@@ -90,6 +90,7 @@ dependencies:
   # Se eliminó soporte Web; paquete `web` removido.
   flutter_image_compress: ^2.0.0
   exif: ^2.0.2
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -115,6 +116,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - env.txt
     - .env
     - assets/branding.png
 
