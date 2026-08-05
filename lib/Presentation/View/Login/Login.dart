@@ -251,17 +251,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Center(
-                  child: TextButton(
-                    onPressed: _showAboutSheet,
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primaryLogo,
-                      textStyle: const TextStyle(fontSize: 14),
-                    ),
-                    child: const Text('Acerca de'),
-                  ),
-                ),
               ],
             ),
           ),
@@ -320,7 +309,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 12),
         Text(
-          '© 2024. Todos los derechos reservados',
+          '© 2026. Todos los derechos reservados',
           style: TextStyle(
             fontSize: 12,
             color: AppColors.darkGray.withValues(alpha: 0.6),
