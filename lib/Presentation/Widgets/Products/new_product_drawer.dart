@@ -17,8 +17,6 @@ class NewProductDrawer extends StatelessWidget {
     required this.costPriceController,
     required this.ivaRateController,
     required this.profitIvaController,
-    required this.bazarController,
-    required this.tiendaController,
     required this.selectedCategoryName,
     required this.selectedStoreId,
     required this.imagePaths,
@@ -31,6 +29,7 @@ class NewProductDrawer extends StatelessWidget {
     required this.onSaveProduct,
     required this.scaffoldKey,
     this.onClose,
+    required this.stockController,
     super.key,
   });
 
@@ -46,8 +45,7 @@ class NewProductDrawer extends StatelessWidget {
   final TextEditingController costPriceController;
   final TextEditingController ivaRateController;
   final TextEditingController profitIvaController;
-  final TextEditingController bazarController;
-  final TextEditingController tiendaController;
+  final TextEditingController stockController;
   final String? selectedCategoryName;
   final int? selectedStoreId;
   final List<String> imagePaths;
@@ -268,24 +266,10 @@ class NewProductDrawer extends StatelessWidget {
                             onChanged: onStoreChanged,
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: bazarController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: modernInput(label: 'Stock Bazar'),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: tiendaController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: modernInput(label: 'Stock Tienda'),
-                                ),
-                              ),
-                            ],
+                          TextFormField(
+                            controller: stockController,
+                            keyboardType: TextInputType.number,
+                            decoration: modernInput(label: 'Stock inicial'),
                           ),
                         ],
                       ),

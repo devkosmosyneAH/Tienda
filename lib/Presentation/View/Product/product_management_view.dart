@@ -43,8 +43,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
   final _costPriceController = TextEditingController(text: '0.00');
   final _ivaRateController = TextEditingController(text: '0.00');
   final _profitIvaController = TextEditingController(text: '0.00');
-  final _bazarController = TextEditingController(text: '0');
-  final _tiendaController = TextEditingController(text: '0');
+  final _stockController = TextEditingController(text: '0');
   final _searchController = TextEditingController();
   String? _selectedCategoryName;
   int? _selectedStoreId;
@@ -75,8 +74,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
     _costPriceController.dispose();
     _ivaRateController.dispose();
     _profitIvaController.dispose();
-    _bazarController.dispose();
-    _tiendaController.dispose();
+    _stockController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -143,14 +141,11 @@ class _ProductManagementViewState extends State<ProductManagementView> {
 
     final controller = context.read<ProductManagementController>();
     final stocks = <int, int>{};
-
-    for (final store in controller.stores) {
-      final id = (store['id'] as num).toInt();
-      final name = store['name'] as String;
-      final source = name == 'Bazar'
-          ? _bazarController.text
-          : _tiendaController.text;
-      stocks[id] = int.tryParse(source) ?? 0;
+    final stockValue = int.tryParse(_stockController.text) ?? 0;
+    if (_selectedStoreId != null) {
+      stocks[_selectedStoreId!] = stockValue;
+    } else if (controller.stores.isNotEmpty) {
+      stocks[(controller.stores.first['id'] as num).toInt()] = stockValue;
     }
 
     setState(() => _isSavingProduct = true);
@@ -189,8 +184,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
       _costPriceController.text = '0.00';
       _ivaRateController.text = '0.00';
       _profitIvaController.text = '0.00';
-      _bazarController.text = '0';
-      _tiendaController.text = '0';
+      _stockController.text = '0';
       setState(() {
         _selectedStoreId = null;
         _imagePaths = [];
@@ -293,8 +287,6 @@ class _ProductManagementViewState extends State<ProductManagementView> {
               costPriceController: _costPriceController,
               ivaRateController: _ivaRateController,
               profitIvaController: _profitIvaController,
-              bazarController: _bazarController,
-              tiendaController: _tiendaController,
               selectedCategoryName: _selectedCategoryName,
               selectedStoreId: _selectedStoreId,
               imagePaths: _imagePaths,
@@ -308,6 +300,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
               onSaveProduct: _saveProduct,
               scaffoldKey: _scaffoldKey,
               onClose: () => Navigator.of(sheetContext).pop(),
+              stockController: _stockController,
             ),
           ),
         );
@@ -333,16 +326,11 @@ class _ProductManagementViewState extends State<ProductManagementView> {
         final totalProducts = controller.products.length;
         final totalStock = controller.products.fold<int>(
           0,
-          (sum, p) =>
-              sum +
-              ((p['stock_bazar'] as num?)?.toInt() ?? 0) +
-              ((p['stock_tienda'] as num?)?.toInt() ?? 0),
+          (sum, p) => sum + ((p['total_stock'] as num?)?.toInt() ?? 0),
         );
         final inventoryValue = controller.products.fold<double>(0, (sum, p) {
           final cost = (p['cost_price'] as num?)?.toDouble() ?? 0;
-          final stock =
-              ((p['stock_bazar'] as num?)?.toInt() ?? 0) +
-              ((p['stock_tienda'] as num?)?.toInt() ?? 0);
+          final stock = (p['total_stock'] as num?)?.toInt() ?? 0;
           return sum + cost * stock;
         });
         final isMobile = MediaQuery.of(context).size.width < 600;

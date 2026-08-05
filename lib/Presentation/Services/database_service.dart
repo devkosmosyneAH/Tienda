@@ -32,10 +32,10 @@ class DatabaseService {
   static bool _platformInitialized = false;
   static final ValueNotifier<int> databaseChanged = ValueNotifier<int>(0);
 
-  static const List<String> _storeNames = ['Bazar', 'Tienda'];
+  static const List<String> _storeNames = ['Tienda'];
 
   // =========================================================
-  // CATÁLOGO ORGANIZADO — BazarNicole ERP/POS v2
+  // CATÁLOGO ORGANIZADO — Tienda ERP/POS
   // Estructura: Store → Categoria → Productos
   //
   // Iconos sugeridos por categoria (Flutter Icons):
@@ -58,11 +58,9 @@ class DatabaseService {
   //   Desechables y Eventos → Icons.dinner_dining
   //
   // Colores sugeridos (Material Design 3):
-  //   Bazar   → Color(0xFF6C3EB8)  // Violeta profundo
   //   Tienda  → Color(0xFF1976D2)  // Azul corporativo
   //
   // Subcategorias futuras sugeridas:
-  //   Bazar   → Decoracion de interiores, Ropa deportiva, Electronica menor
   //   Tienda  → Farmacia básica, Snacks importados, Articulos escolares premium
   //
   // Big Data / Reportes:
@@ -80,58 +78,6 @@ class DatabaseService {
   ///   • Reportes y análisis Big Data
   ///   • Escalabilidad y mantenimiento profesional
   static const Map<String, Map<String, List<String>>> _catalogByStore = {
-    // =========================================================
-    // BAZAR
-    // =========================================================
-    'Bazar': {
-      // Icono: Icons.toys | Color: 0xFFE91E63
-      'Jugueteria': [
-        'Peluches',
-        'Juguetes',
-        'Pelotas de futbol',
-        'Pelotas de indor',
-      ],
-
-      // Icono: Icons.checkroom | Color: 0xFF9C27B0
-      'Moda y Accesorios': [
-        'Carteras',
-        'Zapatos deportivos',
-        'Zapatillas',
-        'Mochilas',
-        'Loncheras',
-        'Lazos',
-        'Vinchas',
-        'Joyeria',
-        'Billeteras',
-      ],
-
-      // Icono: Icons.face_retouching_natural | Color: 0xFFE91E63
-      'Belleza y Perfumeria': ['Perfumes', 'Esmaltes', 'Labiales'],
-
-      // Icono: Icons.home | Color: 0xFF795548
-      'Hogar y Decoracion': [
-        'Portarretratos',
-        'Accesorios de cocina',
-        'Lámparas de dormitorio',
-        'Plateros y accesorios para platos',
-        'Velas aromáticas',
-        'Espejos',
-      ],
-
-      // Icono: Icons.celebration | Color: 0xFFFF9800
-      'Fiestas y Regalos': [
-        'Fundas de regalo',
-        'Accesorios para fiestas y cumpleaños',
-        'Cajas para obsequios',
-      ],
-
-      // Icono: Icons.headphones | Color: 0xFF00BCD4
-      'Tecnologia y Electronicos': ['Audifonos', 'Auriculares Bluetooth'],
-
-      // Icono: Icons.ac_unit | Color: 0xFF2196F3
-      'Temporada y Navidad': ['Accesorios navideños'],
-    },
-
     // =========================================================
     // TIENDA
     // =========================================================
@@ -398,7 +344,7 @@ class DatabaseService {
     // Asegurar existencia del directorio images/ junto a la base de datos
     try {
       final dbDir = File(path).parent;
-      final imagesDirPath = dbDir.path + Platform.pathSeparator + 'images';
+      final imagesDirPath = '${dbDir.path}${Platform.pathSeparator}images';
       final imagesDir = Directory(imagesDirPath);
       if (!await imagesDir.exists()) {
         await imagesDir.create(recursive: true);
@@ -1210,7 +1156,7 @@ class DatabaseService {
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
         [
           uid,
-          'admin@bazarnicole.com',
+          'admin@tienda.com',
           'admin123',
           'Administrador',
           '',
@@ -1773,9 +1719,7 @@ class DatabaseService {
         p.store_id,
         COALESCE(c.name, 'Sin categoria') AS category,
         COALESCE(st.name, '') AS store_name,
-        COALESCE(SUM(i.stock), 0) AS total_stock,
-        COALESCE(MAX(CASE WHEN s.name = 'Bazar' THEN i.stock END), 0) AS stock_bazar,
-        COALESCE(MAX(CASE WHEN s.name = 'Tienda' THEN i.stock END), 0) AS stock_tienda
+        COALESCE(SUM(i.stock), 0) AS total_stock
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
       LEFT JOIN stores st ON st.id = p.store_id

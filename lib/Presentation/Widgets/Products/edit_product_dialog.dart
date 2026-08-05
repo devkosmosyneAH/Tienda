@@ -47,11 +47,8 @@ Future<void> showEditProductDialog(
       : [];
   bool isUploadingEditImages = false;
   bool isSavingEdit = false;
-  final bazarStockController = TextEditingController(
-    text: ((item['stock_bazar'] as num?)?.toInt() ?? 0).toString(),
-  );
-  final tiendaStockController = TextEditingController(
-    text: ((item['stock_tienda'] as num?)?.toInt() ?? 0).toString(),
+  final editStockController = TextEditingController(
+    text: ((item['total_stock'] as num?)?.toInt() ?? 0).toString(),
   );
 
   await showDialog<void>(
@@ -302,23 +299,14 @@ Future<void> showEditProductDialog(
                                   children: [
                                     Expanded(
                                       child: TextField(
-                                        controller: bazarStockController,
+                                        controller: editStockController,
                                         keyboardType: TextInputType.number,
                                         decoration: modernInput(
-                                          label: 'Cantidad Bazar',
+                                          label: 'Cantidad stock',
                                         ),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: tiendaStockController,
-                                        keyboardType: TextInputType.number,
-                                        decoration: modernInput(
-                                          label: 'Cantidad Tienda',
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ],
@@ -384,9 +372,12 @@ Future<void> showEditProductDialog(
                                                       try {
                                                         await controller
                                                             .removeImageReference(
-                                                              productId: (item['id'] as num)
-                                                                  .toInt(),
-                                                              imageRef: imageRef,
+                                                              productId:
+                                                                  (item['id']
+                                                                          as num)
+                                                                      .toInt(),
+                                                              imageRef:
+                                                                  imageRef,
                                                             );
                                                       } catch (e) {
                                                         if (!context.mounted) {
@@ -671,24 +662,30 @@ Future<void> showEditProductDialog(
                                     context,
                                   );
                                   // show progress notification while saving
-                                  showProgressNotification(context, 'Guardando cambios...');
+                                  showProgressNotification(
+                                    context,
+                                    'Guardando cambios...',
+                                  );
                                   setDialogState(() => isSavingEdit = true);
                                   try {
                                     final productId = (item['id'] as num)
                                         .toInt();
+                                    final stockValue =
+                                        int.tryParse(
+                                          editStockController.text,
+                                        ) ??
+                                        0;
+                                    final selectedStoreId =
+                                        editStoreId ??
+                                        (controller.stores.isNotEmpty
+                                            ? (controller.stores.first['id']
+                                                      as num)
+                                                  .toInt()
+                                            : null);
                                     final stockByStore = <int, int>{};
-                                    for (final store in controller.stores) {
-                                      final sid = (store['id'] as num).toInt();
-                                      final storeName = store['name'] as String;
-                                      stockByStore[sid] = storeName == 'Bazar'
-                                          ? int.tryParse(
-                                                  bazarStockController.text,
-                                                ) ??
-                                                0
-                                          : int.tryParse(
-                                                  tiendaStockController.text,
-                                                ) ??
-                                                0;
+                                    if (selectedStoreId != null) {
+                                      stockByStore[selectedStoreId] =
+                                          stockValue;
                                     }
                                     await controller.updateProductWithStock(
                                       productId: productId,
@@ -730,7 +727,7 @@ Future<void> showEditProductDialog(
                                             ),
                                           ) ??
                                           0,
-                                      storeId: editStoreId,
+                                      storeId: selectedStoreId,
                                       images: editImages,
                                       stockByStore: stockByStore,
                                     );
