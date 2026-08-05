@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 bool isLocalImagePath(String value) {
@@ -25,8 +23,8 @@ Widget imagePreview(
   }
 
   return isLocalImagePath(trimmed)
-      ? Image.file(
-          File(trimmed),
+      ? Image.network(
+          trimmed,
           width: width,
           height: height,
           fit: fit,

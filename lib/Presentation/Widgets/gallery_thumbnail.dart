@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 
 /// Miniatura seleccionable, independiente del estado del visor.
@@ -56,19 +55,33 @@ class GalleryThumbnail extends StatelessWidget {
                         ]
                       : null,
                 ),
-                child: Image.file(
-                  File(imageUrl),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const ColoredBox(
-                    color: Color(0xFF242424),
-                    child: Icon(Icons.broken_image_outlined,
-                        color: Colors.white54),
-                  ),
-                ),
+                child: _buildImage(imageUrl),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildImage(String imageUrl) {
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const ColoredBox(
+          color: Color(0xFF242424),
+          child: Icon(Icons.broken_image_outlined, color: Colors.white54),
+        ),
+      );
+    }
+
+    return Image.asset(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => const ColoredBox(
+        color: Color(0xFF242424),
+        child: Icon(Icons.broken_image_outlined, color: Colors.white54),
       ),
     );
   }

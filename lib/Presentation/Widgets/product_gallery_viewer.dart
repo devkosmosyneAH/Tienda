@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:ui';
 import 'package:tienda/Presentation/Widgets/gallery_arrow.dart';
 import 'package:tienda/Presentation/Widgets/gallery_close_button.dart';
@@ -106,7 +105,7 @@ class _ProductGalleryViewerState extends State<ProductGalleryViewer> {
       final ImageProvider provider = imageUrl.startsWith('http://') ||
               imageUrl.startsWith('https://')
           ? NetworkImage(imageUrl)
-          : FileImage(File(imageUrl));
+          : AssetImage(imageUrl);
       unawaited(precacheImage(provider, context));
     }
   }
@@ -359,16 +358,31 @@ class _GalleryImageState extends State<_GalleryImage> {
             maxScale: 5,
             trackpadScrollCausesScale: true,
             boundaryMargin: const EdgeInsets.all(80),
-            child: Image.file(
-              File(widget.imageUrl),
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Center(
-                child: Icon(Icons.broken_image_outlined,
-                    color: Colors.white54, size: 56),
-              ),
-            ),
+            child: _buildDisplayImage(widget.imageUrl),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDisplayImage(String imageUrl) {
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => const Center(
+          child: Icon(Icons.broken_image_outlined,
+              color: Colors.white54, size: 56),
+        ),
+      );
+    }
+
+    return Image.asset(
+      imageUrl,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => const Center(
+        child: Icon(Icons.broken_image_outlined,
+            color: Colors.white54, size: 56),
       ),
     );
   }

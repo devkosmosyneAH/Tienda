@@ -1,15 +1,14 @@
 // ignore_for_file: file_names
 
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'app_io.dart';
 
 /// Resultado de una imagen optimizada lista para subir.
 class OptimizedImage {
-  final File file;
+  final dynamic file;
   final String mimeType;
   final String extension;
   final int originalSize;
@@ -39,7 +38,7 @@ class ImageOptimizerService {
   }) async {
     // Optimización orientada a plataformas locales (no Web).
 
-    final File sourceFile = _resolveSourceFile(source);
+    final dynamic sourceFile = _resolveSourceFile(source);
     if (!await sourceFile.exists()) {
       throw Exception('Archivo no encontrado: ${sourceFile.path}');
     }
@@ -62,8 +61,7 @@ class ImageOptimizerService {
       final tempDir = await getTemporaryDirectory();
       final tempFileName =
           '${DateTime.now().microsecondsSinceEpoch}_${p.setExtension(p.basenameWithoutExtension(originalName), '.webp')}';
-      final tempFile = File(p.join(tempDir.path, tempFileName));
-      await tempFile.writeAsBytes(compressedBytes, flush: true);
+      final tempFile = await _writeTempFile(tempDir.path, tempFileName, compressedBytes);
 
       final int optimizedSize = compressedBytes.length;
       final double savingPercent = originalSize == 0
@@ -93,9 +91,8 @@ class ImageOptimizerService {
     }
   }
 
-  static File _resolveSourceFile(dynamic source) {
-    if (source is File) return source;
-    if (source is String) return File(source);
+  static dynamic _resolveSourceFile(dynamic source) {
+    if (source is String) return source;
     throw ArgumentError.value(
       source,
       'source',
@@ -103,13 +100,13 @@ class ImageOptimizerService {
     );
   }
 
-  static Future<Uint8List?> _compressToWebp(File sourceFile) async {
+  static Future<Uint8List?> _compressToWebp(dynamic sourceFile) async {
     int quality = _qualityStart;
     Uint8List? compressedBytes;
 
     while (quality >= _qualityMin) {
       compressedBytes = await FlutterImageCompress.compressWithFile(
-        sourceFile.path,
+        sourceFile.toString(),
         format: CompressFormat.webp,
         quality: quality,
         keepExif: true,
@@ -150,5 +147,11 @@ class ImageOptimizerService {
     buffer.writeln('$durationMs ms');
     buffer.writeln('══════════════════════════════');
     debugPrint(buffer.toString());
+  }
+
+  static Future<dynamic> _writeTempFile(String dirPath, String fileName, List<int> bytes) async {
+    final filePath = p.join(dirPath, fileName);
+    await AppIO().writeBytes(filePath, bytes);
+    return filePath;
   }
 }

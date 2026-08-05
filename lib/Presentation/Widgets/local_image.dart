@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 class LocalImage extends StatelessWidget {
@@ -8,7 +6,13 @@ class LocalImage extends StatelessWidget {
   final double? width;
   final double? height;
 
-  const LocalImage({Key? key, this.imagePath, this.fit = BoxFit.cover, this.width, this.height}) : super(key: key);
+  const LocalImage({
+    super.key,
+    this.imagePath,
+    this.fit = BoxFit.cover,
+    this.width,
+    this.height,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +25,7 @@ class LocalImage extends StatelessWidget {
       );
     }
 
-    final file = File(imagePath!);
-    if (!file.existsSync()) {
+    if (!imagePath!.startsWith('http')) {
       return Container(
         width: width,
         height: height,
@@ -31,11 +34,6 @@ class LocalImage extends StatelessWidget {
       );
     }
 
-    return Image.file(
-      file,
-      fit: fit,
-      width: width,
-      height: height,
-    );
+    return Image.network(imagePath!, fit: fit, width: width, height: height);
   }
 }

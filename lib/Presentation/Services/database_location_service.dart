@@ -1,29 +1,28 @@
-import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'database_config.dart';
+import 'app_io.dart';
 
 /// Servicio para detectar automáticamente la ubicación de la base de datos
 /// según el sistema operativo y el contexto de ejecución (desarrollo vs ejecutable)
 class DatabaseLocationService {
   static const String _databaseName = DatabaseConfig.dbName;
+  static final AppIO _appIo = AppIO();
 
   /// Obtener la ruta de la base de datos según el sistema operativo
   static Future<String> getDatabasePath() async {
-    if (Platform.isWindows) {
+    if (defaultTargetPlatform == TargetPlatform.windows) {
       return await _getWindowsDatabasePath();
-    } else if (Platform.isMacOS) {
+    } else if (defaultTargetPlatform == TargetPlatform.macOS) {
       return await _getMacOSDatabasePath();
-    } else if (Platform.isLinux) {
+    } else if (defaultTargetPlatform == TargetPlatform.linux) {
       return await _getLinuxDatabasePath();
-    } else if (Platform.isAndroid || Platform.isIOS) {
+    } else if (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) {
       return await _getMobileDatabasePath();
     } else {
-      throw UnsupportedError(
-        'Sistema operativo no soportado: ${Platform.operatingSystem}',
-      );
+      return await _getMobileDatabasePath();
     }
   }
 
@@ -105,7 +104,7 @@ class DatabaseLocationService {
   /// Verificar si estamos ejecutando desde un ejecutable compilado
   static Future<bool> _isRunningFromExecutable() async {
     try {
-      final executablePath = Platform.resolvedExecutable;
+      final executablePath = _getExecutablePath();
 
       // En desarrollo, el ejecutable suele ser dart.exe o flutter
       final executableName = basename(executablePath).toLowerCase();
@@ -128,7 +127,7 @@ class DatabaseLocationService {
   /// Verificar si estamos ejecutando desde un app bundle de macOS
   static Future<bool> _isRunningFromAppBundle() async {
     try {
-      final executablePath = Platform.resolvedExecutable;
+      final executablePath = _getExecutablePath();
       return executablePath.contains('.app/Contents/MacOS/');
     } catch (e) {
       return false;
@@ -137,14 +136,14 @@ class DatabaseLocationService {
 
   /// Obtener el directorio del ejecutable
   static Future<String> _getExecutableDirectory() async {
-    final executablePath = Platform.resolvedExecutable;
+    final executablePath = _getExecutablePath();
     final executableDir = dirname(executablePath);
     return executableDir;
   }
 
   /// Obtener el directorio del app bundle de macOS
   static Future<String> _getAppBundleDirectory() async {
-    final executablePath = Platform.resolvedExecutable;
+    final executablePath = _getExecutablePath();
     // Extraer la ruta hasta .app
     final appIndex = executablePath.indexOf('.app');
     if (appIndex != -1) {
@@ -156,18 +155,15 @@ class DatabaseLocationService {
 
   /// Crear el directorio de la base de datos si no existe
   static Future<void> ensureDatabaseDirectoryExists(String dbPath) async {
-    final dir = Directory(dirname(dbPath));
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
+    await _appIo.createDirectory(dirname(dbPath));
   }
 
   /// Obtener información del sistema para debugging
   static Map<String, dynamic> getSystemInfo() {
     return {
-      'platform': Platform.operatingSystem,
-      'version': Platform.operatingSystemVersion,
-      'executable': Platform.resolvedExecutable,
+      'platform': defaultTargetPlatform.name,
+      'version': defaultTargetPlatform.name,
+      'executable': _getExecutablePath(),
       'isDebugMode': kDebugMode,
       'isProfileMode': kProfileMode,
       'isReleaseMode': kReleaseMode,
@@ -182,16 +178,14 @@ class DatabaseLocationService {
 
   /// Verificar si la base de datos existe en la ruta especificada
   static Future<bool> databaseExists(String path) async {
-    final exists = await File(path).exists();
-    return exists;
+    return _appIo.fileExists(path);
   }
 
   /// Obtener el tamaño de la base de datos
   static Future<double> getDatabaseSize(String path) async {
     try {
-      final file = File(path);
-      if (await file.exists()) {
-        final sizeInBytes = await file.length();
+      if (await _appIo.fileExists(path)) {
+        final sizeInBytes = (await _appIo.readBytes(path)).length;
         final sizeInMB = sizeInBytes / (1024 * 1024);
         return sizeInMB;
       }
@@ -200,4 +194,6 @@ class DatabaseLocationService {
       return 0.0;
     }
   }
+
+  static String _getExecutablePath() => 'native';
 }

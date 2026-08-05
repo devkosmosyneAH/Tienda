@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -8,6 +7,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'database_config.dart';
 import 'database_location_service.dart';
+import 'app_io.dart';
 
 /// Genera un ID de 20 caracteres aleatorios estilo Firebase (letras y numeros).
 String generateFirebaseId() {
@@ -275,7 +275,9 @@ class DatabaseService {
 
   static Future<void> initializePlatform() async {
     if (_platformInitialized) return;
-    if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) {
+    if (kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS) {
       _platformInitialized = true;
       return;
     }
@@ -343,11 +345,13 @@ class DatabaseService {
 
     // Asegurar existencia del directorio images/ junto a la base de datos
     try {
-      final dbDir = File(path).parent;
-      final imagesDirPath = '${dbDir.path}${Platform.pathSeparator}images';
-      final imagesDir = Directory(imagesDirPath);
-      if (!await imagesDir.exists()) {
-        await imagesDir.create(recursive: true);
+      final dbDir = path.substring(
+        0,
+        path.lastIndexOf('/') == -1 ? 0 : path.lastIndexOf('/'),
+      );
+      final imagesDirPath = '$dbDir${AppIO().pathSeparator}images';
+      if (!await AppIO().fileExists(imagesDirPath)) {
+        await AppIO().createDirectory(imagesDirPath);
       }
     } catch (e) {
       // Ignorar errores de creación de carpeta de imágenes
@@ -360,7 +364,7 @@ class DatabaseService {
           data.offsetInBytes,
           data.lengthInBytes,
         );
-        await File(path).writeAsBytes(bytes, flush: true);
+        await AppIO().writeBytes(path, bytes);
       } catch (e) {
         throw Exception('No se pudo copiar la base de datos desde assets: $e');
       }
@@ -427,7 +431,7 @@ class DatabaseService {
       data.lengthInBytes,
     );
 
-    await File(path).writeAsBytes(bytes, flush: true);
+    await AppIO().writeBytes(path, bytes);
     await reopen();
   }
 
@@ -455,8 +459,8 @@ class DatabaseService {
     notifyDatabaseChanged();
   }
 
-  static Future<void> replaceDatabase(File file) async {
-    if (!await file.exists()) {
+  static Future<void> replaceDatabase(dynamic file) async {
+    if (!await AppIO().fileExists(file.path)) {
       throw Exception('El archivo seleccionado no existe: ${file.path}');
     }
 
@@ -467,9 +471,9 @@ class DatabaseService {
     await Future<void>.delayed(const Duration(milliseconds: 250));
 
     final backupPath = '$path.backup.${DateTime.now().millisecondsSinceEpoch}';
-    if (await File(path).exists()) {
-      await File(path).copy(backupPath);
-      await File(path).delete();
+    if (await AppIO().fileExists(path)) {
+      await AppIO().copyFile(path, backupPath);
+      await AppIO().deleteFile(path);
     }
 
     if (file.path == path) {
@@ -1668,7 +1672,7 @@ class DatabaseService {
     if (normalizedSearch.isNotEmpty) {
       final filter = '%$normalizedSearch%';
       clauses.add(
-        '(p.name LIKE ? OR p.sku LIKE ? OR COALESCE(c.name, \"\") LIKE ? OR COALESCE(p.aux_code, \"\") LIKE ?)',
+        '(p.name LIKE ? OR p.sku LIKE ? OR COALESCE(c.name, "") LIKE ? OR COALESCE(p.aux_code, "") LIKE ?)',
       );
       params.addAll([filter, filter, filter, filter]);
     }

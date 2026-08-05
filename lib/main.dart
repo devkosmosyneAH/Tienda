@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:tienda/Presentation/View/Auth/app_routes.dart';
 import 'package:tienda/Presentation/Services/auth_service.dart';
@@ -7,9 +6,9 @@ import 'package:tienda/Presentation/Services/background_job_service.dart';
 import 'package:tienda/Presentation/Services/database_maintenance_service.dart';
 import 'package:tienda/Presentation/Services/database_config.dart';
 import 'package:tienda/Presentation/Services/database_location_service.dart';
+import 'package:tienda/Presentation/Services/app_io.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
-import 'package:tienda/Presentation/display/database_initializer_native.dart';
-import 'package:tienda/Presentation/display/window_manager_initializer.dart';
+import 'package:tienda/Presentation/display/database_initializer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,6 +23,7 @@ import 'package:tienda/Presentation/Controller/purchases_controller.dart';
 import 'package:tienda/Presentation/Controller/reports_controller.dart';
 import 'package:tienda/Presentation/Context/providers.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:tienda/Presentation/display/window_manager_initializer.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -81,12 +81,7 @@ Future<void> main() async {
 Future<void> _initDatabaseSafely() async {
   if (kIsWeb) return; // Web no usa SQLite local
   try {
-    // Para iOS/Android, usar el DatabaseService compartido.
-    if (Platform.isIOS || Platform.isAndroid) {
-      await DatabaseService.database;
-    } else {
-      await DatabaseService.database;
-    }
+    await DatabaseService.database;
   } catch (e) {
     // Intentar método fallback más seguro
     await _safeFallbackDatabaseInit();
@@ -99,16 +94,16 @@ Future<void> _safeFallbackDatabaseInit() async {
   if (kIsWeb) return; // Web no usa SQLite local
   try {
     final dbPath = await DatabaseLocationService.getDatabasePath();
-    final File dbFile = File(dbPath);
+    final dbFile = AppIO();
 
-    if (await dbFile.exists()) {
+    if (await dbFile.fileExists(dbPath)) {
       try {
         debugPrint('Opening database:');
         debugPrint(dbPath);
         await DatabaseService.database;
         return;
       } catch (e) {
-        await dbFile.delete();
+        await dbFile.deleteFile(dbPath);
       }
     }
 
@@ -119,7 +114,7 @@ Future<void> _safeFallbackDatabaseInit() async {
         data.lengthInBytes,
       );
 
-      await dbFile.writeAsBytes(bytes, flush: true);
+      await dbFile.writeBytes(dbPath, bytes);
       debugPrint('Opening database:');
       debugPrint(dbPath);
       await DatabaseService.database;

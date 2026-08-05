@@ -335,7 +335,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                   leadingWidth: 0,
                   titleSpacing: 0,
                   elevation: 4,
-                  shadowColor: AppColors.blackOverlay.withOpacity(0.50),
+                  shadowColor: AppColors.blackOverlay.withValues(alpha: 0.50),
                   title: _mobileHeader(),
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(

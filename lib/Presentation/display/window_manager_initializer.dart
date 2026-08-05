@@ -1,3 +1,2 @@
-import 'window_manager_native.dart' as impl;
-
-Future<void> initializeWindowManager() => impl.initializeWindowManager();
+export 'window_manager_web.dart'
+    if (dart.library.io) 'window_manager_native.dart';

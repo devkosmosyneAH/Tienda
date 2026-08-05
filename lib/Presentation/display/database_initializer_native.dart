@@ -19,15 +19,15 @@ Future<void> initializeDatabasePlatform() async {
 Future<void> _safeFallbackDatabaseInit() async {
   try {
     final dbPath = await DatabaseLocationService.getDatabasePath();
-    final File dbFile = File(dbPath);
-    if (await dbFile.exists()) {
+    final file = File(dbPath);
+    if (await file.exists()) {
       try {
         debugPrint('Opening database:');
         debugPrint(dbPath);
         await DatabaseService.database;
         return;
       } catch (_) {
-        await dbFile.delete();
+        await file.delete();
       }
     }
 
@@ -37,7 +37,7 @@ Future<void> _safeFallbackDatabaseInit() async {
       data.lengthInBytes,
     );
 
-    await dbFile.writeAsBytes(bytes, flush: true);
+    await file.writeAsBytes(bytes, flush: true);
     debugPrint('Opening database:');
     debugPrint(dbPath);
     await DatabaseService.database;
