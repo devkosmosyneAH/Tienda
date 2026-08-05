@@ -103,7 +103,7 @@ class _ProductGalleryViewerState extends State<ProductGalleryViewer> {
     final next = (current + 1) % widget.images.length;
     for (final index in {previous, next}) {
       final imageUrl = widget.images[index];
-      final provider = imageUrl.startsWith('http://') ||
+      final ImageProvider provider = imageUrl.startsWith('http://') ||
               imageUrl.startsWith('https://')
           ? NetworkImage(imageUrl)
           : FileImage(File(imageUrl));
