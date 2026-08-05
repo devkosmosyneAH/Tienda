@@ -36,7 +36,11 @@ class LegalPageWidget extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.primaryLogo,
         foregroundColor: Colors.white,
-        leading: const BackButton(),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Regresar',
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Row(
           children: [
             Icon(_icon, size: 20),
@@ -49,6 +53,9 @@ class LegalPageWidget extends StatelessWidget {
         ),
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           // Fecha de vigencia
           Padding(
