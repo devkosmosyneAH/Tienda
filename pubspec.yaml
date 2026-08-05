@@ -34,6 +34,62 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  fl_chart: ^0.68.0
+  provider: ^6.1.2
+  http: ^1.3.0
+  sqflite: ^2.3.3
+  path: ^1.9.0
+  google_nav_bar: ^5.0.6
+  intl: ^0.20.2
+  flutter_animate: ^4.5.0
+  shared_preferences: ^2.3.3
+  simple_barcode_scanner: ^0.3.0
+  uuid: ^4.5.1
+  mobile_scanner: ^3.5.3
+  material_design_icons_flutter: ^7.0.7296
+  webview_flutter: ^4.10.0
+  tutorial_coach_mark: ^1.2.13
+  emoji_picker_flutter: ^4.3.0
+  image_picker: ^1.1.2
+  permission_handler: ^11.4.0
+  photo_view: ^0.15.0
+  dio: ^5.8.0+1
+  share_plus: ^10.1.4
+  path_provider: ^2.1.5
+  connectivity_plus: ^6.1.3
+  printing: ^5.14.2
+  go_router: ^8.0.0
+  flutter_multi_formatter: ^2.13.7
+  syncfusion_flutter_datagrid: ^29.1.40
+  syncfusion_flutter_xlsio: ^29.1.40
+  syncfusion_flutter_pdf: ^29.1.40
+  open_file: ^3.5.10
+  flutter_speed_dial: ^7.0.0
+  file_picker: ^10.1.9
+  syncfusion_flutter_charts: ^29.2.4
+  url_launcher: ^6.3.1
+  qr_flutter: ^4.1.0
+  editable: ^2.0.0
+  # universal_html removed (no Web support)
+  mailer: ^6.4.1
+  flutter_email_sender: ^7.0.0
+  auto_size_text: ^3.0.0
+  pdf: ^3.11.3
+  infinite_scroll_pagination: ^5.1.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  sqflite_common_ffi: ^2.3.6
+  drift: ^2.14.0
+  drift_flutter: ^0.2.5
+  sqlite3_flutter_libs: ^0.5.39
+  sembast: ^3.8.5+1
+  window_manager: ^0.5.1
+  data_table_2: ^2.6.0
+  flutter_localization: ^0.2.3
+  crypto: ^3.0.3
+  # Se eliminó soporte Web; paquete `web` removido.
+  flutter_image_compress: ^2.0.0
+  exif: ^2.0.2
 
 dev_dependencies:
   flutter_test:
@@ -58,9 +114,9 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - .env
+    - assets/branding.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -73,17 +129,21 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
+  fonts:
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/static/NotoSans-Regular.ttf
+        - asset: assets/fonts/static/NotoSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/static/NotoSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/static/NotoSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/static/NotoSans-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/static/NotoSans-Light.ttf
+          weight: 300
+        - asset: assets/fonts/static/NotoSans-Italic.ttf
+          style: italic
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

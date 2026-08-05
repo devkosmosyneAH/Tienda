@@ -5,3 +5,8 @@ git commit -m "first commit"
 git branch -M main
 git remote add origin https://github.com/devkosmosyneAH/Tienda.git
 git push -u origin main
+
+en caso de subir un mal commit
+
+git update-ref -d HEAD
+git status
