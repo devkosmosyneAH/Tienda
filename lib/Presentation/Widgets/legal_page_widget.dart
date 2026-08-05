@@ -271,7 +271,7 @@ const List<_LegalSection> _privacySections = [
   _LegalSection(
     '05',
     'Compartición de datos',
-    'No vendemos, alquilamos ni compartimos sus datos personales con terceros con fines comerciales. Los datos pueden ser accedidos únicamente por:\n• Personal autorizado de Bazar & Tienda Nicole.\n• Proveedores de servicios técnicos (p.ej. Google Firebase) sujetos a contratos de confidencialidad y políticas de privacidad propias.',
+    'No vendemos, alquilamos ni compartimos sus datos personales con terceros con fines comerciales. Los datos pueden ser accedidos únicamente por:\n• Personal autorizado de Tienda.\n• Proveedores de servicios técnicos (p.ej. Google Firebase) sujetos a contratos de confidencialidad y políticas de privacidad propias.',
   ),
   _LegalSection(
     '06',
