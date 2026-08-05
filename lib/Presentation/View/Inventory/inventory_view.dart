@@ -764,187 +764,70 @@ class _InventoryViewState extends State<InventoryView> {
         ),
         const SizedBox(height: 5),
 
-        // ── Selector de local + dos búsquedas ─────────────────
+        // ── Buscar inventario ─────────────────
         Container(
           color: AppColors.lightGray,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Column(
+          child: Row(
             children: [
-              if (provider.stores.length > 1) ...[
-                Material(
-                  color: AppColors.primaryRed,
-                  elevation: 4,
-                  shadowColor: Colors.black26,
-                  borderRadius: BorderRadius.circular(25),
-                  clipBehavior: Clip.antiAlias,
-                  child: DropdownButtonFormField<int>(
-                    dropdownColor: AppColors.whiteOverlay,
-                    value: provider.selectedStoreId,
-                    focusColor: AppColors.whiteOverlay,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: AppColors.whiteOverlay,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(
-                          color: AppColors.whiteOverlay,
-                          width: 1.5,
+              Expanded(
+                child: Container(
+                  color: AppColors.lightGray,
+                  child: Material(
+                    elevation: 4,
+                    shadowColor: Colors.black26,
+                    borderRadius: BorderRadius.circular(25),
+                    clipBehavior: Clip.antiAlias,
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: AppColors.whiteOverlay,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
                         ),
-                      ),
-                      focusColor: AppColors.whiteOverlay,
-                      hintText: 'Local',
-                      isDense: true,
-                    ),
-                    items: provider.stores
-                        .map(
-                          (s) => DropdownMenuItem<int>(
-                            value: (s['id'] as num).toInt(),
-                            child: Text(s['name'] ?? 'Tienda'),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: AppColors.whiteOverlay,
+                            width: 1.5,
                           ),
-                        )
-                        .toList(),
-                    onChanged: (id) {
-                      if (id != null) provider.selectStore(id);
-                    },
+                        ),
+                        hintText: 'Buscar por Producto...',
+                        hintStyle: TextStyle(color: Colors.grey.shade400),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          size: 18,
+                          color: Colors.black38,
+                        ),
+                        isDense: true,
+                        suffixIcon: _searchController.text.isEmpty
+                            ? null
+                            : GestureDetector(
+                                onTap: () {
+                                  _searchController.clear();
+                                  setState(() {});
+                                },
+                                child: const Icon(
+                                  Icons.clear,
+                                  size: 18,
+                                  color: Colors.black38,
+                                ),
+                              ),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-              ],
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      color: AppColors.lightGray,
-                      child: Material(
-                        elevation: 4,
-                        shadowColor: Colors.black26,
-                        borderRadius: BorderRadius.circular(25),
-                        clipBehavior: Clip.antiAlias,
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: AppColors.whiteOverlay,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 16,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: AppColors.whiteOverlay,
-                                width: 1.5,
-                              ),
-                            ),
-                            hintText: 'Buscar por Producto...',
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
-                            prefixIcon: const Icon(
-                              Icons.search,
-                              size: 18,
-                              color: Colors.black38,
-                            ),
-                            isDense: true,
-                            suffixIcon: _searchController.text.isEmpty
-                                ? null
-                                : GestureDetector(
-                                    onTap: () {
-                                      _searchController.clear();
-                                      setState(() {});
-                                    },
-                                    child: const Icon(
-                                      Icons.clear,
-                                      size: 16,
-                                      color: Colors.black38,
-                                    ),
-                                  ),
-                          ),
-
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Material(
-                      elevation: 4,
-                      shadowColor: Colors.black26,
-                      borderRadius: BorderRadius.circular(25),
-                      clipBehavior: Clip.antiAlias,
-                      child: Container(
-                        color: AppColors.lightGray,
-                        child: TextField(
-                          controller: _descController,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: AppColors.whiteOverlay,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 16,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: AppColors.whiteOverlay,
-                                width: 1.5,
-                              ),
-                            ),
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
-                            hintText: 'Buscar por Descripción...',
-                            prefixIcon: const Icon(
-                              Icons.search,
-                              size: 18,
-                              color: Colors.black38,
-                            ),
-                            isDense: true,
-                            suffixIcon: _descController.text.isEmpty
-                                ? null
-                                : GestureDetector(
-                                    onTap: () {
-                                      _descController.clear();
-                                      setState(() {});
-                                    },
-                                    child: const Icon(
-                                      Icons.clear,
-                                      size: 16,
-                                      color: Colors.black38,
-                                    ),
-                                  ),
-                          ),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ],
           ),

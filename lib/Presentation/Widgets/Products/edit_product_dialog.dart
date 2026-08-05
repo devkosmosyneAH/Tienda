@@ -38,9 +38,6 @@ Future<void> showEditProductDialog(
     text: ((item['profit_iva'] as num?)?.toDouble() ?? 0).toStringAsFixed(2),
   );
 
-  int? editStoreId = item['store_id'] != null
-      ? (item['store_id'] as num).toInt()
-      : null;
   List<String> editImages =
       item['images'] != null && (item['images'] as String).isNotEmpty
       ? (item['images'] as String).split(',')
@@ -270,48 +267,7 @@ Future<void> showEditProductDialog(
                             const SizedBox(height: 24),
                             Divider(color: Colors.grey.shade100),
                             const SizedBox(height: 24),
-                            formSection(
-                              title: 'Local e inventario',
-                              children: [
-                                DropdownButtonFormField<int?>(
-                                  value: editStoreId,
-                                  decoration: modernInput(
-                                    label: 'Local principal',
-                                  ),
-                                  items: [
-                                    const DropdownMenuItem<int?>(
-                                      value: null,
-                                      child: Text('Sin asignar'),
-                                    ),
-                                    ...controller.stores.map((s) {
-                                      final id = (s['id'] as num).toInt();
-                                      return DropdownMenuItem<int?>(
-                                        value: id,
-                                        child: Text(s['name'] as String),
-                                      );
-                                    }),
-                                  ],
-                                  onChanged: (v) =>
-                                      setDialogState(() => editStoreId = v),
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: editStockController,
-                                        keyboardType: TextInputType.number,
-                                        decoration: modernInput(
-                                          label: 'Cantidad stock',
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
+
                             Divider(color: Colors.grey.shade100),
                             const SizedBox(height: 24),
                             formSection(
@@ -675,62 +631,95 @@ Future<void> showEditProductDialog(
                                           editStockController.text,
                                         ) ??
                                         0;
-                                    final selectedStoreId =
-                                        editStoreId ??
-                                        (controller.stores.isNotEmpty
-                                            ? (controller.stores.first['id']
-                                                      as num)
-                                                  .toInt()
-                                            : null);
                                     final stockByStore = <int, int>{};
-                                    if (selectedStoreId != null) {
+                                    if (controller.stores.isNotEmpty) {
+                                      final selectedStoreId =
+                                          (controller.stores.first['id'] as num)
+                                              .toInt();
                                       stockByStore[selectedStoreId] =
                                           stockValue;
+                                      await controller.updateProductWithStock(
+                                        productId: productId,
+                                        name: nameController.text,
+                                        category: editCategory ?? '',
+                                        sku: skuController.text,
+                                        auxCode: auxCodeController.text,
+                                        description: descriptionController.text,
+                                        tags: tagsController.text,
+                                        price:
+                                            double.tryParse(
+                                              priceController.text.replaceAll(
+                                                ',',
+                                                '.',
+                                              ),
+                                            ) ??
+                                            0,
+                                        costPrice:
+                                            double.tryParse(
+                                              costPriceController.text
+                                                  .replaceAll(',', '.'),
+                                            ) ??
+                                            0,
+                                        ivaRate:
+                                            double.tryParse(
+                                              ivaRateController.text.replaceAll(
+                                                ',',
+                                                '.',
+                                              ),
+                                            ) ??
+                                            0,
+                                        profitIva:
+                                            double.tryParse(
+                                              profitIvaController.text
+                                                  .replaceAll(',', '.'),
+                                            ) ??
+                                            0,
+                                        storeId: selectedStoreId,
+                                        images: editImages,
+                                        stockByStore: stockByStore,
+                                      );
+                                    } else {
+                                      await controller.updateProductWithStock(
+                                        productId: productId,
+                                        name: nameController.text,
+                                        category: editCategory ?? '',
+                                        sku: skuController.text,
+                                        auxCode: auxCodeController.text,
+                                        description: descriptionController.text,
+                                        tags: tagsController.text,
+                                        price:
+                                            double.tryParse(
+                                              priceController.text.replaceAll(
+                                                ',',
+                                                '.',
+                                              ),
+                                            ) ??
+                                            0,
+                                        costPrice:
+                                            double.tryParse(
+                                              costPriceController.text
+                                                  .replaceAll(',', '.'),
+                                            ) ??
+                                            0,
+                                        ivaRate:
+                                            double.tryParse(
+                                              ivaRateController.text.replaceAll(
+                                                ',',
+                                                '.',
+                                              ),
+                                            ) ??
+                                            0,
+                                        profitIva:
+                                            double.tryParse(
+                                              profitIvaController.text
+                                                  .replaceAll(',', '.'),
+                                            ) ??
+                                            0,
+                                        storeId: null,
+                                        images: editImages,
+                                        stockByStore: stockByStore,
+                                      );
                                     }
-                                    await controller.updateProductWithStock(
-                                      productId: productId,
-                                      name: nameController.text,
-                                      category: editCategory ?? '',
-                                      sku: skuController.text,
-                                      auxCode: auxCodeController.text,
-                                      description: descriptionController.text,
-                                      tags: tagsController.text,
-                                      price:
-                                          double.tryParse(
-                                            priceController.text.replaceAll(
-                                              ',',
-                                              '.',
-                                            ),
-                                          ) ??
-                                          0,
-                                      costPrice:
-                                          double.tryParse(
-                                            costPriceController.text.replaceAll(
-                                              ',',
-                                              '.',
-                                            ),
-                                          ) ??
-                                          0,
-                                      ivaRate:
-                                          double.tryParse(
-                                            ivaRateController.text.replaceAll(
-                                              ',',
-                                              '.',
-                                            ),
-                                          ) ??
-                                          0,
-                                      profitIva:
-                                          double.tryParse(
-                                            profitIvaController.text.replaceAll(
-                                              ',',
-                                              '.',
-                                            ),
-                                          ) ??
-                                          0,
-                                      storeId: selectedStoreId,
-                                      images: editImages,
-                                      stockByStore: stockByStore,
-                                    );
                                     if (!context.mounted) return;
                                     navigator.pop();
                                     hideProgressNotification(context);

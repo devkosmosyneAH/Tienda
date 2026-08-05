@@ -145,9 +145,9 @@ class GhPagesCatalog {
 class GhPagesCatalogService {
   /// URL base donde están los JSON exportados.
   /// Debe terminar SIN barra final.
-  /// Ejemplo: 'https://bazarypapelerianicole.github.io/PlatformWeb/#/catalog'
+  /// Ejemplo: 'https://devkosmosyneAH.github.io/PlatformWebTienda/#/catalog'
   static String baseUrl =
-      'https://bazarypapelerianicole.github.io/PlatformWeb/#/catalog';
+      'https://devkosmosyneAH.github.io/PlatformWebTienda/#/catalog';
 
   // ── Caché en memoria ───────────────────────────────────────────────────────
   static GhPagesCatalog? _cache;

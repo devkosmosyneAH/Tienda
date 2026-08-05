@@ -90,7 +90,7 @@ class LegalPageWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
             width: double.infinity,
             child: const Text(
-              '© 2026 Bazar & Tienda Nicole · Todos los derechos reservados',
+              '© 2026 Tienda · Todos los derechos reservados',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white54, fontSize: 11),
             ),
@@ -196,7 +196,7 @@ const List<_LegalSection> _termsSections = [
   _LegalSection(
     '01',
     'Aceptación de los términos',
-    'Al acceder y utilizar el catálogo web de Bazar & Tienda Nicole (en adelante "el Sitio"), usted acepta cumplir y quedar vinculado a los presentes Términos y Condiciones. Si no está de acuerdo con alguna parte de estos términos, le pedimos que no utilice el Sitio.',
+    'Al acceder y utilizar el catálogo web de Tienda (en adelante "el Sitio"), usted acepta cumplir y quedar vinculado a los presentes Términos y Condiciones. Si no está de acuerdo con alguna parte de estos términos, le pedimos que no utilice el Sitio.',
   ),
   _LegalSection(
     '02',

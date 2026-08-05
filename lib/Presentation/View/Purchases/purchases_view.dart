@@ -525,25 +525,6 @@ class _PurchaseHistoryTab extends StatelessWidget {
                     children: [
                       SizedBox(
                         width: 220,
-                        child: DropdownButtonFormField<int>(
-                          value: controller.selectedStoreId,
-                          decoration: const InputDecoration(
-                            labelText: 'Local',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: controller.stores
-                              .map(
-                                (store) => DropdownMenuItem<int>(
-                                  value: (store['id'] as num).toInt(),
-                                  child: Text(store['name'].toString()),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: controller.selectStore,
-                        ),
-                      ),
-                      SizedBox(
-                        width: 220,
                         child: DropdownButtonFormField<int?>(
                           value: controller.historySupplierId,
                           decoration: const InputDecoration(
