@@ -33,7 +33,11 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: "assets/env.txt");
+  try {
+    await dotenv.load(fileName: "assets/env.txt");
+  } catch (e) {
+    debugPrint(e.toString());
+  }
 
   // 🌍 INICIALIZAR LOCALIZACIÓN PARA FECHAS
   await initializeDateFormatting('es', null);
