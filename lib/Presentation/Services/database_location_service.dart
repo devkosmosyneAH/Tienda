@@ -34,7 +34,7 @@ class DatabaseLocationService {
       if (await _isRunningFromExecutable()) {
         // Ejecutable: usar directorio junto al .exe
         final executableDir = await _getExecutableDirectory();
-        final dbPath = join(executableDir, 'bazarnicole', _databaseName);
+        final dbPath = join(executableDir, 'tienda', _databaseName);
         return dbPath;
       } else {
         // Desarrollo: usar directorio de SQLite estándar
@@ -64,7 +64,7 @@ class DatabaseLocationService {
           appBundleDir,
           'Contents',
           'Resources',
-          'bazarnicole',
+          'tienda',
           _databaseName,
         );
         return dbPath;
@@ -84,7 +84,7 @@ class DatabaseLocationService {
       if (await _isRunningFromExecutable()) {
         // Ejecutable: usar directorio junto al binario
         final executableDir = await _getExecutableDirectory();
-        final dbPath = join(executableDir, 'bazarnicole', _databaseName);
+        final dbPath = join(executableDir, 'tienda', _databaseName);
         return dbPath;
       } else {
         // Desarrollo: usar directorio de SQLite estándar

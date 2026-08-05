@@ -1986,7 +1986,11 @@ class _StatusCard extends StatelessWidget {
           color: bgColor,
           borderRadius: BorderRadius.circular(14),
           boxShadow: const [
-            BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
           ],
         ),
         child: Padding(
@@ -2014,7 +2018,10 @@ class _StatusCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 label,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 2),
               Text(

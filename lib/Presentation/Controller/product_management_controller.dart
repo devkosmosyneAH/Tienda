@@ -1,4 +1,3 @@
-import 'package:tienda/Presentation/Services/catalog_sync_service.dart';
 import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:tienda/Presentation/Services/image_optimizer_service.dart';
 import 'package:tienda/Presentation/Services/image_storage_service.dart';
@@ -125,8 +124,7 @@ class ProductManagementController extends ChangeNotifier {
       images: images,
       initialStock: initialStock,
     );
-    await loadCatalog();
-    CatalogSyncService.instance.markDirty(); // ← Producto creado
+    await loadCatalog(); // ← Producto creado
   }
 
   Future<void> updateProduct({
@@ -162,12 +160,14 @@ class ProductManagementController extends ChangeNotifier {
     );
     if (images != null) {
       final current = images.toSet();
-      for (final oldPath in previousImages.where((id) => !current.contains(id))) {
+      for (final oldPath in previousImages.where(
+        (id) => !current.contains(id),
+      )) {
         await ImageStorageService.deleteImage(oldPath);
       }
     }
     await loadCatalog();
-    CatalogSyncService.instance.markDirty(); // ← Producto actualizado
+    // ← Producto actualizado
   }
 
   Future<void> updateProductWithStock({
@@ -204,7 +204,9 @@ class ProductManagementController extends ChangeNotifier {
     );
     if (images != null) {
       final current = images.toSet();
-      for (final oldPath in previousImages.where((id) => !current.contains(id))) {
+      for (final oldPath in previousImages.where(
+        (id) => !current.contains(id),
+      )) {
         await ImageStorageService.deleteImage(oldPath);
       }
     }
@@ -216,7 +218,7 @@ class ProductManagementController extends ChangeNotifier {
       );
     }
     await loadCatalog();
-    CatalogSyncService.instance.markDirty(); // ← Producto + stock actualizado
+    // ← Producto + stock actualizado
   }
 
   Future<void> removeImageReference({
@@ -226,7 +228,10 @@ class ProductManagementController extends ChangeNotifier {
     final trimmed = imageRef.trim();
     if (trimmed.isEmpty) return;
 
-    final isLocalImagePath = trimmed.contains('/') || trimmed.contains('\\') || trimmed.startsWith('file:');
+    final isLocalImagePath =
+        trimmed.contains('/') ||
+        trimmed.contains('\\') ||
+        trimmed.startsWith('file:');
 
     if (productId != null) {
       final currentIds = await DatabaseService.getProductImageIds(productId);
@@ -236,7 +241,7 @@ class ProductManagementController extends ChangeNotifier {
           productId: productId,
           imageIds: remainingIds,
         );
-        CatalogSyncService.instance.markDirty();
+
         await loadCatalog();
       }
     }
@@ -253,6 +258,6 @@ class ProductManagementController extends ChangeNotifier {
       await ImageStorageService.deleteImage(path);
     }
     await loadCatalog();
-    CatalogSyncService.instance.markDirty(); // ← Producto eliminado
+    // ← Producto eliminado
   }
 }

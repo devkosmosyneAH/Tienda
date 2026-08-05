@@ -128,33 +128,6 @@ class _CajaTab extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              DropdownButtonFormField<int>(
-                value: controller.selectedStoreId,
-                decoration: InputDecoration(
-                  labelText: 'Local',
-                  filled: true,
-                  fillColor: AppColors.whiteOverlay,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 0,
-                    horizontal: 12,
-                  ),
-                ),
-                items: controller.stores
-                    .map(
-                      (s) => DropdownMenuItem<int>(
-                        value: (s['id'] as num).toInt(),
-                        child: Text(s['name'] as String),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) controller.selectStore(value);
-                },
-              ),
               const SizedBox(height: 16),
               Card(
                 color: AppColors.whiteOverlay,
@@ -406,38 +379,6 @@ class _HistorialTab extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // ── Selector de local ──────────────────────────────────────
-              DropdownButtonFormField<int>(
-                elevation: 4,
-                value: controller.selectedStoreId,
-                decoration: InputDecoration(
-                  labelText: 'Local',
-                  filled: true,
-                  fillColor: AppColors.whiteOverlay,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 0,
-                    horizontal: 12,
-                  ),
-                ),
-                items: controller.stores
-                    .map(
-                      (s) => DropdownMenuItem<int>(
-                        value: (s['id'] as num).toInt(),
-                        child: Text(s['name'] as String),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    controller.selectStore(value);
-                    controller.loadHistory();
-                  }
-                },
-              ),
               const SizedBox(height: 16),
 
               // ── Chips de agrupación ────────────────────────────────────

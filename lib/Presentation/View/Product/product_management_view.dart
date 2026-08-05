@@ -12,7 +12,6 @@ import '../../Widgets/Products/shared_inputs.dart';
 // Shared helpers are in widgets/shared_inputs.dart; widget-specific imports kept below
 import '../../Widgets/Products/new_product_drawer.dart';
 import '../../Widgets/Products/edit_product_dialog.dart';
-import '../../Widgets/Products/filter_dropdown.dart';
 import '../../Widgets/Products/metric_card.dart';
 import '../../Widgets/Products/product_card.dart';
 import '../../Widgets/Products/add_product_button.dart';
@@ -46,8 +45,6 @@ class _ProductManagementViewState extends State<ProductManagementView> {
   final _stockController = TextEditingController(text: '0');
   final _searchController = TextEditingController();
   String? _selectedCategoryName;
-  int? _selectedStoreId;
-  int? _selectedStoreFilterId;
   String? _selectedCategoryFilterName;
   List<String> _imagePaths = [];
   bool _isUploadingImages = false;
@@ -141,12 +138,6 @@ class _ProductManagementViewState extends State<ProductManagementView> {
 
     final controller = context.read<ProductManagementController>();
     final stocks = <int, int>{};
-    final stockValue = int.tryParse(_stockController.text) ?? 0;
-    if (_selectedStoreId != null) {
-      stocks[_selectedStoreId!] = stockValue;
-    } else if (controller.stores.isNotEmpty) {
-      stocks[(controller.stores.first['id'] as num).toInt()] = stockValue;
-    }
 
     setState(() => _isSavingProduct = true);
     // show progress notification while saving
@@ -168,7 +159,9 @@ class _ProductManagementViewState extends State<ProductManagementView> {
         auxCode: _auxCodeController.text,
         description: _descriptionController.text,
         tags: _tagsController.text,
-        storeId: _selectedStoreId,
+        storeId: controller.stores.isNotEmpty
+            ? (controller.stores.first['id'] as num).toInt()
+            : null,
         images: _imagePaths,
         initialStock: stocks,
       );
@@ -186,7 +179,6 @@ class _ProductManagementViewState extends State<ProductManagementView> {
       _profitIvaController.text = '0.00';
       _stockController.text = '0';
       setState(() {
-        _selectedStoreId = null;
         _imagePaths = [];
       });
 
@@ -232,7 +224,6 @@ class _ProductManagementViewState extends State<ProductManagementView> {
     final controller = context.read<ProductManagementController>();
     await controller.loadCatalog(
       search: _searchController.text.trim(),
-      storeId: _selectedStoreFilterId,
       category: _selectedCategoryFilterName,
     );
     if (mounted) setState(() {});
@@ -288,13 +279,11 @@ class _ProductManagementViewState extends State<ProductManagementView> {
               ivaRateController: _ivaRateController,
               profitIvaController: _profitIvaController,
               selectedCategoryName: _selectedCategoryName,
-              selectedStoreId: _selectedStoreId,
               imagePaths: _imagePaths,
               isUploadingImages: _isUploadingImages,
               isSavingProduct: _isSavingProduct,
               onCategoryChanged: (v) =>
                   setState(() => _selectedCategoryName = v),
-              onStoreChanged: (v) => setState(() => _selectedStoreId = v),
               onRemoveImage: (i) => _removeImageAt(i),
               onPickImages: _pickImages,
               onSaveProduct: _saveProduct,
@@ -505,64 +494,6 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: FilterDropdown<int?>(
-                                label: 'Por local',
-                                value: _selectedStoreFilterId,
-                                items: [
-                                  const DropdownMenuItem<int?>(
-                                    value: null,
-                                    child: Text('Locales'),
-                                  ),
-                                  ...controller.stores.map((store) {
-                                    final storeId = (store['id'] as num)
-                                        .toInt();
-                                    final storeName = store['name'] as String;
-                                    return DropdownMenuItem<int?>(
-                                      value: storeId,
-                                      child: Text(storeName),
-                                    );
-                                  }),
-                                ],
-                                onChanged: (value) {
-                                  setState(
-                                    () => _selectedStoreFilterId = value,
-                                  );
-                                  _applyCatalogFilters();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: FilterDropdown<String?>(
-                                label: 'Por categoría',
-                                value: _selectedCategoryFilterName,
-                                items: [
-                                  const DropdownMenuItem<String?>(
-                                    value: null,
-                                    child: Text('Categorías'),
-                                  ),
-                                  ...controller.categories.map((category) {
-                                    final categoryName =
-                                        category['name'] as String;
-                                    return DropdownMenuItem<String?>(
-                                      value: categoryName,
-                                      child: Text(categoryName),
-                                    );
-                                  }),
-                                ],
-                                onChanged: (value) {
-                                  setState(
-                                    () => _selectedCategoryFilterName = value,
-                                  );
-                                  _applyCatalogFilters();
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),

@@ -187,33 +187,6 @@ class _NewPurchaseTab extends StatelessWidget {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(
-                          child: DropdownButtonFormField<int>(
-                            value: controller.selectedStoreId,
-                            decoration: InputDecoration(
-                              labelText: 'Local destino',
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 15,
-                              ),
-                            ),
-                            items: controller.stores
-                                .map(
-                                  (store) => DropdownMenuItem<int>(
-                                    value: (store['id'] as num).toInt(),
-                                    child: Text(store['name'].toString()),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: controller.selectStore,
-                          ),
-                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: TextField(

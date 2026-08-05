@@ -19,7 +19,7 @@ Future<void> initializeWindowManager() async {
     await windowManager.setMinimizable(true);
     await windowManager.setMaximizable(true);
     await windowManager.setClosable(true);
-    await windowManager.setTitle('Sistema de Gestión Comercial – Bazar & Tienda');
+    await windowManager.setTitle('Sistema de Gestión Comercial – Tienda');
 
     if (Platform.isWindows) {
       await Future.delayed(const Duration(milliseconds: 200));

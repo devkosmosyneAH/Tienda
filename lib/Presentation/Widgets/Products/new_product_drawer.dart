@@ -18,12 +18,10 @@ class NewProductDrawer extends StatelessWidget {
     required this.ivaRateController,
     required this.profitIvaController,
     required this.selectedCategoryName,
-    required this.selectedStoreId,
     required this.imagePaths,
     required this.isUploadingImages,
     required this.isSavingProduct,
     required this.onCategoryChanged,
-    required this.onStoreChanged,
     required this.onRemoveImage,
     required this.onPickImages,
     required this.onSaveProduct,
@@ -47,12 +45,10 @@ class NewProductDrawer extends StatelessWidget {
   final TextEditingController profitIvaController;
   final TextEditingController stockController;
   final String? selectedCategoryName;
-  final int? selectedStoreId;
   final List<String> imagePaths;
   final bool isUploadingImages;
   final bool isSavingProduct;
   final ValueChanged<String?> onCategoryChanged;
-  final ValueChanged<int?> onStoreChanged;
   final void Function(int) onRemoveImage;
   final VoidCallback onPickImages;
   final VoidCallback onSaveProduct;
@@ -253,18 +249,6 @@ class NewProductDrawer extends StatelessWidget {
                       formSection(
                         title: 'Local e inventario inicial',
                         children: [
-                          DropdownButtonFormField<int?>(
-                            value: selectedStoreId,
-                            decoration: modernInput(label: 'Local principal'),
-                            items: [
-                              const DropdownMenuItem<int?>(value: null, child: Text('Sin asignar')),
-                              ...controller.stores.map((s) {
-                                final id = (s['id'] as num).toInt();
-                                return DropdownMenuItem<int?>(value: id, child: Text(s['name'] as String));
-                              }),
-                            ],
-                            onChanged: onStoreChanged,
-                          ),
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: stockController,
