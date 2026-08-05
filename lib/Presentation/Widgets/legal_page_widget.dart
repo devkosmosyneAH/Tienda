@@ -206,7 +206,7 @@ const List<_LegalSection> _termsSections = [
   _LegalSection(
     '03',
     'Propiedad intelectual',
-    'Todos los contenidos del Sitio —incluyendo textos, imágenes, logotipos, diseño y código fuente— son propiedad de Bazar & Tienda Nicole o de sus respectivos propietarios y están protegidos por las leyes de propiedad intelectual vigentes en Ecuador. Queda prohibida su reproducción total o parcial sin autorización expresa.',
+    'Todos los contenidos del Sitio —incluyendo textos, imágenes, logotipos, diseño y código fuente— son propiedad de Tienda o de sus respectivos propietarios y están protegidos por las leyes de propiedad intelectual vigentes en Ecuador. Queda prohibida su reproducción total o parcial sin autorización expresa.',
   ),
   _LegalSection(
     '04',
@@ -216,17 +216,17 @@ const List<_LegalSection> _termsSections = [
   _LegalSection(
     '05',
     'Exactitud de la información',
-    'Bazar & Tienda Nicole realiza todos los esfuerzos razonables para mantener la información del catálogo actualizada y precisa. Sin embargo, no garantizamos que toda la información esté libre de errores. Ante cualquier discrepancia, la información del establecimiento físico prevalece.',
+    'Tienda realiza todos los esfuerzos razonables para mantener la información del catálogo actualizada y precisa. Sin embargo, no garantizamos que toda la información esté libre de errores. Ante cualquier discrepancia, la información del establecimiento físico prevalece.',
   ),
   _LegalSection(
     '06',
     'Limitación de responsabilidad',
-    'En la máxima medida permitida por la ley ecuatoriana, Bazar & Tienda Nicole no será responsable por daños directos, indirectos, incidentales o consecuentes derivados del uso o la imposibilidad de usar el Sitio, incluyendo pérdidas de datos o interrupciones del servicio.',
+    'En la máxima medida permitida por la ley ecuatoriana, Tienda no será responsable por daños directos, indirectos, incidentales o consecuentes derivados del uso o la imposibilidad de usar el Sitio, incluyendo pérdidas de datos o interrupciones del servicio.',
   ),
   _LegalSection(
     '07',
     'Enlaces a terceros',
-    'El Sitio puede contener enlaces a sitios de terceros. Bazar & Tienda Nicole no controla ni respalda el contenido de dichos sitios y no asume responsabilidad alguna por sus prácticas o contenidos.',
+    'El Sitio puede contener enlaces a sitios de terceros. Tienda no controla ni respalda el contenido de dichos sitios y no asume responsabilidad alguna por sus prácticas o contenidos.',
   ),
   _LegalSection(
     '08',
@@ -251,7 +251,7 @@ const List<_LegalSection> _privacySections = [
   _LegalSection(
     '01',
     'Responsable del tratamiento',
-    'Bazar & Tienda Nicole, con domicilio en Ecuador, es responsable del tratamiento de los datos personales que usted proporcione al interactuar con este Sitio, de conformidad con la Ley Orgánica de Protección de Datos Personales (LOPDP) y su reglamento.',
+    'Tienda, con domicilio en Ecuador, es responsable del tratamiento de los datos personales que usted proporcione al interactuar con este Sitio, de conformidad con la Ley Orgánica de Protección de Datos Personales (LOPDP) y su reglamento.',
   ),
   _LegalSection(
     '02',

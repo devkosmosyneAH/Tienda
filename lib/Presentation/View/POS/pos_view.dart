@@ -238,10 +238,6 @@ class _PosScaffoldState extends State<_PosScaffold> {
                             curve: Curves.easeOut,
                           ),
                       const SizedBox(height: 16),
-                      // ── Local
-                      const SizedBox.shrink(),
-
-                      const SizedBox(height: 16),
                       // ── Productos / Carrito
                       PosProductosSection(
                             onShowProductSearch: (ctx, _) =>
