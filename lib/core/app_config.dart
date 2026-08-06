@@ -3,9 +3,9 @@ class AppConfig {
   static const int serverPort = 8080;
   static const String serverBaseUrl = 'http://127.0.0.1:8080';
   static const String updateManifestUrl =
-      'https://devkosmosyneAH.github.io/PlatformWebTienda/manifest.json';
+      'https://devkosmosyneah.github.io/PlatformWebTienda/manifest.json';
   static const String updateBundleUrl =
-      'https://devkosmosyneAH.github.io/PlatformWebTienda/update.zip';
+      'https://devkosmosyneah.github.io/PlatformWebTienda/update.zip';
   static const int appVersion = 1;
   static const bool localServerEnabled = true;
 }
