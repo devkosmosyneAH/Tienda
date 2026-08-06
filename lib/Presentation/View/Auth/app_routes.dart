@@ -11,6 +11,7 @@ import 'package:tienda/Presentation/View/Reports/reports_view.dart';
 import 'package:tienda/Presentation/View/Users/users_view.dart';
 import 'package:tienda/Presentation/View/Suppliers/suppliers_view.dart';
 import 'package:tienda/Presentation/Widgets/legal_page_widget.dart';
+import 'package:tienda/Presentation/admin/AdminDBPage.dart';
 
 class AppRoutes {
   // --- Rutas Públicas ---
@@ -48,7 +49,7 @@ class AppRoutes {
     cash: (context) => const CashView(),
     users: (context) => const UsersView(),
     suppliers: (context) => const SuppliersView(),
-
+    adminDb: (context) => const AdminDBPage(),
     terms: (context) => const LegalPageWidget(type: LegalDocType.terms),
     privacy: (context) => const LegalPageWidget(type: LegalDocType.privacy),
   };
@@ -56,7 +57,7 @@ class AppRoutes {
   /// Map de roles con rutas permitidas
   static final Map<String, List<String>> allowedRoutesByRole = {
     // Admin Superior: acceso total
-    'admin_superior': [
+    'super_admin': [
       login,
       register,
       authenticate,

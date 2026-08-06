@@ -116,6 +116,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - assets/database/tienda.db
     - assets/env.txt
     - .env
     - assets/images/branding.png

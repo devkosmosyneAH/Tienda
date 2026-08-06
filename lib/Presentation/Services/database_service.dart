@@ -789,15 +789,42 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        uid TEXT NOT NULL UNIQUE,
-        email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        name TEXT NOT NULL,
-        lastname TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'cajero',
-        is_active INTEGER NOT NULL DEFAULT 1,
-        created_at TEXT NOT NULL
+        id TEXT PRIMARY KEY,
+      uid TEXT UNIQUE NOT NULL,
+
+      -- Información personal
+      nombres TEXT NOT NULL,
+      apellidos TEXT NOT NULL,
+      email TEXT UNIQUE,
+      password TEXT NOT NULL,
+      telefono TEXT,
+      direccion TEXT,
+      ciudad TEXT,
+      provincia TEXT,
+      pais TEXT,
+
+    -- Empresa (opcional)
+      nombre_comercial TEXT,
+      propietario TEXT,
+      ruc TEXT,
+      regimen TEXT,
+
+    -- Facturación
+      autorizacion_sri TEXT,
+      establecimiento TEXT,
+      secuencial_factura INTEGER DEFAULT 1,
+      tipo_comprobante TEXT,
+
+    -- Sistema
+      role TEXT NOT NULL DEFAULT 'usuario',
+      permission TEXT DEFAULT 'yes',
+      profile_image TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT,
+
+    -- Estado
+      activo INTEGER DEFAULT 1,
+      ultimo_login TEXT
       )
     ''');
 
@@ -1173,17 +1200,59 @@ class DatabaseService {
 
     // Asegurar que el usuario principal siempre exista
     await db.rawInsert(
-      '''INSERT OR IGNORE INTO users (uid, email, password, name, lastname, role, is_active, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+      '''INSERT OR IGNORE INTO users (uid, nombres, apellidos, email, password,
+    telefono,
+    direccion,
+    ciudad,
+    provincia,
+    pais,
+    nombre_comercial,
+    propietario,
+    ruc,
+    regimen,
+    autorizacion_sri,
+    establecimiento,
+    secuencial_factura,
+    tipo_comprobante,
+    role,
+    permission,
+    profile_image,
+    created_at,
+    updated_at,
+    activo,
+    ultimo_login)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
       [
-        'user_1754669120053',
-        'anthonycordova330@gmail.com',
+        'user_admin_002',
+        'Dev',
+        'Cosmosyne',
+        'admin@devcosmosyne.com',
         '12345678',
-        'Anthony',
-        'Cordova',
-        'admin',
+        '+593999999999',
+        'Loja',
+        'Loja',
+        'Loja',
+        'Ecuador',
+        'DevCosmosyne',
+        'Dev cosmo',
+        '1799999999001',
+        'RIMPE',
+
+        '0000000000',
+        '001-001',
         1,
-        '2025-08-08T11:05:20.058581',
+        'FACTURA',
+
+        'super_admin',
+        'yes',
+
+        "NULL",
+
+        '2026-08-05T21:45:00',
+        "NULL",
+
+        1,
+        "NULL",
       ],
     );
   }
