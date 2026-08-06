@@ -1,0 +1,5 @@
+User-agent: *
+
+Allow: /
+
+Sitemap: https://devkosmosyneah.github.io/PlatformWebTienda/sitemap.xml
