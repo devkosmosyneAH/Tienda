@@ -1,13 +1,13 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
+import 'package:shelf_web_socket/shelf_web_socket.dart' as shelf_ws;
+import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:tienda/core/app_config.dart';
 import 'package:tienda/core/app_logger.dart';
-import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:tienda/server/local_server_event_bus.dart';
-import 'package:shelf_web_socket/shelf_web_socket.dart' as shelf_ws;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class LocalServerHost {
@@ -20,10 +20,7 @@ class LocalServerHost {
     final router = Router();
 
     router.get('/health', (shelf.Request request) {
-      return shelf.Response.ok(
-        jsonEncode({'status': 'ok', 'service': 'tienda-local-server'}),
-        headers: {'content-type': 'application/json'},
-      );
+      return _jsonResponse({'status': 'ok', 'service': 'tienda-local-server'});
     });
 
     router.get('/api/products', (shelf.Request request) async {
@@ -93,17 +90,16 @@ class LocalServerHost {
         auxCode: body['auxCode']?.toString(),
         description: body['description']?.toString(),
         tags: body['tags']?.toString(),
-        storeId: body['storeId'] as int?,
+        storeId: body['storeId'] is num
+            ? (body['storeId'] as num).toInt()
+            : null,
         categoryName: body['categoryName']?.toString(),
         images: List<String>.from(body['images'] ?? const []),
       );
       LocalServerEventBus.instance.emit(
         const LocalServerEvent(type: 'inventory_changed', payload: {}),
       );
-      return shelf.Response.ok(
-        jsonEncode({'ok': true}),
-        headers: {'content-type': 'application/json'},
-      );
+      return _jsonResponse({'ok': true});
     });
 
     router.post('/api/sales', (shelf.Request request) async {
@@ -145,16 +141,15 @@ class LocalServerHost {
         auxCode: body['auxCode']?.toString(),
         description: body['description']?.toString(),
         tags: body['tags']?.toString(),
-        storeId: body['storeId'] as int?,
+        storeId: body['storeId'] is num
+            ? (body['storeId'] as num).toInt()
+            : null,
         images: List<String>.from(body['images'] ?? const []),
       );
       LocalServerEventBus.instance.emit(
         const LocalServerEvent(type: 'inventory_changed', payload: {}),
       );
-      return shelf.Response.ok(
-        jsonEncode({'ok': true}),
-        headers: {'content-type': 'application/json'},
-      );
+      return _jsonResponse({'ok': true});
     });
 
     router.delete('/api/products/:id', (shelf.Request request) async {
@@ -163,10 +158,7 @@ class LocalServerHost {
       LocalServerEventBus.instance.emit(
         const LocalServerEvent(type: 'inventory_changed', payload: {}),
       );
-      return shelf.Response.ok(
-        jsonEncode({'ok': true}),
-        headers: {'content-type': 'application/json'},
-      );
+      return _jsonResponse({'ok': true});
     });
 
     final handler = const shelf.Pipeline()
@@ -183,7 +175,7 @@ class LocalServerHost {
       webSocket.stream.listen((message) {
         if (message is String) {
           final decoded = jsonDecode(message);
-          if (decoded['type'] == 'ping') {
+          if (decoded is Map<String, dynamic> && decoded['type'] == 'ping') {
             webSocket.sink.add(jsonEncode({'type': 'pong'}));
           }
         }
