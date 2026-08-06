@@ -10,3 +10,9 @@ en caso de subir un mal commit
 
 git update-ref -d HEAD
 git status
+
+Contraseña:
+admin@devcosmosyne.com
+
+password
+12345678

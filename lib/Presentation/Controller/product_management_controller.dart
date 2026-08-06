@@ -1,12 +1,28 @@
-import 'package:tienda/Presentation/Services/database_service.dart';
+import 'dart:async';
+
 import 'package:tienda/Presentation/Services/image_optimizer_service.dart';
 import 'package:tienda/Presentation/Services/image_storage_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:tienda/repositories/products_repository.dart';
+import 'package:tienda/websocket/local_server_websocket_client.dart';
 
 class ProductManagementController extends ChangeNotifier {
-  ProductManagementController() {
-    DatabaseService.addDatabaseListener(_handleDatabaseChanged);
+  ProductManagementController({
+    ProductsRepository? repository,
+    LocalServerWebSocketClient? eventsClient,
+  })  : _repository = repository ?? ProductsRepository(),
+        _eventsClient = eventsClient ?? LocalServerWebSocketClient() {
+    unawaited(_eventsClient.connect());
+    _eventsSubscription = _eventsClient.events.listen((_) {
+      if (!isLoading) {
+        unawaited(loadCatalog());
+      }
+    });
   }
+
+  final ProductsRepository _repository;
+  final LocalServerWebSocketClient _eventsClient;
+  late final StreamSubscription<Map<String, dynamic>> _eventsSubscription;
 
   bool isLoading = false;
   String? errorMessage;
@@ -52,15 +68,10 @@ class ProductManagementController extends ChangeNotifier {
     );
   }
 
-  void _handleDatabaseChanged() {
-    if (!isLoading) {
-      loadCatalog();
-    }
-  }
-
   @override
   void dispose() {
-    DatabaseService.removeDatabaseListener(_handleDatabaseChanged);
+    _eventsSubscription.cancel();
+    unawaited(_eventsClient.dispose());
     super.dispose();
   }
 
@@ -79,9 +90,9 @@ class ProductManagementController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      stores = await DatabaseService.getStores();
-      categories = await DatabaseService.getCategories();
-      products = await DatabaseService.getProducts(
+      stores = await _repository.getStores();
+      categories = await _repository.getCategories();
+      products = await _repository.getProducts(
         search: search,
         storeId: storeId,
         category: category,
@@ -109,21 +120,21 @@ class ProductManagementController extends ChangeNotifier {
     List<String> images = const [],
     Map<int, int> initialStock = const {},
   }) async {
-    await DatabaseService.createProduct(
-      name: name,
-      price: price,
-      costPrice: costPrice,
-      ivaRate: ivaRate,
-      profitIva: profitIva,
-      categoryName: category,
-      sku: sku,
-      auxCode: auxCode,
-      description: description,
-      tags: tags,
-      storeId: storeId,
-      images: images,
-      initialStock: initialStock,
-    );
+    await _repository.createProduct({
+      'name': name,
+      'price': price,
+      'costPrice': costPrice,
+      'ivaRate': ivaRate,
+      'profitIva': profitIva,
+      'categoryName': category,
+      'sku': sku,
+      'auxCode': auxCode,
+      'description': description,
+      'tags': tags,
+      'storeId': storeId,
+      'images': images,
+      'initialStock': _serializeStock(initialStock),
+    });
     await loadCatalog(); // ← Producto creado
   }
 
@@ -142,30 +153,23 @@ class ProductManagementController extends ChangeNotifier {
     int? storeId,
     List<String>? images,
   }) async {
-    final previousImages = await DatabaseService.getProductImageIds(productId);
-    await DatabaseService.updateProduct(
-      productId: productId,
-      name: name,
-      categoryName: category,
-      sku: sku ?? '',
-      price: price,
-      costPrice: costPrice,
-      ivaRate: ivaRate,
-      profitIva: profitIva,
-      auxCode: auxCode,
-      description: description,
-      tags: tags,
-      storeId: storeId,
-      images: images,
+    await _repository.updateProduct(
+      productId,
+      _productPayload(
+        name: name,
+        category: category,
+        price: price,
+        costPrice: costPrice,
+        ivaRate: ivaRate,
+        profitIva: profitIva,
+        sku: sku,
+        auxCode: auxCode,
+        description: description,
+        tags: tags,
+        storeId: storeId,
+        images: images,
+      ),
     );
-    if (images != null) {
-      final current = images.toSet();
-      for (final oldPath in previousImages.where(
-        (id) => !current.contains(id),
-      )) {
-        await ImageStorageService.deleteImage(oldPath);
-      }
-    }
     await loadCatalog();
     // ← Producto actualizado
   }
@@ -186,37 +190,22 @@ class ProductManagementController extends ChangeNotifier {
     List<String>? images,
     Map<int, int> stockByStore = const {},
   }) async {
-    final previousImages = await DatabaseService.getProductImageIds(productId);
-    await DatabaseService.updateProduct(
-      productId: productId,
+    final payload = _productPayload(
       name: name,
-      categoryName: category,
-      sku: sku ?? '',
+      category: category,
       price: price,
       costPrice: costPrice,
       ivaRate: ivaRate,
       profitIva: profitIva,
+      sku: sku,
       auxCode: auxCode,
       description: description,
       tags: tags,
       storeId: storeId,
       images: images,
     );
-    if (images != null) {
-      final current = images.toSet();
-      for (final oldPath in previousImages.where(
-        (id) => !current.contains(id),
-      )) {
-        await ImageStorageService.deleteImage(oldPath);
-      }
-    }
-    for (final entry in stockByStore.entries) {
-      await DatabaseService.updateInventoryStock(
-        productId: productId,
-        storeId: entry.key,
-        stock: entry.value,
-      );
-    }
+    payload['stockByStore'] = _serializeStock(stockByStore);
+    await _repository.updateProduct(productId, payload);
     await loadCatalog();
     // ← Producto + stock actualizado
   }
@@ -228,36 +217,58 @@ class ProductManagementController extends ChangeNotifier {
     final trimmed = imageRef.trim();
     if (trimmed.isEmpty) return;
 
-    final isLocalImagePath =
-        trimmed.contains('/') ||
+    final isLocalImagePath = trimmed.contains('/') ||
         trimmed.contains('\\') ||
         trimmed.startsWith('file:');
 
     if (productId != null) {
-      final currentIds = await DatabaseService.getProductImageIds(productId);
+      final currentIds = await _repository.getProductImageIds(productId);
       if (currentIds.contains(trimmed)) {
-        final remainingIds = currentIds.where((id) => id != trimmed).toList();
-        await DatabaseService.updateProductImages(
-          productId: productId,
-          imageIds: remainingIds,
-        );
-
+        await _repository.removeImageReference(productId, trimmed);
         await loadCatalog();
       }
     }
 
-    if (isLocalImagePath) {
+    if (isLocalImagePath && productId == null) {
       await ImageStorageService.deleteImage(trimmed);
     }
   }
 
   Future<void> deleteProduct(int productId) async {
-    final imagePaths = await DatabaseService.getProductImageIds(productId);
-    await DatabaseService.deleteProduct(productId);
-    for (final path in imagePaths) {
-      await ImageStorageService.deleteImage(path);
-    }
+    await _repository.deleteProduct(productId);
     await loadCatalog();
     // ← Producto eliminado
   }
+
+  Map<String, dynamic> _productPayload({
+    required String name,
+    required String category,
+    required double price,
+    required double costPrice,
+    required double ivaRate,
+    required double profitIva,
+    String? sku,
+    String? auxCode,
+    String? description,
+    String? tags,
+    int? storeId,
+    List<String>? images,
+  }) =>
+      {
+        'name': name,
+        'categoryName': category,
+        'sku': sku ?? '',
+        'price': price,
+        'costPrice': costPrice,
+        'ivaRate': ivaRate,
+        'profitIva': profitIva,
+        'auxCode': auxCode,
+        'description': description,
+        'tags': tags,
+        'storeId': storeId,
+        if (images != null) 'images': images,
+      };
+
+  Map<String, int> _serializeStock(Map<int, int> stockByStore) =>
+      stockByStore.map((storeId, stock) => MapEntry('$storeId', stock));
 }

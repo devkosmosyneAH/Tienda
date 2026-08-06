@@ -1,11 +1,28 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:tienda/Presentation/Model/product_model.dart';
-import 'package:tienda/Presentation/Services/database_service.dart';
+import 'package:tienda/repositories/products_repository.dart';
+import 'package:tienda/websocket/local_server_websocket_client.dart';
 
 class ProductProvider extends ChangeNotifier {
-  ProductProvider() {
-    DatabaseService.addDatabaseListener(_handleDatabaseChanged);
+  ProductProvider({
+    ProductsRepository? repository,
+    LocalServerWebSocketClient? eventsClient,
+  })  : _repository = repository ?? ProductsRepository(),
+        _eventsClient = eventsClient ?? LocalServerWebSocketClient() {
+    unawaited(_eventsClient.connect());
+    _eventsSubscription = _eventsClient.events.listen((_) {
+      if (!isLoading) {
+        unawaited(loadProducts(
+            searchValue: search, categoryFilter: selectedCategory));
+      }
+    });
   }
+
+  final ProductsRepository _repository;
+  final LocalServerWebSocketClient _eventsClient;
+  late final StreamSubscription<Map<String, dynamic>> _eventsSubscription;
 
   bool isLoading = false;
   String? errorMessage;
@@ -16,15 +33,10 @@ class ProductProvider extends ChangeNotifier {
   List<Product> filteredProducts = [];
   Product? selectedProduct;
 
-  void _handleDatabaseChanged() {
-    if (!isLoading) {
-      loadProducts();
-    }
-  }
-
   @override
   void dispose() {
-    DatabaseService.removeDatabaseListener(_handleDatabaseChanged);
+    _eventsSubscription.cancel();
+    unawaited(_eventsClient.dispose());
     super.dispose();
   }
 
@@ -33,7 +45,8 @@ class ProductProvider extends ChangeNotifier {
     await loadProducts();
   }
 
-  Future<void> loadProducts({String searchValue = '', String? categoryFilter}) async {
+  Future<void> loadProducts(
+      {String searchValue = '', String? categoryFilter}) async {
     isLoading = true;
     search = searchValue;
     selectedCategory = categoryFilter;
@@ -41,7 +54,7 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final rawProducts = await DatabaseService.getProducts(search: searchValue);
+      final rawProducts = await _repository.getProducts(search: searchValue);
       products = rawProducts.map((p) => Product.fromMap(p)).toList();
 
       _filterProducts();
@@ -75,13 +88,15 @@ class ProductProvider extends ChangeNotifier {
     Map<int, int>? initialStock,
   }) async {
     try {
-      await DatabaseService.createProduct(
-        name: name,
-        price: price,
-        sku: sku,
-        categoryName: categoryName,
-        initialStock: initialStock ?? {},
-      );
+      await _repository.createProduct({
+        'name': name,
+        'price': price,
+        'sku': sku,
+        'categoryName': categoryName,
+        'initialStock': (initialStock ?? const {}).map(
+          (storeId, stock) => MapEntry('$storeId', stock),
+        ),
+      });
       await loadProducts(searchValue: search, categoryFilter: selectedCategory);
     } catch (e) {
       errorMessage = 'Error al crear producto: $e';
@@ -97,13 +112,12 @@ class ProductProvider extends ChangeNotifier {
     required double price,
   }) async {
     try {
-      await DatabaseService.updateProduct(
-        productId: productId,
-        name: name,
-        categoryName: categoryName,
-        sku: sku,
-        price: price,
-      );
+      await _repository.updateProduct(productId, {
+        'name': name,
+        'categoryName': categoryName,
+        'sku': sku,
+        'price': price,
+      });
       await loadProducts(searchValue: search, categoryFilter: selectedCategory);
     } catch (e) {
       errorMessage = 'Error al actualizar producto: $e';

@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'package:tienda/core/app_config.dart';
 import 'package:tienda/core/app_logger.dart';
-import 'package:tienda/Presentation/Services/app_io.dart';
+import 'package:tienda/runtime/ui_runtime.dart';
 
 class UpdateService {
   static Future<bool> checkForUpdates({String? manifestUrl}) async {
@@ -13,15 +14,15 @@ class UpdateService {
       final manifest = await _fetchManifest(
         manifestUrl ?? AppConfig.updateManifestUrl,
       );
-      final remoteVersion = (manifest['version'] as num?)?.toInt() ?? 0;
-      final remoteSha = manifest['sha256']?.toString() ?? '';
+      final installed = await _readInstalledState();
       return shouldApplyUpdate(
-        remoteVersion: remoteVersion,
-        remoteSha: remoteSha,
-        currentVersion: AppConfig.appVersion,
+        remoteVersion: _manifestVersion(manifest),
+        remoteSha: manifest['sha256']?.toString(),
+        currentVersion: installed.version,
+        currentSha: installed.sha256,
       );
-    } catch (e) {
-      AppLogger.log('No se pudo comprobar actualizaciones', error: e);
+    } catch (error) {
+      AppLogger.log('No se pudo comprobar actualizaciones', error: error);
       return false;
     }
   }
@@ -32,16 +33,11 @@ class UpdateService {
     required int currentVersion,
     String? currentSha,
   }) {
-    if (remoteVersion > currentVersion) {
-      return true;
-    }
-    if (remoteSha != null && remoteSha.isNotEmpty) {
-      if (currentSha == null || currentSha.isEmpty) {
-        return true;
-      }
-      return remoteSha != currentSha;
-    }
-    return false;
+    if (remoteVersion > currentVersion) return true;
+    return remoteVersion == currentVersion &&
+        remoteSha != null &&
+        remoteSha.isNotEmpty &&
+        remoteSha != currentSha;
   }
 
   static Future<bool> downloadAndApplyUpdate({
@@ -49,78 +45,77 @@ class UpdateService {
     String? bundleUrl,
     String? destinationDir,
   }) async {
-    final io = const AppIO();
-    final dir = Directory(
-      destinationDir ?? path.join(Directory.current.path, 'update_bundle'),
-    );
-    final bundlePath = path.join(dir.path, 'update.zip');
-    final stagingDir = Directory(path.join(dir.path, 'staging'));
-    final backupDir = Directory(path.join(dir.path, 'web_backup'));
-    final appWebDir = Directory(path.join(Directory.current.path, 'web'));
-
+    Directory? uiDirectory;
+    Directory? backupDirectory;
     try {
-      await io.createDirectory(dir.path);
-      await io.createDirectory(stagingDir.path);
-
       final manifest = await _fetchManifest(
         manifestUrl ?? AppConfig.updateManifestUrl,
       );
-      final remoteVersion = (manifest['version'] as num?)?.toInt() ?? 0;
+      final installed = await _readInstalledState();
+      final remoteVersion = _manifestVersion(manifest);
       final remoteSha = manifest['sha256']?.toString() ?? '';
+
+      if (!shouldApplyUpdate(
+        remoteVersion: remoteVersion,
+        remoteSha: remoteSha,
+        currentVersion: installed.version,
+        currentSha: installed.sha256,
+      )) {
+        return false;
+      }
+
+      final runtimeDirectory = await UiRuntime.runtimeDirectory();
+      uiDirectory = destinationDir == null
+          ? await UiRuntime.uiDirectory()
+          : Directory(destinationDir);
+      final stagingDirectory = await UiRuntime.stagingDirectory();
+      backupDirectory = await UiRuntime.backupDirectory();
+      final bundleFile = File(path.join(runtimeDirectory.path, 'update.zip'));
       final resolvedBundleUrl =
           manifest['bundleUrl']?.toString() ??
           bundleUrl ??
           AppConfig.updateBundleUrl;
 
-      if (remoteVersion <= AppConfig.appVersion &&
-          (remoteSha.isEmpty || remoteSha == _currentHash())) {
-        return false;
-      }
+      await runtimeDirectory.create(recursive: true);
+      await _resetDirectory(stagingDirectory);
 
       final response = await http
           .get(Uri.parse(resolvedBundleUrl))
           .timeout(const Duration(seconds: 20));
-      if (response.statusCode != 200) {
+      if (response.statusCode != HttpStatus.ok) {
         throw Exception('No se pudo descargar el paquete de actualización');
       }
 
-      await io.writeBytes(bundlePath, response.bodyBytes);
       final downloadedSha = sha256.convert(response.bodyBytes).toString();
-      if (remoteSha.isNotEmpty && downloadedSha != remoteSha) {
+      if (remoteSha.isEmpty || downloadedSha != remoteSha) {
         throw Exception('El hash del paquete no coincide con el manifiesto');
       }
+      await bundleFile.writeAsBytes(response.bodyBytes, flush: true);
 
-      await _extractArchive(bundlePath, stagingDir.path);
-      final sourceUiDir = _findInterfaceDirectory(stagingDir);
-      if (sourceUiDir == null) {
-        throw Exception(
-          'No se encontró la interfaz en el paquete de actualización',
-        );
+      await _validateArchive(bundleFile.path);
+      await _extractArchive(bundleFile.path, stagingDirectory.path);
+      final sourceUiDirectory = _findInterfaceDirectory(stagingDirectory);
+      if (sourceUiDirectory == null) {
+        throw Exception('No se encontró la interfaz en el paquete de actualización');
       }
 
-      if (backupDir.existsSync()) {
-        await backupDir.delete(recursive: true);
-      }
-      await _copyDirectoryContents(appWebDir, backupDir);
-      await _clearDirectory(appWebDir);
-      await _copyDirectoryContents(sourceUiDir, appWebDir);
+      await _replaceInterface(
+        source: sourceUiDirectory,
+        destination: uiDirectory,
+        backup: backupDirectory,
+      );
+      await _writeInstalledState(
+        _InstalledUiState(version: remoteVersion, sha256: remoteSha),
+      );
 
       AppLogger.log(
-        'Actualización aplicada correctamente desde $resolvedBundleUrl',
+        'Actualización de interfaz aplicada desde $resolvedBundleUrl',
       );
       return true;
-    } catch (e) {
-      AppLogger.log('La actualización falló', error: e);
-      if (backupDir.existsSync()) {
-        try {
-          await _clearDirectory(appWebDir);
-          await _copyDirectoryContents(backupDir, appWebDir);
-        } catch (rollbackError) {
-          AppLogger.log(
-            'No se pudo restaurar la interfaz',
-            error: rollbackError,
-          );
-        }
+    } catch (error) {
+      AppLogger.log('La actualización de interfaz falló', error: error);
+      if (uiDirectory != null && backupDirectory != null) {
+        await _rollbackInterface(uiDirectory, backupDirectory);
       }
       return false;
     }
@@ -130,7 +125,7 @@ class UpdateService {
     final response = await http
         .get(Uri.parse(manifestUrl))
         .timeout(const Duration(seconds: 10));
-    if (response.statusCode != 200) {
+    if (response.statusCode != HttpStatus.ok) {
       throw Exception('No se pudo leer el manifiesto de actualización');
     }
     final manifest = jsonDecode(response.body);
@@ -140,80 +135,127 @@ class UpdateService {
     return manifest;
   }
 
-  static String _currentHash() {
-    return '';
+  static int _manifestVersion(Map<String, dynamic> manifest) {
+    final value = manifest['version'];
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
-  static Directory? _findInterfaceDirectory(Directory stagingDir) {
+  static Future<_InstalledUiState> _readInstalledState() async {
+    final stateFile = await UiRuntime.versionStateFile();
+    if (!await stateFile.exists()) {
+      return const _InstalledUiState(version: AppConfig.appVersion, sha256: '');
+    }
+
+    try {
+      final decoded = jsonDecode(await stateFile.readAsString());
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Estado inválido');
+      }
+      return _InstalledUiState(
+        version: _manifestVersion(decoded),
+        sha256: decoded['sha256']?.toString() ?? '',
+      );
+    } catch (error) {
+      AppLogger.log('No se pudo leer el estado de la interfaz', error: error);
+      return const _InstalledUiState(version: AppConfig.appVersion, sha256: '');
+    }
+  }
+
+  static Future<void> _writeInstalledState(_InstalledUiState state) async {
+    final stateFile = await UiRuntime.versionStateFile();
+    await stateFile.parent.create(recursive: true);
+    await stateFile.writeAsString(
+      jsonEncode({'version': state.version, 'sha256': state.sha256}),
+      flush: true,
+    );
+  }
+
+  static Directory? _findInterfaceDirectory(Directory stagingDirectory) {
     final candidates = <Directory>[
-      Directory(path.join(stagingDir.path, 'web')),
-      Directory(path.join(stagingDir.path, 'build', 'web')),
-      Directory(path.join(stagingDir.path, 'dist')),
+      Directory(path.join(stagingDirectory.path, 'ui')),
+      Directory(path.join(stagingDirectory.path, 'web')),
+      Directory(path.join(stagingDirectory.path, 'build', 'web')),
+      Directory(path.join(stagingDirectory.path, 'dist')),
     ];
     return candidates.where((directory) => directory.existsSync()).firstOrNull;
+  }
+
+  static Future<void> _validateArchive(String archivePath) async {
+    final result = await Process.run('tar', ['-tf', archivePath]);
+    if (result.exitCode != 0) {
+      throw Exception('No se pudo inspeccionar el paquete de actualización');
+    }
+
+    final entries = LineSplitter.split(result.stdout.toString());
+    if (entries.isEmpty ||
+        entries.any((entry) =>
+            entry.startsWith('/') ||
+            entry.startsWith('\\') ||
+            entry.split('/').contains('..'))) {
+      throw Exception('El paquete de actualización contiene rutas no permitidas');
+    }
   }
 
   static Future<void> _extractArchive(
     String archivePath,
     String destinationPath,
   ) async {
-    if (Platform.isWindows) {
-      final result = await Process.run('tar', [
-        '-xf',
-        archivePath,
-        '-C',
-        destinationPath,
-      ]);
-      if (result.exitCode != 0) {
-        throw Exception(result.stderr.toString());
-      }
-      return;
-    }
-
-    final result = await Process.run('unzip', [
-      '-o',
+    final result = await Process.run('tar', [
+      '-xf',
       archivePath,
-      '-d',
+      '-C',
       destinationPath,
     ]);
     if (result.exitCode != 0) {
-      throw Exception(result.stderr.toString());
+      throw Exception('No se pudo descomprimir la actualización');
     }
   }
 
-  static Future<void> _copyDirectoryContents(
-    Directory source,
+  static Future<void> _replaceInterface({
+    required Directory source,
+    required Directory destination,
+    required Directory backup,
+  }) async {
+    await destination.parent.create(recursive: true);
+    if (await backup.exists()) {
+      await backup.delete(recursive: true);
+    }
+    if (await destination.exists()) {
+      await destination.rename(backup.path);
+    }
+    await source.rename(destination.path);
+  }
+
+  static Future<void> _rollbackInterface(
     Directory destination,
+    Directory backup,
   ) async {
-    if (!source.existsSync()) {
-      return;
-    }
-    await destination.create(recursive: true);
-    for (final entity in source.listSync()) {
-      final targetPath = path.join(
-        destination.path,
-        path.basename(entity.path),
-      );
-      if (entity is File) {
-        await entity.copy(targetPath);
-      } else if (entity is Directory) {
-        await _copyDirectoryContents(entity, Directory(targetPath));
+    try {
+      if (!await backup.exists()) return;
+      if (await destination.exists()) {
+        await destination.delete(recursive: true);
       }
+      await backup.rename(destination.path);
+      AppLogger.log('Rollback de interfaz completado');
+    } catch (error) {
+      AppLogger.log('No se pudo restaurar la interfaz', error: error);
     }
   }
 
-  static Future<void> _clearDirectory(Directory directory) async {
-    if (!directory.existsSync()) {
-      return;
+  static Future<void> _resetDirectory(Directory directory) async {
+    if (await directory.exists()) {
+      await directory.delete(recursive: true);
     }
-    for (final entity in directory.listSync()) {
-      if (entity is File) {
-        await entity.delete();
-      } else if (entity is Directory) {
-        await entity.delete(recursive: true);
-      }
-    }
+    await directory.create(recursive: true);
   }
+}
+
+class _InstalledUiState {
+  const _InstalledUiState({required this.version, required this.sha256});
+
+  final int version;
+  final String sha256;
 }
 
 extension _FirstOrNull<T> on Iterable<T> {
