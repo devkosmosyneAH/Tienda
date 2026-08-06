@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="" readonly="0" foreign_keys="" case_sensitive_like="" temp_store="" wal_autocheckpoint="" synchronous=""/><attached/><window><main_tabs open="structure browser pragmas query" current="1"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="6578"/><column_width id="4" width="0"/></tab_structure><tab_browse><table title="." custom_title="0" dock_id="2" table="0,0:"/><dock_state state="000000ff00000000fd0000000100000002000006830000031dfc0100000002fb000000160064006f0063006b00420072006f00770073006500310100000000000006830000000000000000fb000000160064006f0063006b00420072006f00770073006500320100000000000006830000010100ffffff0000027e0000000000000004000000040000000800000008fc00000000"/><default_encoding codec=""/><browse_table_settings/></tab_browse><tab_sql><sql name="SQL 1*">CREATE TABLE users(
+   _key                  VARCHAR(28) NOT NULL PRIMARY KEY
+  ,actividaddescripcion  VARCHAR(413)
+  ,actividaddetalle0     VARCHAR(50)
+  ,actividaddetalle1     VARCHAR(59)
+  ,actividaddetalle2     VARCHAR(59)
+  ,actividaddetalle3     VARCHAR(51)
+  ,autorizacionSRI       INTEGER 
+  ,contactocelular0      VARCHAR(40)
+  ,contactodireccion     VARCHAR(49)
+  ,contactotelefono      VARCHAR(22)
+  ,createdAt             VARCHAR(34) NOT NULL
+  ,email                 VARCHAR(27)
+  ,facturacodigo         VARCHAR(10)
+  ,facturanumero         INTEGER 
+  ,facturatipo           VARCHAR(45)
+  ,lastname              VARCHAR(19) NOT NULL
+  ,name                  VARCHAR(23) NOT NULL
+  ,nombreComercial       VARCHAR(20)
+  ,permission            VARCHAR(10) NOT NULL
+  ,propietario           VARCHAR(34)
+  ,regimen               VARCHAR(46)
+  ,role                  VARCHAR(15) NOT NULL
+  ,ruc                   VARCHAR(14)
+  ,ubicacion             VARCHAR(24)
+  ,uid                   VARCHAR(28) NOT NULL
+  ,password              VARCHAR(30) NOT NULL
+  ,profileImage          VARCHAR(46)
+  ,actividad_descripcion VARCHAR(53)
+  ,actividad_detalle_0   VARCHAR(45)
+  ,actividad_detalle_1   VARCHAR(24)
+  ,actividad_detalle_2   VARCHAR(34)
+  ,actividad_detalle_3   INTEGER 
+  ,contacto_celular_0    INTEGER 
+  ,contacto_direccion    VARCHAR(53)
+  ,contacto_telefono     VARCHAR(21)
+  ,factura_codigo        VARCHAR(22)
+  ,factura_numero        VARCHAR(34)
+  ,factura_tipo          VARCHAR(13)
+  ,FIELD39               INTEGER 
+  ,FIELD40               VARCHAR(45)
+  ,FIELD41               INTEGER 
+  ,FIELD42               VARCHAR(10)
+  ,FIELD43               INTEGER 
+  ,FIELD44               VARCHAR(13)
+);</sql><current_tab id="0"/></tab_sql></sqlb_project>
