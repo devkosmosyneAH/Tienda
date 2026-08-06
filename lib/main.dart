@@ -9,6 +9,8 @@ import 'package:tienda/Presentation/Services/database_location_service.dart';
 import 'package:tienda/Presentation/Services/app_io.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
 import 'package:tienda/Presentation/display/database_initializer.dart';
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,6 +26,8 @@ import 'package:tienda/Presentation/Controller/reports_controller.dart';
 import 'package:tienda/Presentation/Context/providers.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:tienda/Presentation/display/window_manager_initializer.dart';
+import 'package:tienda/controllers/local_server_controller.dart';
+import 'package:tienda/updater/update_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -60,6 +64,19 @@ Future<void> main() async {
 
     // 🛠️ Motor de mantenimiento SQLite enterprise (cada 6h)
     DatabaseMaintenanceService().startPeriodicMaintenance(intervalHours: 6);
+
+    // 🧭 Iniciar servidor local para el nuevo motor de acceso por HTTP/WebSocket
+    final localServerController = LocalServerController();
+    await localServerController.initialize();
+
+    // 🔄 Comprobar actualizaciones del frontend web de forma no intrusiva
+    unawaited(
+      UpdateService.checkForUpdates().then((hasUpdate) async {
+        if (hasUpdate) {
+          await UpdateService.downloadAndApplyUpdate();
+        }
+      }),
+    );
   }
 
   // 🌐 Web: siempre muestra el catálogo público, sin autenticación
