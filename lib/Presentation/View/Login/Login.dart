@@ -179,7 +179,7 @@ class _LoginPageState extends State<LoginPage> {
     return Column(
           children: [
             const LogoImage(),
-            const SizedBox(height: 24),
+            const SizedBox(height:18),
             const Text(
               'Iniciar sesión',
               textAlign: TextAlign.center,
@@ -324,38 +324,36 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: AppColors.lightWhite,
       appBar: const CustomLoginAppBar(),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.lightWhite,
-              AppColors.threeColor.withValues(alpha: 0.08),
-            ],
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  //_buildBackground(),
-                  const SizedBox(height: 12),
-                  _buildHeader(context),
-                  const SizedBox(height: 28),
-                  _buildLoginCard(context),
-                  const SizedBox(height: 26),
-                  _buildFooter(context),
-                  const SizedBox(height: 18),
-                ],
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          _buildBackground(),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 18,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 12),
+                      _buildHeader(context),
+                      const SizedBox(height: 28),
+                      _buildLoginCard(context),
+                      const SizedBox(height: 26),
+                      _buildFooter(context),
+                      const SizedBox(height: 18),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -370,7 +368,7 @@ Widget _buildBackground() {
         colors: [
           Colors.white,
           Colors.grey[50]!,
-          AppColors.primaryLogo.withValues(alpha: 0.03),
+          AppColors.lightWhite.withValues(alpha: 0.03),
         ],
       ),
     ),
