@@ -343,6 +343,7 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  //_buildBackground(),
                   const SizedBox(height: 12),
                   _buildHeader(context),
                   const SizedBox(height: 28),
@@ -358,6 +359,51 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+}
+
+Widget _buildBackground() {
+  return Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white,
+          Colors.grey[50]!,
+          AppColors.primaryLogo.withValues(alpha: 0.03),
+        ],
+      ),
+    ),
+    child: Stack(
+      children: [
+        // Círculos decorativos suaves
+        Positioned(
+          top: -80,
+          right: -60,
+          child: Container(
+            width: 220,
+            height: 220,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primaryLogo.withValues(alpha: 0.06),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: -100,
+          left: -80,
+          child: Container(
+            width: 280,
+            height: 280,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primaryLogo.withValues(alpha: 0.04),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _LoginActionButton extends StatelessWidget {

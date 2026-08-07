@@ -1182,25 +1182,10 @@ class DatabaseService {
     final total = (count.first['c'] as num).toInt();
     if (total == 0) {
       final uid = generateFirebaseId();
-      await db.rawInsert(
-        '''INSERT OR IGNORE INTO users (uid, email, password, name, lastname, role, is_active, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-        [
-          uid,
-          'admin@tienda.com',
-          'admin123',
-          'Administrador',
-          '',
-          'admin',
-          1,
-          DateTime.now().toIso8601String(),
-        ],
-      );
-    }
 
-    // Asegurar que el usuario principal siempre exista
-    await db.rawInsert(
-      '''INSERT OR IGNORE INTO users (uid, nombres, apellidos, email, password,
+      // Asegurar que el usuario principal siempre exista
+      await db.rawInsert(
+        '''INSERT OR IGNORE INTO users (uid, nombres, apellidos, email, password,
     telefono,
     direccion,
     ciudad,
@@ -1222,39 +1207,40 @@ class DatabaseService {
     activo,
     ultimo_login)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-      [
-        'user_admin_002',
-        'Dev',
-        'Cosmosyne',
-        'admin@devcosmosyne.com',
-        '12345678',
-        '+593999999999',
-        'Loja',
-        'Loja',
-        'Loja',
-        'Ecuador',
-        'DevCosmosyne',
-        'Dev cosmo',
-        '1799999999001',
-        'RIMPE',
+        [
+          uid,
+          'Dev',
+          'Cosmosyne',
+          'admin@devcosmosyne.com',
+          '12345678',
+          '+593999999999',
+          'Loja',
+          'Loja',
+          'Loja',
+          'Ecuador',
+          'DevCosmosyne',
+          'Dev cosmo',
+          '1799999999001',
+          'RIMPE',
 
-        '0000000000',
-        '001-001',
-        1,
-        'FACTURA',
+          '0000000000',
+          '001-001',
+          1,
+          'FACTURA',
 
-        'super_admin',
-        'yes',
+          'super_admin',
+          'yes',
 
-        "NULL",
+          "NULL",
 
-        '2026-08-05T21:45:00',
-        "NULL",
+          '2026-08-05T21:45:00',
+          "NULL",
 
-        1,
-        "NULL",
-      ],
-    );
+          1,
+          "NULL",
+        ],
+      );
+    }
   }
 
   static Future<void> _seedPaymentMethods(DatabaseExecutor db) async {
