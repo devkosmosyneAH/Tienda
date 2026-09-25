@@ -52,3 +52,80 @@ assets/env.txt
 .env.development.local
 .env.test.local
 .env.production.local
+
+client_secret_676289285632-36qeh5hnhvi1r9evhq07b2eirmlcop2g.apps.googleusercontent.com.json
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Installer / Distribution folders
+/distributable/
+/installer_assets/
+/installer_output/
+
+# Instaladores generados
+installer_output/
+
+# Archivos ejecutables generados
+*.exe
+
+# Build / distribución
+distributable/
+installer_output/
+
+# Ejecutables
+*.exe
+
+# Bases de datos generadas
+*.db
+*.db-shm
+*.db-wal
+
+# Variables de entorno / secretos
+.env
+.env.*
+*.env
+.venv
