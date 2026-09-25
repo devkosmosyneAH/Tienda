@@ -172,7 +172,7 @@ class MyApp extends StatelessWidget {
         ...AppProviders.getProviders(),
       ],
       child: MaterialApp(
-        title: 'Bazar & Tienda',
+        title: 'Tienda',
         theme: ThemeData(
           primaryColor: AppColors.primaryLogo,
           useMaterial3: true,
