@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tienda/Presentation/Model/supplier_model.dart';
 import 'package:tienda/Presentation/Services/database_service.dart';
+import 'package:tienda/Presentation/Services/audit_service.dart';
 
 class SuppliersController extends ChangeNotifier {
   List<SupplierModel> _suppliers = [];
@@ -82,7 +83,7 @@ class SuppliersController extends ChangeNotifier {
       if (existing.isNotEmpty) {
         return 'Ya existe un proveedor con ese nombre.';
       }
-      await DatabaseService.rawInsert(
+      final supplierId = await DatabaseService.rawInsert(
         'INSERT INTO suppliers (name, phone, email, notes) VALUES (?, ?, ?, ?)',
         [
           supplier.name.trim(),
@@ -90,6 +91,11 @@ class SuppliersController extends ChangeNotifier {
           supplier.email?.trim(),
           supplier.notes?.trim(),
         ],
+      );
+      await AuditService.log(
+        action: AuditAction.createSupplier, module: 'Suppliers',
+        page: 'SuppliersView', entity: 'supplier', entityId: supplierId,
+        newData: supplier.toMap(), controller: 'SuppliersController',
       );
       await loadSuppliers();
       return null;
@@ -101,6 +107,9 @@ class SuppliersController extends ChangeNotifier {
   /// Actualizar proveedor. Retorna null si fue exitoso.
   Future<String?> updateSupplier(SupplierModel supplier) async {
     try {
+      final before = await DatabaseService.rawQuery(
+        'SELECT * FROM suppliers WHERE id = ? LIMIT 1', [supplier.id],
+      );
       await DatabaseService.rawUpdate(
         'UPDATE suppliers SET name = ?, phone = ?, email = ?, notes = ? WHERE id = ?',
         [
@@ -110,6 +119,16 @@ class SuppliersController extends ChangeNotifier {
           supplier.notes?.trim(),
           supplier.id,
         ],
+      );
+      final after = await DatabaseService.rawQuery(
+        'SELECT * FROM suppliers WHERE id = ? LIMIT 1', [supplier.id],
+      );
+      await AuditService.log(
+        action: AuditAction.updateSupplier, module: 'Suppliers',
+        page: 'SuppliersView', entity: 'supplier', entityId: supplier.id,
+        oldData: before.isEmpty ? null : before.first,
+        newData: after.isEmpty ? null : after.first,
+        controller: 'SuppliersController',
       );
       await loadSuppliers();
       return null;
@@ -121,6 +140,9 @@ class SuppliersController extends ChangeNotifier {
   /// Eliminar proveedor. Retorna null si fue exitoso.
   Future<String?> deleteSupplier(SupplierModel supplier) async {
     try {
+      final before = await DatabaseService.rawQuery(
+        'SELECT * FROM suppliers WHERE id = ? LIMIT 1', [supplier.id],
+      );
       // Verificar si tiene compras asociadas
       final purchases = await DatabaseService.rawQuery(
         'SELECT COUNT(*) as c FROM purchases WHERE supplier_id = ?',
@@ -134,6 +156,12 @@ class SuppliersController extends ChangeNotifier {
       await DatabaseService.rawUpdate('DELETE FROM suppliers WHERE id = ?', [
         supplier.id,
       ]);
+      await AuditService.log(
+        action: AuditAction.deleteSupplier, module: 'Suppliers',
+        page: 'SuppliersView', entity: 'supplier', entityId: supplier.id,
+        oldData: before.isEmpty ? null : before.first,
+        controller: 'SuppliersController',
+      );
       await loadSuppliers();
       return null;
     } catch (e) {

@@ -1,14 +1,10 @@
+import 'dart:io';
+
+import 'package:tienda/Presentation/Services/google_drive_backup_service.dart';
 import 'package:flutter/material.dart';
 
-bool isLocalImagePath(String value) {
-  final trimmed = value.trim();
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return false;
-  }
-  return trimmed.startsWith('file:') ||
-      trimmed.contains('/') ||
-      trimmed.contains('\\');
-}
+bool isLocalImagePath(String value) =>
+    value.contains('/') || value.contains('\\') || value.startsWith('file:');
 
 Widget imagePreview(
   String value, {
@@ -17,23 +13,19 @@ Widget imagePreview(
   BoxFit fit = BoxFit.cover,
   Widget Function(BuildContext, Object, StackTrace?)? errorBuilder,
 }) {
-  final trimmed = value.trim();
-  if (trimmed.isEmpty) {
-    return const SizedBox();
-  }
-
-  return isLocalImagePath(trimmed)
-      ? Image.network(
-          trimmed,
+  return isLocalImagePath(value)
+      ? Image.file(
+          File(value),
           width: width,
           height: height,
           fit: fit,
           errorBuilder: errorBuilder,
         )
-      : Container(
+      : Image.network(
+          GoogleDriveBackupService.publicImageUrl(value.trim()),
           width: width,
           height: height,
-          color: Colors.grey[200],
-          child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
+          fit: fit,
+          errorBuilder: errorBuilder,
         );
 }

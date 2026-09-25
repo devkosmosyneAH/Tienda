@@ -1,5 +1,8 @@
 import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:tienda/Presentation/Services/audit_service.dart';
+
+enum PurchaseHistoryPeriod { all, today, week, month }
 
 class PurchasesController extends ChangeNotifier {
   bool isLoading = false;
@@ -8,19 +11,99 @@ class PurchasesController extends ChangeNotifier {
 
   int? selectedStoreId;
   int? historySupplierId;
+  String? historyCategory;
   DateTime? historyDate;
+  PurchaseHistoryPeriod historyPeriod = PurchaseHistoryPeriod.all;
   String search = '';
 
   List<Map<String, dynamic>> stores = [];
   List<Map<String, dynamic>> suppliers = [];
+  List<Map<String, dynamic>> categories = [];
   List<Map<String, dynamic>> products = [];
   List<Map<String, dynamic>> cart = [];
   List<Map<String, dynamic>> purchaseHistory = [];
+  List<Map<String, dynamic>> paymentMethods = [];
 
-  double get total => cart.fold<double>(
+  String invoiceNumber = '';
+  String auxiliaryInvoiceNumber = '';
+  int? selectedPaymentMethodId;
+  String selectedPaymentMethodName = 'Contado';
+
+  bool considerVatProfit = false;
+  double governmentVatRate = 15.0;
+  double profitVatRate = 15.0;
+  double discount = 0;
+
+  double get subtotal => cart.fold<double>(
     0,
     (sum, item) => sum + ((item['quantity'] as int) * (item['cost'] as double)),
   );
+
+  double get appliedVatRate => governmentVatRate;
+
+  double get vatTotal => subtotal * appliedVatRate / 100;
+
+  double get total =>
+      (subtotal + vatTotal - discount).clamp(0, double.infinity);
+
+  int get productsWithVat => governmentVatRate > 0 ? cart.length : 0;
+
+  int get historyTotalCount => purchaseHistory.length;
+
+  int get historyPaidCount => purchaseHistory.where((purchase) {
+    final payment = purchase['payment_method']?.toString().toLowerCase() ?? '';
+    return !payment.contains('crédito') && !payment.contains('credito');
+  }).length;
+
+  int get historyPendingCount => historyTotalCount - historyPaidCount;
+
+  double get historyTotalAmount => purchaseHistory.fold<double>(
+    0,
+    (sum, purchase) =>
+        sum + ((purchase['total'] as num?)?.toDouble() ?? 0),
+  );
+
+  void setConsiderVatProfit(bool value) {
+    considerVatProfit = value;
+    notifyListeners();
+  }
+
+  void updateGovernmentVatRate(double value) {
+    governmentVatRate = value < 0 ? 0 : value;
+    notifyListeners();
+  }
+
+  void updateProfitVatRate(double value) {
+    profitVatRate = value < 0 ? 0 : value;
+    notifyListeners();
+  }
+
+  void updateDiscount(double value) {
+    discount = value < 0 ? 0 : value;
+    notifyListeners();
+  }
+
+  void updateAuxiliaryInvoiceNumber(String value) {
+    auxiliaryInvoiceNumber = value;
+    notifyListeners();
+  }
+
+  void selectPaymentMethod(int? methodId) {
+    if (methodId == null) return;
+    selectedPaymentMethodId = methodId;
+    final method = paymentMethods.firstWhere(
+      (item) => (item['id'] as num).toInt() == methodId,
+      orElse: () => <String, dynamic>{},
+    );
+    selectedPaymentMethodName = _paymentMethodLabel(
+      method['name']?.toString() ?? 'Contado',
+    );
+    notifyListeners();
+  }
+
+  String _paymentMethodLabel(String name) {
+    return name.toLowerCase() == 'efectivo' ? 'Contado' : name;
+  }
 
   Future<void> initialize() async {
     if (isLoading || stores.isNotEmpty) return;
@@ -35,6 +118,15 @@ class PurchasesController extends ChangeNotifier {
     try {
       stores = await DatabaseService.getStores();
       suppliers = await DatabaseService.getSuppliers();
+      categories = await DatabaseService.getCategories();
+      paymentMethods = await DatabaseService.getPaymentMethods();
+      selectedPaymentMethodId ??= paymentMethods.isNotEmpty
+          ? (paymentMethods.first['id'] as num).toInt()
+          : null;
+      selectedPaymentMethodName = paymentMethods.isNotEmpty
+          ? _paymentMethodLabel(paymentMethods.first['name'].toString())
+          : 'Contado';
+      invoiceNumber = await DatabaseService.getNextPurchaseInvoiceNumber();
       if (stores.isNotEmpty) {
         selectedStoreId ??= (stores.first['id'] as num).toInt();
       }
@@ -62,7 +154,16 @@ class PurchasesController extends ChangeNotifier {
   }
 
   Future<void> _loadProducts() async {
-    products = await DatabaseService.getProducts(search: search);
+    if (selectedStoreId == null) {
+      products = [];
+      notifyListeners();
+      return;
+    }
+
+    products = await DatabaseService.getProducts(
+      search: search,
+      storeId: selectedStoreId,
+    );
     notifyListeners();
   }
 
@@ -77,7 +178,9 @@ class PurchasesController extends ChangeNotifier {
         'product_id': productId,
         'name': product['name'],
         'quantity': 1,
-        'cost': ((product['price'] as num?)?.toDouble()) ?? 0,
+        'cost':
+            ((product['cost_price'] ?? product['cost']) as num?)?.toDouble() ??
+            0,
       });
     }
 
@@ -101,6 +204,11 @@ class PurchasesController extends ChangeNotifier {
     } else {
       cart[index]['quantity'] = currentQty - 1;
     }
+    notifyListeners();
+  }
+
+  void removeFromCart(int productId) {
+    cart.removeWhere((item) => item['product_id'] == productId);
     notifyListeners();
   }
 
@@ -131,6 +239,11 @@ class PurchasesController extends ChangeNotifier {
       storeId: selectedStoreId!,
       supplierName: supplierName,
       supplierPhone: supplierPhone,
+      vatRate: appliedVatRate,
+      discount: discount,
+      invoiceNumber: invoiceNumber,
+      auxiliaryInvoiceNumber: auxiliaryInvoiceNumber,
+      paymentMethod: selectedPaymentMethodName,
       items: cart
           .map(
             (item) => {
@@ -140,6 +253,14 @@ class PurchasesController extends ChangeNotifier {
             },
           )
           .toList(),
+    );
+
+    await AuditService.log(
+      action: AuditAction.createPurchase, module: 'Purchases',
+      page: 'PurchasesView', entity: 'purchase', entityId: purchaseId,
+      newData: {'purchase_id': purchaseId, 'products': cart,
+        'supplier': supplierName, 'payment_method': selectedPaymentMethodName},
+      controller: 'PurchasesController',
     );
 
     cart.clear();
@@ -154,6 +275,16 @@ class PurchasesController extends ChangeNotifier {
     await loadPurchaseHistory();
   }
 
+  Future<void> selectHistoryPeriod(PurchaseHistoryPeriod period) async {
+    historyPeriod = period;
+    await loadPurchaseHistory();
+  }
+
+  Future<void> selectHistoryCategory(String? category) async {
+    historyCategory = category;
+    await loadPurchaseHistory();
+  }
+
   Future<void> setHistoryDate(DateTime? value) async {
     historyDate = value;
     await loadPurchaseHistory();
@@ -161,7 +292,9 @@ class PurchasesController extends ChangeNotifier {
 
   Future<void> clearHistoryFilters() async {
     historySupplierId = null;
+    historyCategory = null;
     historyDate = null;
+    historyPeriod = PurchaseHistoryPeriod.all;
     await loadPurchaseHistory();
   }
 
@@ -170,10 +303,30 @@ class PurchasesController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final now = DateTime.now();
+      DateTime? fromDate;
+      DateTime? toDate;
+      switch (historyPeriod) {
+        case PurchaseHistoryPeriod.all:
+          break;
+        case PurchaseHistoryPeriod.today:
+          fromDate = DateTime(now.year, now.month, now.day);
+          toDate = fromDate.add(const Duration(days: 1));
+        case PurchaseHistoryPeriod.week:
+          final dayStart = DateTime(now.year, now.month, now.day);
+          fromDate = dayStart.subtract(Duration(days: dayStart.weekday - 1));
+          toDate = fromDate.add(const Duration(days: 7));
+        case PurchaseHistoryPeriod.month:
+          fromDate = DateTime(now.year, now.month);
+          toDate = DateTime(now.year, now.month + 1);
+      }
       purchaseHistory = await DatabaseService.getPurchaseHistory(
         storeId: selectedStoreId,
         supplierId: historySupplierId,
+        category: historyCategory,
         date: historyDate,
+        fromDate: fromDate,
+        toDate: toDate,
       );
       errorMessage = null;
     } catch (e) {

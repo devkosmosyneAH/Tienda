@@ -1,4 +1,5 @@
 import 'package:tienda/Presentation/Model/cash_model.dart';
+import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -160,20 +161,12 @@ class _DenominationRowState extends State<_DenominationRow> {
           // Campo cantidad
           SizedBox(
             width: 56,
-            child: TextField(
+            child: SharedTextField(
               controller: _ctrl,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               textAlign: TextAlign.center,
-              decoration: const InputDecoration(
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 6,
-                ),
-                border: OutlineInputBorder(),
-                hintText: '0',
-              ),
+              hint: '0',
               onChanged: (v) {
                 final qty = int.tryParse(v) ?? 0;
                 widget.onQtyChanged(qty);

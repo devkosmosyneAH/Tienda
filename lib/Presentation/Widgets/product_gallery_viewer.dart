@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
+
 import 'package:tienda/Presentation/Widgets/gallery_arrow.dart';
 import 'package:tienda/Presentation/Widgets/gallery_close_button.dart';
 import 'package:tienda/Presentation/Widgets/gallery_thumbnail.dart';
@@ -40,13 +41,14 @@ class ProductGalleryViewer extends StatefulWidget {
       barrierLabel: 'Cerrar visor de imágenes',
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (dialogContext, _, __) => ProductGalleryViewer(
-        images: images,
-        initialIndex: safeIndex,
+      pageBuilder: (dialogContext, _, __) => SelectionArea(
+        child: ProductGalleryViewer(images: images, initialIndex: safeIndex),
       ),
       transitionBuilder: (_, animation, __, child) {
-        final curved =
-            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
         return FadeTransition(
           opacity: curved,
           child: ScaleTransition(
@@ -101,17 +103,13 @@ class _ProductGalleryViewerState extends State<ProductGalleryViewer> {
         (current - 1 + widget.images.length) % widget.images.length;
     final next = (current + 1) % widget.images.length;
     for (final index in {previous, next}) {
-      final imageUrl = widget.images[index];
-      final ImageProvider provider = imageUrl.startsWith('http://') ||
-              imageUrl.startsWith('https://')
-          ? NetworkImage(imageUrl)
-          : AssetImage(imageUrl);
-      unawaited(precacheImage(provider, context));
+      unawaited(precacheImage(NetworkImage(widget.images[index]), context));
     }
   }
 
   void _select(int index) {
-    final normalized = (index % widget.images.length + widget.images.length) %
+    final normalized =
+        (index % widget.images.length + widget.images.length) %
         widget.images.length;
     if (_currentIndex.value != normalized) _currentIndex.value = normalized;
   }
@@ -180,13 +178,15 @@ class _ProductGalleryViewerState extends State<ProductGalleryViewer> {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final showThumbnails = constraints.maxWidth >= 520;
-                      final galleryWidth = constraints.maxWidth *
+                      final galleryWidth =
+                          constraints.maxWidth *
                           (constraints.maxWidth >= 900 ? 0.85 : 0.94);
                       return Stack(
                         children: [
                           Padding(
                             padding: EdgeInsets.only(
-                                bottom: showThumbnails ? 106 : 18),
+                              bottom: showThumbnails ? 106 : 18,
+                            ),
                             child: Center(
                               child: SizedBox(
                                 width: galleryWidth,
@@ -220,7 +220,10 @@ class _ProductGalleryViewerState extends State<ProductGalleryViewer> {
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                     shadows: [
-                                      Shadow(color: Colors.black, blurRadius: 8)
+                                      Shadow(
+                                        color: Colors.black,
+                                        blurRadius: 8,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -239,7 +242,9 @@ class _ProductGalleryViewerState extends State<ProductGalleryViewer> {
                               bottom: showThumbnails ? 90 : 0,
                               child: Center(
                                 child: GalleryArrow(
-                                    onPressed: _previous, isPrevious: true),
+                                  onPressed: _previous,
+                                  isPrevious: true,
+                                ),
                               ),
                             ),
                             Positioned(
@@ -248,7 +253,9 @@ class _ProductGalleryViewerState extends State<ProductGalleryViewer> {
                               bottom: showThumbnails ? 90 : 0,
                               child: Center(
                                 child: GalleryArrow(
-                                    onPressed: _next, isPrevious: false),
+                                  onPressed: _next,
+                                  isPrevious: false,
+                                ),
                               ),
                             ),
                           ],
@@ -262,10 +269,12 @@ class _ProductGalleryViewerState extends State<ProductGalleryViewer> {
                                 valueListenable: _currentIndex,
                                 builder: (_, selected, __) => ListView.builder(
                                   key: const PageStorageKey(
-                                      'product-gallery-thumbnails'),
+                                    'product-gallery-thumbnails',
+                                  ),
                                   scrollDirection: Axis.horizontal,
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 16),
+                                    horizontal: 16,
+                                  ),
                                   itemCount: widget.images.length,
                                   itemBuilder: (_, index) => GalleryThumbnail(
                                     imageUrl: widget.images[index],
@@ -358,31 +367,25 @@ class _GalleryImageState extends State<_GalleryImage> {
             maxScale: 5,
             trackpadScrollCausesScale: true,
             boundaryMargin: const EdgeInsets.all(80),
-            child: _buildDisplayImage(widget.imageUrl),
+            child: Image.network(
+              widget.imageUrl,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Center(
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  color: Colors.white54,
+                  size: 56,
+                ),
+              ),
+              loadingBuilder: (_, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white70),
+                );
+              },
+            ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDisplayImage(String imageUrl) {
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return Image.network(
-        imageUrl,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => const Center(
-          child: Icon(Icons.broken_image_outlined,
-              color: Colors.white54, size: 56),
-        ),
-      );
-    }
-
-    return Image.asset(
-      imageUrl,
-      fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => const Center(
-        child: Icon(Icons.broken_image_outlined,
-            color: Colors.white54, size: 56),
       ),
     );
   }

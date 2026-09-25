@@ -59,6 +59,27 @@ class InventoryProvider extends ChangeNotifier {
     await loadInventory();
   }
 
+  Future<void> refreshInventory() async {
+    if (isLoading) return;
+
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      stores = await DatabaseService.getStores();
+      final storeIds = stores.map((store) => (store['id'] as num).toInt());
+      if (selectedStoreId == null || !storeIds.contains(selectedStoreId)) {
+        selectedStoreId = storeIds.isEmpty ? null : storeIds.first;
+      }
+      await loadInventory();
+    } catch (e) {
+      errorMessage = 'No se pudo actualizar el inventario: $e';
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> loadInventory() async {
     if (selectedStoreId == null) return;
 

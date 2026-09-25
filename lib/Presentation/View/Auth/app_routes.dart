@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tienda/Presentation/View/Login/Login.dart';
 import 'package:tienda/Presentation/View/Customers/customers_view.dart';
@@ -6,12 +7,14 @@ import 'package:tienda/Presentation/View/Dashboard/dashboard_page.dart';
 import 'package:tienda/Presentation/View/Inventory/inventory_view.dart';
 import 'package:tienda/Presentation/View/POS/pos_view.dart';
 import 'package:tienda/Presentation/View/Product/product_management_view.dart';
+import 'package:tienda/Presentation/View/Categories/category_management_view.dart';
 import 'package:tienda/Presentation/View/Purchases/purchases_view.dart';
 import 'package:tienda/Presentation/View/Reports/reports_view.dart';
 import 'package:tienda/Presentation/View/Users/users_view.dart';
 import 'package:tienda/Presentation/View/Suppliers/suppliers_view.dart';
-import 'package:tienda/Presentation/Widgets/legal_page_widget.dart';
 import 'package:tienda/Presentation/admin/AdminDBPage.dart';
+import 'package:tienda/Presentation/View/Admin/audit_logs_page.dart';
+import 'package:tienda/Presentation/Widgets/legal_page_widget.dart';
 
 class AppRoutes {
   // --- Rutas Públicas ---
@@ -24,6 +27,7 @@ class AppRoutes {
   static const dashboard = '/dashboard';
   static const pos = '/pos';
   static const products = '/products';
+  static const categories = '/categories';
   static const purchases = '/purchases';
   static const inventory = '/inventory';
   static const customers = '/customers';
@@ -32,6 +36,7 @@ class AppRoutes {
   static const users = '/users';
   static const suppliers = '/suppliers';
   static const adminDb = '/admin-db';
+  static const auditLogs = '/audit-logs';
   static const catalog = '/catalog';
   static const terms = '/terms';
   static const privacy = '/privacy';
@@ -42,6 +47,7 @@ class AppRoutes {
     dashboard: (context) => const DashboardPage(),
     pos: (context) => const PosView(),
     products: (context) => const ProductManagementView(),
+    categories: (context) => const CategoryManagementView(),
     purchases: (context) => const PurchasesView(),
     inventory: (context) => const InventoryView(),
     customers: (context) => const CustomersView(),
@@ -50,14 +56,18 @@ class AppRoutes {
     users: (context) => const UsersView(),
     suppliers: (context) => const SuppliersView(),
     adminDb: (context) => const AdminDBPage(),
-    terms: (context) => const LegalPageWidget(type: LegalDocType.terms),
-    privacy: (context) => const LegalPageWidget(type: LegalDocType.privacy),
+    auditLogs: (context) => const AuditLogsPage(),
+
+    if (kIsWeb)
+      terms: (context) => const LegalPageWidget(type: LegalDocType.terms),
+    if (kIsWeb)
+      privacy: (context) => const LegalPageWidget(type: LegalDocType.privacy),
   };
 
   /// Map de roles con rutas permitidas
   static final Map<String, List<String>> allowedRoutesByRole = {
     // Admin Superior: acceso total
-    'super_admin': [
+    'admin_superior': [
       login,
       register,
       authenticate,
@@ -65,6 +75,7 @@ class AppRoutes {
       dashboard,
       pos,
       products,
+      categories,
       purchases,
       inventory,
       customers,
@@ -73,6 +84,7 @@ class AppRoutes {
       users,
       suppliers,
       adminDb,
+      auditLogs,
     ],
     // Administrador: sin gestión de usuarios
     'administrador': [
@@ -81,6 +93,7 @@ class AppRoutes {
       dashboard,
       pos,
       products,
+      categories,
       purchases,
       inventory,
       customers,
@@ -99,6 +112,7 @@ class AppRoutes {
       dashboard,
       pos,
       products,
+      categories,
       purchases,
       inventory,
       customers,
@@ -107,6 +121,7 @@ class AppRoutes {
       users,
       suppliers,
       adminDb,
+      auditLogs,
     ],
   };
 

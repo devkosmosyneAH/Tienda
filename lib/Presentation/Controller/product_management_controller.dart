@@ -1,28 +1,14 @@
-import 'dart:async';
-
+import 'package:tienda/Presentation/Services/catalog_sync_service.dart';
+import 'package:tienda/Presentation/Services/audit_service.dart';
+import 'package:tienda/Presentation/Services/database_service.dart';
+import 'package:tienda/Presentation/Services/google_drive_backup_service.dart';
 import 'package:tienda/Presentation/Services/image_optimizer_service.dart';
-import 'package:tienda/Presentation/Services/image_storage_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:tienda/repositories/products_repository.dart';
-import 'package:tienda/websocket/local_server_websocket_client.dart';
 
 class ProductManagementController extends ChangeNotifier {
-  ProductManagementController({
-    ProductsRepository? repository,
-    LocalServerWebSocketClient? eventsClient,
-  })  : _repository = repository ?? ProductsRepository(),
-        _eventsClient = eventsClient ?? LocalServerWebSocketClient() {
-    unawaited(_eventsClient.connect());
-    _eventsSubscription = _eventsClient.events.listen((_) {
-      if (!isLoading) {
-        unawaited(loadCatalog());
-      }
-    });
+  ProductManagementController() {
+    DatabaseService.addDatabaseListener(_handleDatabaseChanged);
   }
-
-  final ProductsRepository _repository;
-  final LocalServerWebSocketClient _eventsClient;
-  late final StreamSubscription<Map<String, dynamic>> _eventsSubscription;
 
   bool isLoading = false;
   String? errorMessage;
@@ -42,15 +28,15 @@ class ProductManagementController extends ChangeNotifier {
           );
 
           debugPrint('Optimización completada: ${optimized.file.path}');
-          debugPrint('Guardando imagen en carpeta local...');
+          debugPrint('Subiendo imagen...');
 
-          final savedPath = await ImageStorageService.saveImageFile(
+          final fileId = await GoogleDriveBackupService.uploadProductImage(
             optimized.file.path,
           );
-          debugPrint('Imagen guardada en: $savedPath');
-          return savedPath;
+          debugPrint('Subida completada: $fileId');
+          return fileId;
         } catch (e) {
-          debugPrint('Error al optimizar/guardar $localPath: $e');
+          debugPrint('Error al optimizar/subir $localPath: $e');
           rethrow;
         } finally {
           if (optimized != null) {
@@ -68,10 +54,15 @@ class ProductManagementController extends ChangeNotifier {
     );
   }
 
+  void _handleDatabaseChanged() {
+    if (!isLoading) {
+      loadCatalog();
+    }
+  }
+
   @override
   void dispose() {
-    _eventsSubscription.cancel();
-    unawaited(_eventsClient.dispose());
+    DatabaseService.removeDatabaseListener(_handleDatabaseChanged);
     super.dispose();
   }
 
@@ -90,9 +81,9 @@ class ProductManagementController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      stores = await _repository.getStores();
-      categories = await _repository.getCategories();
-      products = await _repository.getProducts(
+      stores = await DatabaseService.getStores();
+      categories = await DatabaseService.getCategories();
+      products = await DatabaseService.getProducts(
         search: search,
         storeId: storeId,
         category: category,
@@ -120,22 +111,42 @@ class ProductManagementController extends ChangeNotifier {
     List<String> images = const [],
     Map<int, int> initialStock = const {},
   }) async {
-    await _repository.createProduct({
-      'name': name,
-      'price': price,
-      'costPrice': costPrice,
-      'ivaRate': ivaRate,
-      'profitIva': profitIva,
-      'categoryName': category,
-      'sku': sku,
-      'auxCode': auxCode,
-      'description': description,
-      'tags': tags,
-      'storeId': storeId,
-      'images': images,
-      'initialStock': _serializeStock(initialStock),
-    });
-    await loadCatalog(); // ← Producto creado
+    try {
+      await DatabaseService.createProduct(
+      name: name,
+      price: price,
+      costPrice: costPrice,
+      ivaRate: ivaRate,
+      profitIva: profitIva,
+      categoryName: category,
+      sku: sku,
+      auxCode: auxCode,
+      description: description,
+      tags: tags,
+      storeId: storeId,
+      images: images,
+      initialStock: initialStock,
+    );
+      final created = await DatabaseService.rawQuery(
+        'SELECT * FROM products WHERE name = ? ORDER BY id DESC LIMIT 1', [name],
+      );
+      await AuditService.log(
+        action: AuditAction.createProduct, module: 'Products',
+        page: 'ProductManagementView', entity: 'product',
+        entityId: created.isEmpty ? null : created.first['id'],
+        newData: created.isEmpty ? null : created.first,
+        controller: 'ProductManagementController',
+      );
+      await loadCatalog();
+      CatalogSyncService.instance.markDirty();
+    } catch (error) {
+      await AuditService.log(
+        action: AuditAction.createProduct, module: 'Products',
+        page: 'ProductManagementView', controller: 'ProductManagementController',
+        success: false, error: error,
+      );
+      rethrow;
+    }
   }
 
   Future<void> updateProduct({
@@ -153,25 +164,53 @@ class ProductManagementController extends ChangeNotifier {
     int? storeId,
     List<String>? images,
   }) async {
-    await _repository.updateProduct(
-      productId,
-      _productPayload(
-        name: name,
-        category: category,
-        price: price,
-        costPrice: costPrice,
-        ivaRate: ivaRate,
-        profitIva: profitIva,
-        sku: sku,
-        auxCode: auxCode,
-        description: description,
-        tags: tags,
-        storeId: storeId,
-        images: images,
-      ),
+    final previousImages = await DatabaseService.getProductImageIds(productId);
+    final before = await DatabaseService.rawQuery(
+      'SELECT * FROM products WHERE id = ? LIMIT 1', [productId],
     );
-    await loadCatalog();
-    // ← Producto actualizado
+    try {
+      await DatabaseService.updateProduct(
+      productId: productId,
+      name: name,
+      categoryName: category,
+      sku: sku ?? '',
+      price: price,
+      costPrice: costPrice,
+      ivaRate: ivaRate,
+      profitIva: profitIva,
+      auxCode: auxCode,
+      description: description,
+      tags: tags,
+      storeId: storeId,
+      images: images,
+    );
+      if (images != null) {
+      final current = images.toSet();
+      for (final oldId in previousImages.where((id) => !current.contains(id))) {
+        await GoogleDriveBackupService.deleteProductImage(oldId);
+      }
+      }
+      final after = await DatabaseService.rawQuery(
+        'SELECT * FROM products WHERE id = ? LIMIT 1', [productId],
+      );
+      await AuditService.log(
+        action: AuditAction.updateProduct, module: 'Products',
+        page: 'ProductManagementView', entity: 'product', entityId: productId,
+        oldData: before.isEmpty ? null : before.first,
+        newData: after.isEmpty ? null : after.first,
+        controller: 'ProductManagementController',
+      );
+      await loadCatalog();
+      CatalogSyncService.instance.markDirty();
+    } catch (error) {
+      await AuditService.log(
+        action: AuditAction.updateProduct, module: 'Products',
+        page: 'ProductManagementView', entity: 'product', entityId: productId,
+        oldData: before.isEmpty ? null : before.first,
+        controller: 'ProductManagementController', success: false, error: error,
+      );
+      rethrow;
+    }
   }
 
   Future<void> updateProductWithStock({
@@ -190,24 +229,37 @@ class ProductManagementController extends ChangeNotifier {
     List<String>? images,
     Map<int, int> stockByStore = const {},
   }) async {
-    final payload = _productPayload(
+    final previousImages = await DatabaseService.getProductImageIds(productId);
+    await DatabaseService.updateProduct(
+      productId: productId,
       name: name,
-      category: category,
+      categoryName: category,
+      sku: sku ?? '',
       price: price,
       costPrice: costPrice,
       ivaRate: ivaRate,
       profitIva: profitIva,
-      sku: sku,
       auxCode: auxCode,
       description: description,
       tags: tags,
       storeId: storeId,
       images: images,
     );
-    payload['stockByStore'] = _serializeStock(stockByStore);
-    await _repository.updateProduct(productId, payload);
+    if (images != null) {
+      final current = images.toSet();
+      for (final oldId in previousImages.where((id) => !current.contains(id))) {
+        await GoogleDriveBackupService.deleteProductImage(oldId);
+      }
+    }
+    for (final entry in stockByStore.entries) {
+      await DatabaseService.updateInventoryStock(
+        productId: productId,
+        storeId: entry.key,
+        stock: entry.value,
+      );
+    }
     await loadCatalog();
-    // ← Producto + stock actualizado
+    CatalogSyncService.instance.markDirty(); // ← Producto + stock actualizado
   }
 
   Future<void> removeImageReference({
@@ -217,58 +269,52 @@ class ProductManagementController extends ChangeNotifier {
     final trimmed = imageRef.trim();
     if (trimmed.isEmpty) return;
 
-    final isLocalImagePath = trimmed.contains('/') ||
-        trimmed.contains('\\') ||
-        trimmed.startsWith('file:');
+    final isDriveReference = !trimmed.contains('/') && !trimmed.contains('\\');
 
     if (productId != null) {
-      final currentIds = await _repository.getProductImageIds(productId);
+      final currentIds = await DatabaseService.getProductImageIds(productId);
       if (currentIds.contains(trimmed)) {
-        await _repository.removeImageReference(productId, trimmed);
+        final remainingIds = currentIds.where((id) => id != trimmed).toList();
+        await DatabaseService.updateProductImages(
+          productId: productId,
+          imageIds: remainingIds,
+        );
+        CatalogSyncService.instance.markDirty();
         await loadCatalog();
       }
     }
 
-    if (isLocalImagePath && productId == null) {
-      await ImageStorageService.deleteImage(trimmed);
+    if (isDriveReference) {
+      await GoogleDriveBackupService.deleteProductImage(trimmed);
     }
   }
 
   Future<void> deleteProduct(int productId) async {
-    await _repository.deleteProduct(productId);
+    final imageIds = await DatabaseService.getProductImageIds(productId);
+    final before = await DatabaseService.rawQuery(
+      'SELECT * FROM products WHERE id = ? LIMIT 1', [productId],
+    );
+    try {
+      await DatabaseService.deleteProduct(productId);
+      await AuditService.log(
+        action: AuditAction.deleteProduct, module: 'Products',
+        page: 'ProductManagementView', entity: 'product', entityId: productId,
+        oldData: before.isEmpty ? null : before.first,
+        controller: 'ProductManagementController',
+      );
+    } catch (error) {
+      await AuditService.log(
+        action: AuditAction.deleteProduct, module: 'Products',
+        page: 'ProductManagementView', entity: 'product', entityId: productId,
+        oldData: before.isEmpty ? null : before.first,
+        controller: 'ProductManagementController', success: false, error: error,
+      );
+      rethrow;
+    }
+    for (final id in imageIds) {
+      await GoogleDriveBackupService.deleteProductImage(id);
+    }
     await loadCatalog();
-    // ← Producto eliminado
+    CatalogSyncService.instance.markDirty(); // ← Producto eliminado
   }
-
-  Map<String, dynamic> _productPayload({
-    required String name,
-    required String category,
-    required double price,
-    required double costPrice,
-    required double ivaRate,
-    required double profitIva,
-    String? sku,
-    String? auxCode,
-    String? description,
-    String? tags,
-    int? storeId,
-    List<String>? images,
-  }) =>
-      {
-        'name': name,
-        'categoryName': category,
-        'sku': sku ?? '',
-        'price': price,
-        'costPrice': costPrice,
-        'ivaRate': ivaRate,
-        'profitIva': profitIva,
-        'auxCode': auxCode,
-        'description': description,
-        'tags': tags,
-        'storeId': storeId,
-        if (images != null) 'images': images,
-      };
-
-  Map<String, int> _serializeStock(Map<int, int> stockByStore) =>
-      stockByStore.map((storeId, stock) => MapEntry('$storeId', stock));
 }

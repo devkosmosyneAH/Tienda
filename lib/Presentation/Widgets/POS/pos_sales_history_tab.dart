@@ -1,4 +1,5 @@
 import 'package:tienda/Presentation/Controller/pos_controller.dart';
+import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -7,12 +8,29 @@ import 'package:provider/provider.dart';
 //  Tab: Historial de Ventas
 // ─────────────────────────────────────────────────────────────────
 
-class PosSalesHistoryTab extends StatelessWidget {
+class PosSalesHistoryTab extends StatefulWidget {
   const PosSalesHistoryTab({super.key});
 
+  @override
+  State<PosSalesHistoryTab> createState() => _PosSalesHistoryTabState();
+}
+
+class _PosSalesHistoryTabState extends State<PosSalesHistoryTab> {
+  String _query = '';
+
   static const _months = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
   ];
 
   @override
@@ -22,18 +40,43 @@ class PosSalesHistoryTab extends StatelessWidget {
         final currentYear = DateTime.now().year;
         final years = List.generate(currentYear - 2019, (i) => currentYear - i);
 
+        final filteredSales = controller.salesHistory.where((sale) {
+          final query = _query.trim().toLowerCase();
+          if (query.isEmpty) return true;
+          final client = sale['client_name']?.toString().toLowerCase() ?? '';
+          final id = sale['id']?.toString() ?? '';
+          return client.contains(query) || id.contains(query);
+        }).toList();
+        final filteredTotal = filteredSales.fold<double>(
+          0,
+          (sum, sale) => sum + ((sale['total'] as num?)?.toDouble() ?? 0),
+        );
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // ── Cabecera
             Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              color: Colors.transparent,
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
               child: Row(
                 children: [
                   const Text(
                     'Historial de Ventas',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '${controller.totalSalesCount} ventas',
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Total: \$${filteredTotal.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      color: Colors.green.shade800,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const Spacer(),
                   FilledButton.icon(
@@ -51,17 +94,101 @@ class PosSalesHistoryTab extends StatelessWidget {
               ),
             ),
             // ── Panel de filtros
-            Container(
-              color: Colors.grey.shade50,
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  const Text(
-                    'Filtros de Búsqueda',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  SizedBox(
+                    width: 110,
+                    child: _FilterDropdown<int?>(
+                      label: 'Año',
+                      value: controller.historyYear,
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Todos'),
+                        ),
+                        ...years.map(
+                          (y) => DropdownMenuItem(
+                            value: y,
+                            child: Text(y.toString()),
+                          ),
+                        ),
+                      ],
+                      onChanged: controller.setHistoryYear,
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: 110,
+                    child: _FilterDropdown<int?>(
+                      label: 'Mes',
+                      value: controller.historyMonth,
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Todos'),
+                        ),
+                        ...List.generate(
+                          12,
+                          (i) => DropdownMenuItem(
+                            value: i + 1,
+                            child: Text(_months[i]),
+                          ),
+                        ),
+                      ],
+                      onChanged: controller.historyYear == null
+                          ? null
+                          : controller.setHistoryMonth,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 100,
+                    child: _FilterDropdown<int?>(
+                      label: 'Día',
+                      value: controller.historyDay,
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Todos'),
+                        ),
+                        ...List.generate(
+                          31,
+                          (i) => DropdownMenuItem(
+                            value: i + 1,
+                            child: Text((i + 1).toString()),
+                          ),
+                        ),
+                      ],
+                      onChanged: controller.historyMonth == null
+                          ? null
+                          : controller.setHistoryDay,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 240,
+                    child: SharedTextField(
+                      onChanged: (value) => setState(() => _query = value),
+                      label: 'Buscar factura/cliente',
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                    ),
+                  ),
+                  if (controller.historyYear != null ||
+                      controller.historyMonth != null ||
+                      controller.historyDay != null ||
+                      controller.historyCustomerId != null)
+                    TextButton.icon(
+                      onPressed: controller.clearHistoryFilters,
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      icon: const Icon(Icons.close, size: 16),
+                      label: const Text('Limpiar'),
+                    ),
+                ],
+              ),
+            ),
+            /*
                   Row(
                     children: [
                       Expanded(
@@ -162,11 +289,11 @@ class PosSalesHistoryTab extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
+            ),*/
             const Divider(height: 1),
             // ── Lista de ventas
             Expanded(
-              child: controller.salesHistory.isEmpty
+              child: filteredSales.isEmpty
                   ? const Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -179,7 +306,10 @@ class PosSalesHistoryTab extends StatelessWidget {
                           SizedBox(height: 12),
                           Text(
                             'No hay ventas registradas',
-                            style: TextStyle(fontSize: 16, color: Colors.black45),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black45,
+                            ),
                           ),
                         ],
                       ),
@@ -189,9 +319,9 @@ class PosSalesHistoryTab extends StatelessWidget {
                         horizontal: 16,
                         vertical: 12,
                       ),
-                      itemCount: controller.salesHistory.length,
+                      itemCount: filteredSales.length,
                       itemBuilder: (context, index) {
-                        final sale = controller.salesHistory[index];
+                        final sale = filteredSales[index];
                         final saleId = (sale['id'] as num).toInt();
                         final date = DateTime.tryParse(
                           sale['date']?.toString() ?? '',
@@ -202,8 +332,8 @@ class PosSalesHistoryTab extends StatelessWidget {
                             sale['client_name']?.toString() ??
                             'Consumidor final';
                         final storeName = sale['store_name']?.toString() ?? '';
-                        final paymentName =
-                            sale['payment_method_name']?.toString();
+                        final paymentName = sale['payment_method_name']
+                            ?.toString();
                         final nvLabel =
                             'NV\n#${saleId.toString().padLeft(3, '0')}';
 
@@ -383,7 +513,11 @@ class PosSaleHistoryCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.person_outline, size: 14, color: Colors.black45),
+                        const Icon(
+                          Icons.person_outline,
+                          size: 14,
+                          color: Colors.black45,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -400,11 +534,18 @@ class PosSaleHistoryCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.black45),
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 14,
+                          color: Colors.black45,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           'Fecha: $dateStr',
-                          style: const TextStyle(fontSize: 13, color: Colors.black54),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.black54,
+                          ),
                         ),
                       ],
                     ),
@@ -412,11 +553,18 @@ class PosSaleHistoryCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          const Icon(Icons.payment_outlined, size: 14, color: Colors.black45),
+                          const Icon(
+                            Icons.payment_outlined,
+                            size: 14,
+                            color: Colors.black45,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             paymentName!,
-                            style: const TextStyle(fontSize: 12, color: Colors.black45),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black45,
+                            ),
                           ),
                         ],
                       ),

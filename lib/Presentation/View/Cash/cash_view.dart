@@ -4,9 +4,15 @@ import 'package:tienda/Presentation/Renders/responsive_helper.dart';
 import 'package:tienda/Presentation/Services/session_service.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
 import 'package:tienda/Presentation/Widgets/cash_widgets.dart';
+import 'package:tienda/Presentation/Widgets/cash_stores_status.dart';
+import 'package:tienda/Presentation/Widgets/Products/filter_dropdown.dart';
+import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+
+part '../../Widgets/Cash/cash_current_tab.dart';
+part '../../Widgets/Cash/cash_history_tab.dart';
 
 class CashView extends StatefulWidget {
   const CashView({super.key});
@@ -61,7 +67,7 @@ class _CashViewState extends State<CashView>
               ),
               boxShadow: const [
                 BoxShadow(
-                  color: Colors.black26,
+                  color: AppColors.primaryLogo,
                   blurRadius: 5,
                   offset: Offset(0, 3),
                 ),
@@ -80,9 +86,30 @@ class _CashViewState extends State<CashView>
                 onPressed: () => Navigator.pop(context),
               ),
               title: const Text(
-                'Caja diaria',
+                'Gestión de Caja',
                 style: TextStyle(color: AppColors.whiteOverlay),
               ),
+              actions: [
+                Consumer<CashController>(
+                  builder: (context, controller, _) {
+                    return Container(
+                      margin: const EdgeInsets.only(right: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLogo.withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: CashStoresStatus(
+                        controller: controller,
+                        isMobile: MediaQuery.of(context).size.width < 600,
+                      ),
+                    );
+                  },
+                ),
+              ],
               bottom: TabBar(
                 controller: _tabController,
                 labelColor: AppColors.whiteOverlay,
@@ -101,7 +128,7 @@ class _CashViewState extends State<CashView>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [_CajaTab(), _HistorialTab()],
+        children: const [CashCurrentTab(), CashHistoryTab()],
       ),
     );
   }
@@ -109,6 +136,7 @@ class _CashViewState extends State<CashView>
 
 // ─── Tab 1: Caja actual ───────────────────────────────────────────────────────
 
+// ignore: unused_element
 class _CajaTab extends StatelessWidget {
   const _CajaTab();
 
@@ -121,205 +149,60 @@ class _CajaTab extends StatelessWidget {
         }
 
         final summary = controller.summary ?? {};
-        final byMethod = (summary['by_method'] as List?) ?? [];
-
         return RefreshIndicator(
           onRefresh: controller.refresh,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              const SizedBox(height: 16),
-              Card(
-                color: AppColors.whiteOverlay,
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        controller.hasOpenSession
-                            ? 'Caja abierta'
-                            : 'Caja cerrada',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-
-                      const SizedBox(height: 8),
-                      if (controller.activeSession != null)
-                        Text(
-                          'Apertura: \$${((controller.activeSession!['opening_amount'] ?? 0) as num).toStringAsFixed(2)}',
-                        ),
-                      if (controller.activeSession != null) ...[
-                        const SizedBox(height: 4),
-                        _CashSessionInfo(session: controller.activeSession!),
-                      ],
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth >= 900;
+              return ListView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 32 : 16,
+                  vertical: 20,
+                ),
+                children: [
+                  _CashSectionHeader(
+                    controller: controller,
+                    onStoreChanged: (value) {
+                      if (value != null) controller.selectStore(value);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _CashStatusCard(controller: controller, summary: summary),
+                  if (controller.hasOpenSession) ...[
+                    const SizedBox(height: 16),
+                    _CashKpiGrid(summary: summary),
+                    const SizedBox(height: 20),
+                    if (isDesktop)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (!controller.hasOpenSession)
-                            ElevatedButton.icon(
-                              onPressed: () =>
-                                  _CashViewActions.showOpenDialog(context),
-                              icon: const Icon(Icons.lock_open),
-                              label: const Text('Abrir caja'),
+                          Expanded(
+                            child: _MovementsCard(
+                              movements: controller.movements,
                             ),
-                          if (controller.hasOpenSession) ...[
-                            ElevatedButton.icon(
-                              onPressed: () =>
-                                  _CashViewActions.showMovementDialog(
-                                    context,
-                                    'income',
-                                  ),
-                              icon: const Icon(Icons.add_circle_outline),
-                              label: const Text('Ingreso'),
+                          ),
+                          const SizedBox(width: 20),
+                          SizedBox(
+                            width: 320,
+                            child: _CashSummaryCard(
+                              summary: summary,
+                              breakdown: controller.openingBreakdown,
                             ),
-                            ElevatedButton.icon(
-                              onPressed: () =>
-                                  _CashViewActions.showMovementDialog(
-                                    context,
-                                    'expense',
-                                  ),
-                              icon: const Icon(Icons.remove_circle_outline),
-                              label: const Text('Gasto'),
-                            ),
-                            FilledButton.icon(
-                              onPressed: () =>
-                                  _CashViewActions.showCloseDialog(context),
-                              icon: const Icon(Icons.lock_outline),
-                              label: const Text('Cerrar caja'),
-                            ),
-                          ],
+                          ),
                         ],
+                      )
+                    else ...[
+                      _MovementsCard(movements: controller.movements),
+                      const SizedBox(height: 16),
+                      _CashSummaryCard(
+                        summary: summary,
+                        breakdown: controller.openingBreakdown,
                       ),
                     ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (controller.hasOpenSession)
-                Card(
-                  color: AppColors.whiteOverlay,
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Resumen',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Ingresos: \$${((summary['total_income'] ?? 0) as num).toStringAsFixed(2)}',
-                        ),
-                        Text(
-                          'Egresos: \$${((summary['total_expense'] ?? 0) as num).toStringAsFixed(2)}',
-                        ),
-                        Text(
-                          'Saldo esperado: \$${((summary['expected_balance'] ?? 0) as num).toStringAsFixed(2)}',
-                        ),
-                        Text(
-                          'Caja física: \$${((summary['physical_cash'] ?? 0) as num).toStringAsFixed(2)}',
-                        ),
-                        Text(
-                          'Caja virtual: \$${((summary['virtual_balance'] ?? 0) as num).toStringAsFixed(2)}',
-                        ),
-                        if (controller.openingBreakdown != null) ...[
-                          const SizedBox(height: 12),
-                          const Divider(),
-                          const SizedBox(height: 8),
-                          CashBreakdownSummary(
-                            breakdown: controller.openingBreakdown!,
-                            title: 'Desglose de apertura',
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Por método',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 6),
-                        ...byMethod.map(
-                          (row) => ListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(row['method']?.toString() ?? '-'),
-                            subtitle: Text(
-                              'Ingreso: \$${((row['income'] ?? 0) as num).toStringAsFixed(2)} · Egreso: \$${((row['expense'] ?? 0) as num).toStringAsFixed(2)}',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 16),
-              const Text(
-                'Movimientos',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              if (controller.movements.isEmpty)
-                const Card(
-                  elevation: 4,
-                  color: AppColors.whiteOverlay,
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('No hay movimientos registrados'),
-                  ),
-                )
-              else
-                ...controller.movements.reversed.toList().asMap().entries.map((
-                  entry,
-                ) {
-                  final i = entry.key;
-                  final m = entry.value;
-                  return Card(
-                        elevation: 4,
-                        color: AppColors.whiteOverlay,
-                        child: ListTile(
-                          leading: Icon(
-                            m['type'] == 'income'
-                                ? Icons.arrow_downward
-                                : Icons.arrow_upward,
-                            color: m['type'] == 'income'
-                                ? Colors.green
-                                : Colors.red,
-                          ),
-                          title: Text(
-                            m['description']?.toString().isNotEmpty == true
-                                ? m['description'].toString()
-                                : (m['type'] == 'income' ? 'Ingreso' : 'Gasto'),
-                          ),
-                          subtitle: Text('Método: ${m['method']}'),
-                          trailing: Text(
-                            '\$${((m['amount'] ?? 0) as num).toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: m['type'] == 'income'
-                                  ? Colors.green
-                                  : Colors.red,
-                            ),
-                          ),
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(
-                        delay: Duration(milliseconds: 40 * (i % 20)),
-                        duration: 300.ms,
-                      )
-                      .slideX(
-                        begin: -0.1,
-                        end: 0,
-                        delay: Duration(milliseconds: 40 * (i % 20)),
-                        duration: 300.ms,
-                        curve: Curves.easeOut,
-                      );
-                }),
-            ],
+                  ],
+                ],
+              );
+            },
           ),
         );
       },
@@ -327,8 +210,610 @@ class _CajaTab extends StatelessWidget {
   }
 }
 
+String _cashAmount(Object? value) =>
+    '\$${((value ?? 0) as num).toDouble().toStringAsFixed(2)}';
+
+class _CashSectionHeader extends StatelessWidget {
+  const _CashSectionHeader({
+    required this.controller,
+    required this.onStoreChanged,
+  });
+
+  final CashController controller;
+  final ValueChanged<int?> onStoreChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(Icons.storefront_outlined, color: AppColors.blackOverlay),
+        const SizedBox(width: 10),
+        Expanded(
+          child: FilterDropdown<int>(
+            label: 'Establecimiento / caja',
+            value: controller.selectedStoreId,
+            items: controller.stores
+                .map(
+                  (store) => DropdownMenuItem<int>(
+                    value: (store['id'] as num).toInt(),
+                    child: Text(store['name'] as String),
+                  ),
+                )
+                .toList(),
+            onChanged: onStoreChanged,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CashStatusCard extends StatelessWidget {
+  const _CashStatusCard({required this.controller, required this.summary});
+
+  final CashController controller;
+  final Map<String, dynamic> summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final isOpen = controller.hasOpenSession;
+    final opening = controller.activeSession?['opening_amount'];
+    return _CashSurface(
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: isOpen ? AppColors.darkGreen : AppColors.primaryRed,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  isOpen ? 'CAJA ABIERTA' : 'CAJA CERRADA',
+                  style: const TextStyle(
+                    color: AppColors.primaryLogo,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.7,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              _cashAmount(isOpen ? summary['expected_balance'] : opening),
+              style: const TextStyle(
+                color: AppColors.primaryLogo,
+                fontSize: 36,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isOpen ? 'Saldo actual' : 'Lista para iniciar operaciones',
+              style: const TextStyle(color: AppColors.mediumGray, fontSize: 14),
+            ),
+            if (controller.activeSession != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Apertura: ${_cashAmount(opening)}',
+                style: const TextStyle(color: AppColors.darkGray),
+              ),
+              const SizedBox(height: 4),
+              _CashSessionInfo(session: controller.activeSession!),
+            ],
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                if (!isOpen)
+                  _CashActionButton(
+                    label: 'Abrir caja',
+                    icon: Icons.lock_open_outlined,
+                    color: AppColors.primaryBlue,
+                    onPressed: () => _CashViewActions.showOpenDialog(context),
+                  ),
+                if (isOpen) ...[
+                  _CashActionButton(
+                    label: 'Ingreso',
+                    icon: Icons.add,
+                    color: AppColors.darkGreen,
+                    onPressed: () =>
+                        _CashViewActions.showMovementDialog(context, 'income'),
+                  ),
+                  _CashActionButton(
+                    label: 'Gasto',
+                    icon: Icons.remove,
+                    color: AppColors.primaryRed,
+                    onPressed: () =>
+                        _CashViewActions.showMovementDialog(context, 'expense'),
+                  ),
+                  _CashActionButton(
+                    label: 'Cerrar caja',
+                    icon: Icons.lock_outline,
+                    color: AppColors.primaryLogo,
+                    onPressed: () => _CashViewActions.showCloseDialog(context),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CashActionButton extends StatelessWidget {
+  const _CashActionButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        foregroundColor: AppColors.whiteOverlay,
+        backgroundColor: color,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
+
+class _CashKpiGrid extends StatelessWidget {
+  const _CashKpiGrid({required this.summary});
+  final Map<String, dynamic> summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final kpis = [
+      ('Ingresos', 'total_income', Icons.trending_up, AppColors.darkGreen),
+      ('Egresos', 'total_expense', Icons.trending_down, AppColors.primaryRed),
+      (
+        'Saldo esperado',
+        'expected_balance',
+        Icons.account_balance_wallet_outlined,
+        AppColors.primaryLogo,
+      ),
+      (
+        'Caja física',
+        'physical_cash',
+        Icons.payments_outlined,
+        AppColors.primaryBlue,
+      ),
+      (
+        'Caja virtual',
+        'virtual_balance',
+        Icons.credit_card_outlined,
+        AppColors.primaryLogo,
+      ),
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 1000
+            ? 5
+            : constraints.maxWidth >= 560
+            ? 2
+            : 1;
+        const spacing = 12.0;
+        final itemWidth = columns == 1
+            ? constraints.maxWidth
+            : (constraints.maxWidth - spacing * (columns - 1)) / columns;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            ...kpis.map(
+              (kpi) => SizedBox(
+                width: itemWidth,
+                child: _KpiCard(
+                  label: kpi.$1,
+                  value: _cashAmount(summary[kpi.$2]),
+                  icon: kpi.$3,
+                  color: kpi.$4,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _KpiCard extends StatelessWidget {
+  const _KpiCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CashSurface(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(height: 8),
+            Text(
+              label.toUpperCase(),
+              style: const TextStyle(
+                color: AppColors.mediumGray,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MovementsCard extends StatelessWidget {
+  const _MovementsCard({required this.movements});
+  final List<Map<String, dynamic>> movements;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CashSurface(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _CashCardTitle(title: 'Movimientos', icon: Icons.swap_vert),
+            const SizedBox(height: 8),
+            if (movements.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 28),
+                child: Center(
+                  child: Text(
+                    'Sin movimientos registrados',
+                    style: TextStyle(color: AppColors.mediumGray),
+                  ),
+                ),
+              )
+            else
+              ...movements.reversed.toList().asMap().entries.map((entry) {
+                final movement = entry.value;
+                final isIncome = movement['type'] == 'income';
+                return _MovementRow(
+                  movement: movement,
+                  isIncome: isIncome,
+                ).animate().fadeIn(
+                  delay: Duration(milliseconds: 35 * (entry.key % 20)),
+                  duration: 250.ms,
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MovementRow extends StatelessWidget {
+  const _MovementRow({required this.movement, required this.isIncome});
+  final Map<String, dynamic> movement;
+  final bool isIncome;
+
+  String _time() {
+    final raw = movement['created_at']?.toString();
+    if (raw == null) return '';
+    try {
+      final date = DateTime.parse(raw).toLocal();
+      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isIncome ? AppColors.primaryBlue : AppColors.primaryRed;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.gery100)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isIncome ? Icons.add : Icons.remove,
+              color: color,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  movement['description']?.toString().isNotEmpty == true
+                      ? movement['description'].toString()
+                      : isIncome
+                      ? 'Ingreso'
+                      : 'Gasto',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkGray,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${movement['method'] ?? '-'}${_time().isNotEmpty ? ' · ${_time()}' : ''}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.mediumGray,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${isIncome ? '+' : '-'}${_cashAmount(movement['amount'])}',
+            style: TextStyle(color: color, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CashSummaryCard extends StatelessWidget {
+  const _CashSummaryCard({required this.summary, required this.breakdown});
+  final Map<String, dynamic> summary;
+  final CashBreakdown? breakdown;
+
+  @override
+  Widget build(BuildContext context) {
+    final byMethod = (summary['by_method'] as List?) ?? [];
+    return Column(
+      children: [
+        _CashSurface(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _CashCardTitle(
+                  title: 'Resumen de caja',
+                  icon: Icons.assessment_outlined,
+                ),
+                const SizedBox(height: 14),
+                _SummaryLine(
+                  label: 'Caja física',
+                  value: _cashAmount(summary['physical_cash']),
+                ),
+                _SummaryLine(
+                  label: 'Caja virtual',
+                  value: _cashAmount(summary['virtual_balance']),
+                ),
+                _SummaryLine(
+                  label: 'Saldo esperado',
+                  value: _cashAmount(summary['expected_balance']),
+                  emphasized: true,
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightBlue.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    'CAJA CUADRADA',
+                    style: TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (byMethod.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  const _CashCardTitle(
+                    title: 'Métodos de pago',
+                    icon: Icons.credit_card_outlined,
+                  ),
+                  const SizedBox(height: 8),
+                  ...byMethod.map((row) => _PaymentMethodRow(row: row)),
+                ],
+              ],
+            ),
+          ),
+        ),
+        if (breakdown != null) ...[
+          const SizedBox(height: 12),
+          _CashSurface(
+            child: ExpansionTile(
+              tilePadding: const EdgeInsets.symmetric(horizontal: 20),
+              childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              title: const Text(
+                'Desglose de apertura',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkGray,
+                ),
+              ),
+              trailing: Text(
+                _cashAmount(breakdown!.grandTotal),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryBlue,
+                ),
+              ),
+              children: [
+                CashBreakdownSummary(
+                  breakdown: breakdown!,
+                  title: 'Detalle de efectivo',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _PaymentMethodRow extends StatelessWidget {
+  const _PaymentMethodRow({required this.row});
+  final dynamic row;
+
+  @override
+  Widget build(BuildContext context) {
+    final income = (row['income'] ?? 0) as num;
+    final expense = (row['expense'] ?? 0) as num;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            row['method']?.toString() ?? '-',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGray,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            'Ingresos ${_cashAmount(income)} · Egresos ${_cashAmount(expense)} · Neto ${_cashAmount(income - expense)}',
+            style: const TextStyle(fontSize: 12, color: AppColors.mediumGray),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryLine extends StatelessWidget {
+  const _SummaryLine({
+    required this.label,
+    required this.value,
+    this.emphasized = false,
+  });
+  final String label;
+  final String value;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: AppColors.mediumGray,
+            fontWeight: emphasized ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: AppColors.primaryLogo,
+            fontWeight: emphasized ? FontWeight.w700 : FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _CashCardTitle extends StatelessWidget {
+  const _CashCardTitle({required this.title, required this.icon});
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Icon(icon, size: 20, color: AppColors.primaryBlue),
+      const SizedBox(width: 8),
+      Text(
+        title,
+        style: const TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          color: AppColors.primaryLogo,
+        ),
+      ),
+    ],
+  );
+}
+
+class _CashSurface extends StatelessWidget {
+  const _CashSurface({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: EdgeInsets.zero,
+    color: AppColors.whiteOverlay,
+    elevation: 1,
+    shadowColor: AppColors.greyOverlay.withValues(alpha: 0.35),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    child: child,
+  );
+}
+
 // ─── Tab 2: Historial de cajas ────────────────────────────────────────────────
 
+// ignore: unused_element
 class _HistorialTab extends StatelessWidget {
   const _HistorialTab();
 
@@ -379,6 +864,25 @@ class _HistorialTab extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              // ── Selector de local ──────────────────────────────────────
+              FilterDropdown<int>(
+                label: 'Local',
+                value: controller.selectedStoreId,
+                items: controller.stores
+                    .map(
+                      (s) => DropdownMenuItem<int>(
+                        value: (s['id'] as num).toInt(),
+                        child: Text(s['name'] as String),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    controller.selectStore(value);
+                    controller.loadHistory();
+                  }
+                },
+              ),
               const SizedBox(height: 16),
 
               // ── Chips de agrupación ────────────────────────────────────
@@ -402,22 +906,9 @@ class _HistorialTab extends StatelessWidget {
               // ── Filtro por año (visible en modo mes/semana) ────────────
               if (groupBy != 'year' &&
                   controller.historyAvailableYears.isNotEmpty) ...[
-                DropdownButtonFormField<String>(
-                  elevation: 4,
+                FilterDropdown<String>(
+                  label: 'Año',
                   value: controller.historyYear,
-                  decoration: InputDecoration(
-                    labelText: 'Año',
-                    filled: true,
-                    fillColor: AppColors.whiteOverlay,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 0,
-                      horizontal: 12,
-                    ),
-                  ),
                   items: [
                     const DropdownMenuItem(value: null, child: Text('Todos')),
                     ...controller.historyAvailableYears.map(
@@ -476,11 +967,15 @@ class _HistorialTab extends StatelessWidget {
 
 // ─── Card de sesión histórica ─────────────────────────────────────────────────
 
-class _HistorySessionCard extends StatelessWidget {
+// ignore: unused_element
+class _LegacyHistorySessionCard extends StatelessWidget {
   final Map<String, dynamic> session;
   final String Function(String?) formatDate;
 
-  const _HistorySessionCard({required this.session, required this.formatDate});
+  const _LegacyHistorySessionCard({
+    required this.session,
+    required this.formatDate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -493,8 +988,8 @@ class _HistorySessionCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ExpansionTile(
         leading: CircleAvatar(
-          backgroundColor: Colors.green.shade50,
-          child: const Icon(Icons.receipt_long, color: Colors.green),
+          backgroundColor: AppColors.lightBlue.withValues(alpha: 0.35),
+          child: const Icon(Icons.receipt_long, color: AppColors.primaryBlue),
         ),
         title: Text(
           formatDate(session['opened_at'] as String?),
@@ -503,7 +998,7 @@ class _HistorySessionCard extends StatelessWidget {
         subtitle: Text(
           'Balance: \$${balance.toStringAsFixed(2)}',
           style: TextStyle(
-            color: balance >= 0 ? Colors.green : Colors.red,
+            color: balance >= 0 ? AppColors.primaryBlue : AppColors.primaryRed,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -548,9 +1043,10 @@ class _HistorySessionCard extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
   final String label;
   final String value;
-  const _InfoRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -562,7 +1058,7 @@ class _InfoRow extends StatelessWidget {
             width: 90,
             child: Text(
               '$label:',
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              style: const TextStyle(color: AppColors.mediumGray, fontSize: 13),
             ),
           ),
           Expanded(
@@ -577,18 +1073,16 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-// ─── Picker de mes ────────────────────────────────────────────────────────────
-
 class _MonthPicker extends StatelessWidget {
-  final String? year;
-  final String? selected;
-  final ValueChanged<String?> onChanged;
-
   const _MonthPicker({
     required this.year,
     required this.selected,
     required this.onChanged,
   });
+
+  final String? year;
+  final String? selected;
+  final ValueChanged<String?> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -620,9 +1114,7 @@ class _MonthPicker extends StatelessWidget {
       'Noviembre',
       'Diciembre',
     ];
-
     final effectiveYear = year ?? DateTime.now().year.toString();
-
     final items = List.generate(
       months.length,
       (i) => DropdownMenuItem<String>(
@@ -630,25 +1122,13 @@ class _MonthPicker extends StatelessWidget {
         child: Text(monthNames[i]),
       ),
     );
-
-    final currentValue =
-        (selected != null && selected!.startsWith(effectiveYear))
+    final currentValue = selected != null && selected!.startsWith(effectiveYear)
         ? selected
         : null;
 
-    return DropdownButtonFormField<String>(
-      elevation: 4,
+    return _HistoryDropdown<String>(
+      label: 'Mes',
       value: currentValue,
-      decoration: InputDecoration(
-        labelText: 'Mes',
-        filled: true,
-        fillColor: AppColors.whiteOverlay,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-      ),
       items: [
         const DropdownMenuItem(value: null, child: Text('Todos')),
         ...items,
@@ -692,23 +1172,13 @@ class _WeekPicker extends StatelessWidget {
     if (weeks.isEmpty) {
       return const Text(
         'Sin semanas disponibles para el período',
-        style: TextStyle(color: Colors.grey, fontSize: 13),
+        style: TextStyle(color: AppColors.mediumGray, fontSize: 13),
       );
     }
 
-    return DropdownButtonFormField<String>(
+    return _HistoryDropdown<String>(
+      label: 'Semana',
       value: (selected != null && weeks.contains(selected)) ? selected : null,
-      decoration: InputDecoration(
-        suffixStyle: const TextStyle(fontSize: 12, color: Colors.grey),
-        labelText: 'Semana',
-        filled: true,
-        fillColor: AppColors.whiteOverlay,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-      ),
       items: [
         const DropdownMenuItem(value: null, child: Text('Todas')),
         ...weeks.map((w) {
@@ -827,17 +1297,17 @@ class _CashViewActions {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
+                SharedTextField(
                   controller: amountController,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(labelText: 'Monto'),
+                  label: 'Monto',
                 ),
                 const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
+                FilterDropdown<String>(
+                  label: 'Método',
                   value: selectedMethod,
-                  decoration: const InputDecoration(labelText: 'Método'),
                   items: methods
                       .map(
                         (m) => DropdownMenuItem<String>(
@@ -849,9 +1319,9 @@ class _CashViewActions {
                   onChanged: (v) => setLocalState(() => selectedMethod = v),
                 ),
                 const SizedBox(height: 8),
-                TextField(
+                SharedTextField(
                   controller: descController,
-                  decoration: const InputDecoration(labelText: 'Descripción'),
+                  label: 'Descripción',
                 ),
               ],
             );
@@ -909,30 +1379,69 @@ class _CashViewActions {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Cerrar caja'),
+        title: const Text(
+          'CIERRE DE CAJA',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryLogo,
+          ),
+        ),
         content: SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(
             child: StatefulBuilder(
-              builder: (ctx, setLocalState) => Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Cuenta el efectivo físico al cierre:',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                  const SizedBox(height: 12),
-                  DenominationInputWidget(
-                    onChanged: (entries, total) {
-                      setLocalState(() {
-                        denomEntries = entries;
-                        denomTotal = total;
-                      });
-                    },
-                  ),
-                ],
-              ),
+              builder: (ctx, setLocalState) {
+                final expected =
+                    ((controller.summary?['expected_balance'] ?? 0) as num)
+                        .toDouble();
+                final difference = denomTotal - expected;
+                final isBalanced = difference.abs() < 0.005;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _CloseAmountRow(label: 'Saldo esperado', value: expected),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Cuenta el efectivo físico al cierre:',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                    const SizedBox(height: 12),
+                    DenominationInputWidget(
+                      onChanged: (entries, total) {
+                        setLocalState(() {
+                          denomEntries = entries;
+                          denomTotal = total;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _CloseAmountRow(
+                      label: 'Efectivo contado',
+                      value: denomTotal,
+                    ),
+                    const Divider(height: 22),
+                    _CloseAmountRow(
+                      label: 'Diferencia',
+                      value: difference,
+                      color: isBalanced
+                          ? AppColors.primaryBlue
+                          : AppColors.primaryRed,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isBalanced ? 'CAJA CUADRADA' : 'REVISAR DIFERENCIA',
+                      style: TextStyle(
+                        color: isBalanced
+                            ? AppColors.primaryBlue
+                            : AppColors.primaryRed,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -943,7 +1452,7 @@ class _CashViewActions {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Cerrar'),
+            child: const Text('Confirmar cierre'),
           ),
         ],
       ),
@@ -966,6 +1475,32 @@ class _CashViewActions {
         );
       }
     }
+  }
+}
+
+class _CloseAmountRow extends StatelessWidget {
+  const _CloseAmountRow({required this.label, required this.value, this.color});
+
+  final String label;
+  final double value;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: AppColors.mediumGray)),
+        Text(
+          _cashAmount(value),
+          style: TextStyle(
+            color: color ?? AppColors.primaryLogo,
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -993,7 +1528,7 @@ class _CashSessionInfo extends StatelessWidget {
 
     return Row(
       children: [
-        const Icon(Icons.person_outline, size: 14, color: Colors.grey),
+        const Icon(Icons.person_outline, size: 14, color: AppColors.mediumGray),
         const SizedBox(width: 4),
         Expanded(
           child: Text(
@@ -1001,7 +1536,7 @@ class _CashSessionInfo extends StatelessWidget {
               if (openedByName.isNotEmpty) 'Abierta por: $openedByName',
               if (timeStr.isNotEmpty) 'a las $timeStr',
             ].join(' '),
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+            style: const TextStyle(fontSize: 12, color: AppColors.mediumGray),
           ),
         ),
       ],

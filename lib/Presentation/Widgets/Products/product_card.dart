@@ -49,7 +49,9 @@ class ProductCard extends StatelessWidget {
             ? (item['images'] as String).split(',').first
             : null;
     final price = (item['price'] as num?)?.toDouble() ?? 0;
-    final totalStock = (item['total_stock'] as num?)?.toInt() ?? 0;
+    final totalStock =
+        ((item['stock_bazar'] as num?)?.toInt() ?? 0) +
+            ((item['stock_tienda'] as num?)?.toInt() ?? 0);
     final category = item['category']?.toString() ?? '';
     final sku = item['sku']?.toString() ?? '';
 

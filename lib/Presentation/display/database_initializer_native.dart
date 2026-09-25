@@ -7,6 +7,8 @@ import '../Services/database_location_service.dart';
 
 /// Inicialización de base de datos para entornos nativos (desktop, mobile).
 Future<void> initializeDatabasePlatform() async {
+  if (kIsWeb) return;
+
   await DatabaseService.initializePlatform();
 
   try {
@@ -19,15 +21,15 @@ Future<void> initializeDatabasePlatform() async {
 Future<void> _safeFallbackDatabaseInit() async {
   try {
     final dbPath = await DatabaseLocationService.getDatabasePath();
-    final file = File(dbPath);
-    if (await file.exists()) {
+    final File dbFile = File(dbPath);
+    if (await dbFile.exists()) {
       try {
         debugPrint('Opening database:');
         debugPrint(dbPath);
         await DatabaseService.database;
         return;
       } catch (_) {
-        await file.delete();
+        await dbFile.delete();
       }
     }
 
@@ -37,7 +39,7 @@ Future<void> _safeFallbackDatabaseInit() async {
       data.lengthInBytes,
     );
 
-    await file.writeAsBytes(bytes, flush: true);
+    await dbFile.writeAsBytes(bytes, flush: true);
     debugPrint('Opening database:');
     debugPrint(dbPath);
     await DatabaseService.database;

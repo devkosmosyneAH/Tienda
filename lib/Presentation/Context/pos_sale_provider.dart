@@ -12,7 +12,7 @@ class PosSaleProvider extends ChangeNotifier {
   String get receiptType => _receiptType;
 
   // ── Consumidor final / cliente seleccionado
-  bool _isConsumerFinal = true;
+  bool _isConsumerFinal = false;
   bool get isConsumerFinal => _isConsumerFinal;
 
   // ── Método de pago seleccionado (para agregar un nuevo pago)
@@ -31,25 +31,25 @@ class PosSaleProvider extends ChangeNotifier {
   double get transport => _transport;
 
   // ── Controladores de texto (para los campos de monto)
-  final TextEditingController discountController =
-      TextEditingController(text: '0');
-  final TextEditingController transportController =
-      TextEditingController(text: '0');
-  final TextEditingController receivedController =
-      TextEditingController(text: '0');
+  final TextEditingController discountController = TextEditingController(
+    text: '0',
+  );
+  final TextEditingController transportController = TextEditingController(
+    text: '0',
+  );
+  final TextEditingController receivedController = TextEditingController(
+    text: '0',
+  );
 
   // ── Derivados
   double effectiveTotal(double subtotal) =>
       (subtotal - _discount + _transport).clamp(0, double.infinity);
 
-  double get paymentsTotal =>
-      _payments.fold(0, (s, p) => s + p.amount);
+  double get paymentsTotal => _payments.fold(0, (s, p) => s + p.amount);
 
-  double receivedAmount() =>
-      double.tryParse(receivedController.text) ?? 0;
+  double receivedAmount() => double.tryParse(receivedController.text) ?? 0;
 
-  double change(double subtotal) =>
-      receivedAmount() - effectiveTotal(subtotal);
+  double change(double subtotal) => receivedAmount() - effectiveTotal(subtotal);
 
   // ────────────────────────────────────────────────────────────────
   //  Mutaciones
@@ -81,15 +81,19 @@ class PosSaleProvider extends ChangeNotifier {
   }
 
   /// Agrega un pago por el monto restante con el método seleccionado.
-  void addPayment(List<Map<String, dynamic>> methods, double total) {
+  void addPayment(
+    List<Map<String, dynamic>> methods,
+    double total, {
+    double? amount,
+  }) {
     if (methods.isEmpty) return;
     final alreadyReceived = paymentsTotal;
     final remaining = total - alreadyReceived;
-    if (remaining <= 0) return;
+    final paymentAmount = amount ?? remaining;
+    if (paymentAmount <= 0 || remaining <= 0) return;
 
     final methodId =
-        _selectedPaymentMethodId ??
-        (methods.first['id'] as num).toInt();
+        _selectedPaymentMethodId ?? (methods.first['id'] as num).toInt();
     final method = methods.firstWhere(
       (m) => (m['id'] as num).toInt() == methodId,
       orElse: () => methods.first,
@@ -98,7 +102,7 @@ class PosSaleProvider extends ChangeNotifier {
       PosPaymentEntry(
         methodId: methodId,
         methodName: method['name'].toString(),
-        amount: remaining,
+        amount: paymentAmount > remaining ? remaining : paymentAmount,
       ),
     );
     notifyListeners();
@@ -119,7 +123,7 @@ class PosSaleProvider extends ChangeNotifier {
     _payments.clear();
     _discount = 0;
     _transport = 0;
-    _isConsumerFinal = true;
+    _isConsumerFinal = false;
     _selectedPaymentMethodId = null;
     discountController.text = '0';
     transportController.text = '0';

@@ -70,21 +70,21 @@ class GhPagesProduct {
   });
 
   factory GhPagesProduct.fromJson(Map<String, dynamic> json) => GhPagesProduct(
-        id: (json['id'] as num).toInt(),
-        uid: json['uid'] as String?,
-        name: json['name'] as String,
-        sku: json['sku'] as String?,
-        description: json['description'] as String?,
-        tags: json['tags'] as String?,
-        price: (json['price'] as num).toDouble(),
-        ivaRate: ((json['ivaRate'] ?? 0) as num).toDouble(),
-        category: json['category'] as String?,
-        images: (json['images'] as List<dynamic>? ?? [])
-            .map((e) => e as String)
-            .toList(),
-        totalStock: ((json['totalStock'] ?? 0) as num).toInt(),
-        isActive: (json['isActive'] as bool?) ?? true,
-      );
+    id: (json['id'] as num).toInt(),
+    uid: json['uid'] as String?,
+    name: json['name'] as String,
+    sku: json['sku'] as String?,
+    description: json['description'] as String?,
+    tags: json['tags'] as String?,
+    price: (json['price'] as num).toDouble(),
+    ivaRate: ((json['ivaRate'] ?? 0) as num).toDouble(),
+    category: json['category'] as String?,
+    images: (json['images'] as List<dynamic>? ?? [])
+        .map((e) => e as String)
+        .toList(),
+    totalStock: ((json['totalStock'] ?? 0) as num).toInt(),
+    isActive: (json['isActive'] as bool?) ?? true,
+  );
 }
 
 /// Categoría del catálogo público (leída desde categories.json).
@@ -145,9 +145,9 @@ class GhPagesCatalog {
 class GhPagesCatalogService {
   /// URL base donde están los JSON exportados.
   /// Debe terminar SIN barra final.
-  /// Ejemplo: 'devkosmosyneAH.github.io/PlatformWebTienda/'
+  /// Ejemplo: 'https://bazarypapelerianicole.github.io/bazarproject/#/catalog'
   static String baseUrl =
-      'devkosmosyneAH.github.io/PlatformWebTienda/';
+      'https://bazarypapelerianicole.github.io/bazarproject/#/catalog';
 
   // ── Caché en memoria ───────────────────────────────────────────────────────
   static GhPagesCatalog? _cache;
@@ -163,12 +163,16 @@ class GhPagesCatalogService {
 
     // 2. Caché válida: devolver sin descargar.
     if (_cache != null && manifest.version == _cachedVersion) {
-      print('[GhPagesCatalogService] ✅ Caché válida (versión ${manifest.version}).');
+      print(
+        '[GhPagesCatalogService] ✅ Caché válida (versión ${manifest.version}).',
+      );
       return _cache!;
     }
 
-    print('[GhPagesCatalogService] 🔄 Versión nueva '
-        '(local=$_cachedVersion → remota=${manifest.version}). Descargando…');
+    print(
+      '[GhPagesCatalogService] 🔄 Versión nueva '
+      '(local=$_cachedVersion → remota=${manifest.version}). Descargando…',
+    );
 
     // 3. Descargar datos frescos.
     final products = manifest.isPaginated
@@ -211,12 +215,10 @@ class GhPagesCatalogService {
   }
 
   static Future<List<GhPagesProduct>> _fetchAllPages(
-      GhPagesManifest manifest) async {
+    GhPagesManifest manifest,
+  ) async {
     final total = manifest.totalPages!;
-    final futures = List.generate(
-      total,
-      (i) => _fetchPageProducts(i + 1),
-    );
+    final futures = List.generate(total, (i) => _fetchPageProducts(i + 1));
     final pages = await Future.wait(futures);
     return pages.expand((p) => p).toList();
   }
@@ -230,8 +232,7 @@ class GhPagesCatalogService {
   }
 
   static Future<List<GhPagesCategory>> _fetchCategories() async {
-    final list =
-        await _fetchJson('$baseUrl/categories.json') as List<dynamic>;
+    final list = await _fetchJson('$baseUrl/categories.json') as List<dynamic>;
     return list
         .map((e) => GhPagesCategory.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -244,9 +245,7 @@ class GhPagesCatalogService {
         .timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) {
-      throw Exception(
-        'HTTP ${response.statusCode} al obtener $url',
-      );
+      throw Exception('HTTP ${response.statusCode} al obtener $url');
     }
 
     return jsonDecode(response.body);

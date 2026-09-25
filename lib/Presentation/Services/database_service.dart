@@ -1,13 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'backup_service.dart';
 import 'database_config.dart';
 import 'database_location_service.dart';
-import 'app_io.dart';
 
 /// Genera un ID de 20 caracteres aleatorios estilo Firebase (letras y numeros).
 String generateFirebaseId() {
@@ -32,10 +33,10 @@ class DatabaseService {
   static bool _platformInitialized = false;
   static final ValueNotifier<int> databaseChanged = ValueNotifier<int>(0);
 
-  static const List<String> _storeNames = ['Tienda'];
+  static const List<String> _storeNames = ['Bazar', 'Tienda'];
 
   // =========================================================
-  // CATÁLOGO ORGANIZADO — Tienda ERP/POS
+  // CATÁLOGO ORGANIZADO — BazarNicole ERP/POS v2
   // Estructura: Store → Categoria → Productos
   //
   // Iconos sugeridos por categoria (Flutter Icons):
@@ -58,9 +59,11 @@ class DatabaseService {
   //   Desechables y Eventos → Icons.dinner_dining
   //
   // Colores sugeridos (Material Design 3):
+  //   Bazar   → Color(0xFF6C3EB8)  // Violeta profundo
   //   Tienda  → Color(0xFF1976D2)  // Azul corporativo
   //
   // Subcategorias futuras sugeridas:
+  //   Bazar   → Decoracion de interiores, Ropa deportiva, Electronica menor
   //   Tienda  → Farmacia básica, Snacks importados, Articulos escolares premium
   //
   // Big Data / Reportes:
@@ -78,6 +81,58 @@ class DatabaseService {
   ///   • Reportes y análisis Big Data
   ///   • Escalabilidad y mantenimiento profesional
   static const Map<String, Map<String, List<String>>> _catalogByStore = {
+    // =========================================================
+    // BAZAR
+    // =========================================================
+    'Bazar': {
+      // Icono: Icons.toys | Color: 0xFFE91E63
+      'Jugueteria': [
+        'Peluches',
+        'Juguetes',
+        'Pelotas de futbol',
+        'Pelotas de indor',
+      ],
+
+      // Icono: Icons.checkroom | Color: 0xFF9C27B0
+      'Moda y Accesorios': [
+        'Carteras',
+        'Zapatos deportivos',
+        'Zapatillas',
+        'Mochilas',
+        'Loncheras',
+        'Lazos',
+        'Vinchas',
+        'Joyeria',
+        'Billeteras',
+      ],
+
+      // Icono: Icons.face_retouching_natural | Color: 0xFFE91E63
+      'Belleza y Perfumeria': ['Perfumes', 'Esmaltes', 'Labiales'],
+
+      // Icono: Icons.home | Color: 0xFF795548
+      'Hogar y Decoracion': [
+        'Portarretratos',
+        'Accesorios de cocina',
+        'Lámparas de dormitorio',
+        'Plateros y accesorios para platos',
+        'Velas aromáticas',
+        'Espejos',
+      ],
+
+      // Icono: Icons.celebration | Color: 0xFFFF9800
+      'Fiestas y Regalos': [
+        'Fundas de regalo',
+        'Accesorios para fiestas y cumpleaños',
+        'Cajas para obsequios',
+      ],
+
+      // Icono: Icons.headphones | Color: 0xFF00BCD4
+      'Tecnologia y Electronicos': ['Audifonos', 'Auriculares Bluetooth'],
+
+      // Icono: Icons.ac_unit | Color: 0xFF2196F3
+      'Temporada y Navidad': ['Accesorios navideños'],
+    },
+
     // =========================================================
     // TIENDA
     // =========================================================
@@ -274,10 +329,8 @@ class DatabaseService {
   };
 
   static Future<void> initializePlatform() async {
-    if (_platformInitialized) return;
-    if (kIsWeb ||
-        defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS) {
+    if (_platformInitialized || kIsWeb) return;
+    if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) {
       _platformInitialized = true;
       return;
     }
@@ -343,20 +396,6 @@ class DatabaseService {
       await DatabaseLocationService.ensureDatabaseDirectoryExists(path);
     }
 
-    // Asegurar existencia del directorio images/ junto a la base de datos
-    try {
-      final dbDir = path.substring(
-        0,
-        path.lastIndexOf('/') == -1 ? 0 : path.lastIndexOf('/'),
-      );
-      final imagesDirPath = '$dbDir${AppIO().pathSeparator}images';
-      if (!await AppIO().fileExists(imagesDirPath)) {
-        await AppIO().createDirectory(imagesDirPath);
-      }
-    } catch (e) {
-      // Ignorar errores de creación de carpeta de imágenes
-    }
-
     if (!await DatabaseLocationService.databaseExists(path)) {
       try {
         final data = await rootBundle.load(DatabaseConfig.assetDbPath);
@@ -364,7 +403,7 @@ class DatabaseService {
           data.offsetInBytes,
           data.lengthInBytes,
         );
-        await AppIO().writeBytes(path, bytes);
+        await File(path).writeAsBytes(bytes, flush: true);
       } catch (e) {
         throw Exception('No se pudo copiar la base de datos desde assets: $e');
       }
@@ -376,7 +415,7 @@ class DatabaseService {
     final db = await databaseFactory.openDatabase(
       path,
       options: OpenDatabaseOptions(
-        version: 2,
+        version: 3,
         onCreate: (db, version) async => _ensureBusinessSchema(db),
         onUpgrade: (db, oldVersion, newVersion) async =>
             _ensureBusinessSchema(db),
@@ -397,7 +436,7 @@ class DatabaseService {
       ),
     );
 
-    // Backup en la nube eliminado: no se realizan backups automáticos.
+    _performAutomaticBackupIfNeeded();
     return db;
   }
 
@@ -431,7 +470,7 @@ class DatabaseService {
       data.lengthInBytes,
     );
 
-    await AppIO().writeBytes(path, bytes);
+    await File(path).writeAsBytes(bytes, flush: true);
     await reopen();
   }
 
@@ -459,8 +498,8 @@ class DatabaseService {
     notifyDatabaseChanged();
   }
 
-  static Future<void> replaceDatabase(dynamic file) async {
-    if (!await AppIO().fileExists(file.path)) {
+  static Future<void> replaceDatabase(File file) async {
+    if (!await file.exists()) {
       throw Exception('El archivo seleccionado no existe: ${file.path}');
     }
 
@@ -471,9 +510,9 @@ class DatabaseService {
     await Future<void>.delayed(const Duration(milliseconds: 250));
 
     final backupPath = '$path.backup.${DateTime.now().millisecondsSinceEpoch}';
-    if (await AppIO().fileExists(path)) {
-      await AppIO().copyFile(path, backupPath);
-      await AppIO().deleteFile(path);
+    if (await File(path).exists()) {
+      await File(path).copy(backupPath);
+      await File(path).delete();
     }
 
     if (file.path == path) {
@@ -509,6 +548,12 @@ class DatabaseService {
       db,
       table: 'categories',
       column: 'slug',
+      definition: 'TEXT NOT NULL DEFAULT ""',
+    );
+    await _ensureColumn(
+      db,
+      table: 'categories',
+      column: 'image_url',
       definition: 'TEXT NOT NULL DEFAULT ""',
     );
 
@@ -574,11 +619,14 @@ class DatabaseService {
       )
     ''');
 
-    // ── Migracion: columnas cedula, identification_type, address ──
+    // ── Migracion: datos adicionales del cliente ──
     for (final colDef in [
       'cedula TEXT',
       'identification_type TEXT DEFAULT "cedula"',
       'address TEXT',
+      'apellidos TEXT',
+      'referencias TEXT',
+      'uid TEXT',
     ]) {
       try {
         await db.execute('ALTER TABLE clients ADD COLUMN $colDef');
@@ -789,44 +837,54 @@ class DatabaseService {
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-      uid TEXT UNIQUE NOT NULL,
-
-      -- Información personal
-      nombres TEXT NOT NULL,
-      apellidos TEXT NOT NULL,
-      email TEXT UNIQUE,
-      password TEXT NOT NULL,
-      telefono TEXT,
-      direccion TEXT,
-      ciudad TEXT,
-      provincia TEXT,
-      pais TEXT,
-
-    -- Empresa (opcional)
-      nombre_comercial TEXT,
-      propietario TEXT,
-      ruc TEXT,
-      regimen TEXT,
-
-    -- Facturación
-      autorizacion_sri TEXT,
-      establecimiento TEXT,
-      secuencial_factura INTEGER DEFAULT 1,
-      tipo_comprobante TEXT,
-
-    -- Sistema
-      role TEXT NOT NULL DEFAULT 'usuario',
-      permission TEXT DEFAULT 'yes',
-      profile_image TEXT,
-      created_at TEXT NOT NULL,
-      updated_at TEXT,
-
-    -- Estado
-      activo INTEGER DEFAULT 1,
-      ultimo_login TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        name TEXT NOT NULL,
+        lastname TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'cajero',
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        user_name TEXT,
+        user_email TEXT,
+        user_role TEXT,
+        action TEXT NOT NULL,
+        module TEXT,
+        page TEXT,
+        entity TEXT,
+        entity_id TEXT,
+        description TEXT,
+        old_data TEXT,
+        new_data TEXT,
+        metadata TEXT,
+        controller TEXT,
+        service TEXT,
+        platform TEXT,
+        created_at TEXT NOT NULL,
+        success INTEGER NOT NULL DEFAULT 1,
+        error_message TEXT,
+        ip_address TEXT,
+        device_info TEXT
+      )
+    ''');
+    for (final index in [
+      'CREATE INDEX IF NOT EXISTS idx_audit_created_at ON audit_logs(created_at)',
+      'CREATE INDEX IF NOT EXISTS idx_audit_user_id ON audit_logs(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action)',
+      'CREATE INDEX IF NOT EXISTS idx_audit_module ON audit_logs(module)',
+      'CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_logs(entity)',
+      'CREATE INDEX IF NOT EXISTS idx_audit_entity_id ON audit_logs(entity_id)',
+    ]) {
+      await db.execute(index);
+    }
 
     await _seedAdminUser(db);
     await _seedPaymentMethods(db);
@@ -842,6 +900,24 @@ class DatabaseService {
       table: 'products',
       column: 'uid',
       definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'purchases',
+      column: 'invoice_number',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'purchases',
+      column: 'auxiliary_invoice_number',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'purchases',
+      column: 'payment_method',
+      definition: "TEXT NOT NULL DEFAULT 'Contado'",
     );
     await _ensureColumn(
       db,
@@ -1182,65 +1258,37 @@ class DatabaseService {
     final total = (count.first['c'] as num).toInt();
     if (total == 0) {
       final uid = generateFirebaseId();
-
-      // Asegurar que el usuario principal siempre exista
       await db.rawInsert(
-        '''INSERT OR IGNORE INTO users (uid, nombres, apellidos, email, password,
-    telefono,
-    direccion,
-    ciudad,
-    provincia,
-    pais,
-    nombre_comercial,
-    propietario,
-    ruc,
-    regimen,
-    autorizacion_sri,
-    establecimiento,
-    secuencial_factura,
-    tipo_comprobante,
-    role,
-    permission,
-    profile_image,
-    created_at,
-    updated_at,
-    activo,
-    ultimo_login)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        '''INSERT OR IGNORE INTO users (uid, email, password, name, lastname, role, is_active, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
         [
           uid,
-          'Dev',
-          'Cosmosyne',
-          'admin@devcosmosyne.com',
-          '12345678',
-          '+593999999999',
-          'Loja',
-          'Loja',
-          'Loja',
-          'Ecuador',
-          'DevCosmosyne',
-          'Dev cosmo',
-          '1799999999001',
-          'RIMPE',
-
-          '0000000000',
-          '001-001',
+          'admin@bazarnicole.com',
+          'admin123',
+          'Administrador',
+          '',
+          'admin',
           1,
-          'FACTURA',
-
-          'super_admin',
-          'yes',
-
-          "NULL",
-
-          '2026-08-05T21:45:00',
-          "NULL",
-
-          1,
-          "NULL",
+          DateTime.now().toIso8601String(),
         ],
       );
     }
+
+    // Asegurar que el usuario principal siempre exista
+    await db.rawInsert(
+      '''INSERT OR IGNORE INTO users (uid, email, password, name, lastname, role, is_active, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+      [
+        'user_1754669120053',
+        'anthonycordova330@gmail.com',
+        '12345678',
+        'Anthony',
+        'Cordova',
+        'admin',
+        1,
+        '2025-08-08T11:05:20.058581',
+      ],
+    );
   }
 
   static Future<void> _seedPaymentMethods(DatabaseExecutor db) async {
@@ -1703,7 +1751,13 @@ class DatabaseService {
     return normalized.toLowerCase();
   }
 
-  // Backups eliminados.
+  static void _performAutomaticBackupIfNeeded() {
+    Future.delayed(const Duration(seconds: 2), () async {
+      try {
+        await BackupService.performAutomaticBackupIfNeeded();
+      } catch (_) {}
+    });
+  }
 
   static Future<List<Map<String, dynamic>>> getStores() async {
     final db = await database;
@@ -1712,7 +1766,59 @@ class DatabaseService {
 
   static Future<List<Map<String, dynamic>>> getCategories() async {
     final db = await database;
-    return db.rawQuery('SELECT id, name FROM categories ORDER BY name');
+    return db.rawQuery('''
+      SELECT c.id, c.name, c.slug, c.store_id, c.image_url,
+        (SELECT COUNT(*) FROM products p WHERE p.category_id = c.id) AS product_count
+      FROM categories c
+      ORDER BY c.name
+    ''');
+  }
+
+  static Future<int> createCategory({
+    required String name,
+    int? storeId,
+    String imageUrl = '',
+  }) async {
+    final db = await database;
+    final cleanName = _cleanName(name);
+    if (cleanName.isEmpty) throw Exception('El nombre de la categoría es obligatorio.');
+    final slug = _buildCategorySlug(cleanName);
+    final id = await db.rawInsert(
+      'INSERT INTO categories (name, slug, store_id, image_url) VALUES (?, ?, ?, ?)',
+      [cleanName, slug, storeId, imageUrl.trim()],
+    );
+    notifyDatabaseChanged();
+    return id;
+  }
+
+  static Future<void> updateCategory({
+    required int categoryId,
+    required String name,
+    int? storeId,
+    String imageUrl = '',
+  }) async {
+    final db = await database;
+    final cleanName = _cleanName(name);
+    if (cleanName.isEmpty) throw Exception('El nombre de la categoría es obligatorio.');
+    await db.rawUpdate(
+      'UPDATE categories SET name = ?, slug = ?, store_id = ?, image_url = ? WHERE id = ?',
+      [cleanName, _buildCategorySlug(cleanName), storeId, imageUrl.trim(), categoryId],
+    );
+    notifyDatabaseChanged();
+  }
+
+  static Future<void> deleteCategory(int categoryId) async {
+    final db = await database;
+    final products = await db.rawQuery(
+      'SELECT COUNT(*) AS total FROM products WHERE category_id = ?',
+      [categoryId],
+    );
+    final total = (products.first['total'] as num?)?.toInt() ?? 0;
+    if (total > 0) {
+      throw Exception('No puedes eliminar esta categoría porque tiene $total producto(s) asociado(s).');
+    }
+    await db.rawDelete('DELETE FROM categories WHERE id = ?', [categoryId]);
+    notifyDatabaseChanged();
   }
 
   static ProductQueryFilters buildProductQueryFilters({
@@ -1727,9 +1833,9 @@ class DatabaseService {
     if (normalizedSearch.isNotEmpty) {
       final filter = '%$normalizedSearch%';
       clauses.add(
-        '(p.name LIKE ? OR p.sku LIKE ? OR COALESCE(c.name, "") LIKE ? OR COALESCE(p.aux_code, "") LIKE ?)',
+        "(p.name LIKE ? OR p.sku LIKE ? OR COALESCE(p.description, '') LIKE ? OR COALESCE(p.aux_code, '') LIKE ? OR COALESCE(c.name, '') LIKE ?)",
       );
-      params.addAll([filter, filter, filter, filter]);
+      params.addAll([filter, filter, filter, filter, filter]);
     }
 
     if (storeId != null) {
@@ -1778,7 +1884,9 @@ class DatabaseService {
         p.store_id,
         COALESCE(c.name, 'Sin categoria') AS category,
         COALESCE(st.name, '') AS store_name,
-        COALESCE(SUM(i.stock), 0) AS total_stock
+        COALESCE(SUM(i.stock), 0) AS total_stock,
+        COALESCE(MAX(CASE WHEN s.name = 'Bazar' THEN i.stock END), 0) AS stock_bazar,
+        COALESCE(MAX(CASE WHEN s.name = 'Tienda' THEN i.stock END), 0) AS stock_tienda
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
       LEFT JOIN stores st ON st.id = p.store_id
@@ -1803,16 +1911,26 @@ class DatabaseService {
         p.id AS product_id,
         p.name,
         p.sku,
+        COALESCE(p.aux_code, '') AS aux_code,
+        COALESCE(p.description, '') AS description,
         p.price,
+        COALESCE(p.cost_price, 0) AS cost_price,
         COALESCE(c.name, 'Sin categoria') AS category,
         COALESCE(i.stock, 0) AS stock
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
-      LEFT JOIN inventory i ON i.product_id = p.id AND i.store_id = ?
-      WHERE p.name LIKE ? OR p.sku LIKE ? OR COALESCE(c.name, '') LIKE ?
+      INNER JOIN inventory i ON i.product_id = p.id AND i.store_id = ?
+      WHERE i.stock >= 0
+        AND (
+          p.name LIKE ? OR
+          p.sku LIKE ? OR
+          COALESCE(p.aux_code, '') LIKE ? OR
+          COALESCE(p.description, '') LIKE ? OR
+          COALESCE(c.name, '') LIKE ?
+        )
       ORDER BY p.name COLLATE NOCASE
       ''',
-      [storeId, filter, filter, filter],
+      [storeId, filter, filter, filter, filter, filter],
     );
   }
 
@@ -2104,7 +2222,8 @@ class DatabaseService {
     );
   }
 
-  /// Rutas locales de las imágenes asociadas al producto.
+  /// IDs de Drive asociados al producto. Las rutas locales antiguas se ignoran
+  /// para no intentar borrar archivos fuera de Google Drive.
   static Future<List<String>> getProductImageIds(int productId) async {
     final db = await database;
     final rows = await db.rawQuery(
@@ -2116,7 +2235,10 @@ class DatabaseService {
     return raw
         .split(',')
         .map((value) => value.trim())
-        .where((value) => value.isNotEmpty)
+        .where(
+          (value) =>
+              value.isNotEmpty && !value.contains('/') && !value.contains('\\'),
+        )
         .toList();
   }
 
@@ -2138,7 +2260,7 @@ class DatabaseService {
     return db.rawQuery(
       '''
       SELECT id, name, phone, email, notes, created_at,
-             cedula, identification_type, address
+              cedula, identification_type, address, apellidos, referencias, uid
       FROM clients
       WHERE name LIKE ? OR COALESCE(phone, '') LIKE ?
          OR COALESCE(email, '') LIKE ? OR COALESCE(cedula, '') LIKE ?
@@ -2151,12 +2273,15 @@ class DatabaseService {
   static Future<void> updateCustomer({
     required int id,
     required String name,
+    String? uid,
     String? phone,
     String? email,
     String? notes,
+    String? apellidos,
     String? cedula,
     String? identificationType,
     String? address,
+    String? referencias,
   }) async {
     if (name.trim().isEmpty) {
       throw Exception('El nombre del cliente es obligatorio');
@@ -2166,23 +2291,40 @@ class DatabaseService {
       'clients',
       {
         'name': _cleanName(name),
+        'uid': uid?.trim().isNotEmpty == true ? uid!.trim() : null,
         'phone': phone?.trim().isNotEmpty == true ? phone!.trim() : null,
         'email': email?.trim().isNotEmpty == true ? email!.trim() : null,
         'notes': notes?.trim().isNotEmpty == true ? notes!.trim() : null,
+        'apellidos': apellidos?.trim().isNotEmpty == true
+            ? apellidos!.trim()
+            : null,
         'cedula': cedula?.trim().isNotEmpty == true ? cedula!.trim() : null,
         'identification_type': identificationType,
         'address': address?.trim().isNotEmpty == true ? address!.trim() : null,
+        'referencias': referencias?.trim().isNotEmpty == true
+            ? referencias!.trim()
+            : null,
       },
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
-  static Future<void> createCustomer({
+  static Future<void> deleteCustomer(int id) async {
+    final db = await database;
+    await db.delete('clients', where: 'id = ?', whereArgs: [id]);
+  }
+
+  static Future<String> createCustomer({
     required String name,
+    String? uid,
     String? phone,
     String? email,
     String? notes,
+    String? apellidos,
+    String? cedula,
+    String? address,
+    String? referencias,
   }) async {
     final cleanName = _cleanName(name);
     if (cleanName.isEmpty) {
@@ -2190,16 +2332,31 @@ class DatabaseService {
     }
 
     final db = await database;
-    await db.rawInsert(
-      'INSERT INTO clients (name, phone, email, notes, created_at) VALUES (?, ?, ?, ?, ?)',
+    final customerId = await db.rawInsert(
+      '''INSERT INTO clients
+         (name, phone, email, notes, apellidos, cedula, address, referencias, uid, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, lower(hex(randomblob(16)))), ?)''',
       [
         cleanName,
         phone?.trim(),
         email?.trim(),
         notes?.trim(),
+        apellidos?.trim(),
+        cedula?.trim(),
+        address?.trim(),
+        referencias?.trim(),
+        uid?.trim().isNotEmpty == true ? uid!.trim() : null,
         DateTime.now().toIso8601String(),
       ],
     );
+    final rows = await db.query(
+      'clients',
+      columns: ['uid'],
+      where: 'id = ?',
+      whereArgs: [customerId],
+      limit: 1,
+    );
+    return rows.first['uid']?.toString() ?? '';
   }
 
   static Future<List<Map<String, dynamic>>> getCustomerHistory(
@@ -2240,6 +2397,11 @@ class DatabaseService {
     required List<Map<String, dynamic>> items,
     String? supplierName,
     String? supplierPhone,
+    double vatRate = 0,
+    double discount = 0,
+    String? invoiceNumber,
+    String? auxiliaryInvoiceNumber,
+    String paymentMethod = 'Contado',
   }) async {
     if (items.isEmpty) {
       throw Exception('La compra debe contener al menos un producto');
@@ -2260,8 +2422,10 @@ class DatabaseService {
           throw Exception('El costo no puede ser negativo');
         }
 
-        total += quantity * cost;
+        total += quantity * cost * (1 + vatRate / 100);
       }
+
+      total = (total - discount).clamp(0, double.infinity);
 
       final supplierId = await _ensureSupplier(
         txn,
@@ -2270,8 +2434,16 @@ class DatabaseService {
       );
 
       final purchaseId = await txn.rawInsert(
-        'INSERT INTO purchases (store_id, supplier_id, total, date) VALUES (?, ?, ?, ?)',
-        [storeId, supplierId, total, DateTime.now().toIso8601String()],
+        'INSERT INTO purchases (store_id, supplier_id, total, date, invoice_number, auxiliary_invoice_number, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          storeId,
+          supplierId,
+          total,
+          DateTime.now().toIso8601String(),
+          invoiceNumber,
+          auxiliaryInvoiceNumber,
+          paymentMethod,
+        ],
       );
 
       for (final item in items) {
@@ -2415,7 +2587,10 @@ class DatabaseService {
   static Future<List<Map<String, dynamic>>> getPurchaseHistory({
     int? storeId,
     int? supplierId,
+    String? category,
     DateTime? date,
+    DateTime? fromDate,
+    DateTime? toDate,
   }) async {
     final db = await database;
     final conditions = <String>[];
@@ -2429,9 +2604,30 @@ class DatabaseService {
       conditions.add('pu.supplier_id = ?');
       args.add(supplierId);
     }
+    if (category != null && category.trim().isNotEmpty) {
+      conditions.add('''EXISTS (
+        SELECT 1
+        FROM purchase_items pi_filter
+        INNER JOIN products p_filter
+          ON p_filter.id = pi_filter.product_id
+        LEFT JOIN categories c_filter
+          ON c_filter.id = p_filter.category_id
+        WHERE pi_filter.purchase_id = pu.id
+          AND COALESCE(c_filter.name, '') LIKE ?
+      )''');
+      args.add('%${category.trim()}%');
+    }
     if (date != null) {
       conditions.add('pu.date LIKE ?');
       args.add('${date.toIso8601String().split('T').first}%');
+    }
+    if (fromDate != null) {
+      conditions.add('pu.date >= ?');
+      args.add(fromDate.toIso8601String());
+    }
+    if (toDate != null) {
+      conditions.add('pu.date < ?');
+      args.add(toDate.toIso8601String());
     }
 
     final whereClause = conditions.isEmpty
@@ -2439,7 +2635,8 @@ class DatabaseService {
         : 'WHERE ${conditions.join(' AND ')}';
 
     return db.rawQuery('''
-      SELECT pu.id, pu.date, pu.total,
+            SELECT pu.id, pu.date, pu.total,
+              pu.invoice_number, pu.payment_method,
              st.name AS store_name,
              COALESCE(sp.name, 'Sin proveedor') AS supplier_name
       FROM purchases pu
@@ -2466,32 +2663,82 @@ class DatabaseService {
     );
   }
 
-  static Future<Map<String, dynamic>> getReportsSnapshot() async {
+  static Future<Map<String, dynamic>> getReportsSnapshot({
+    DateTime? fromDate,
+    DateTime? toDate,
+  }) async {
     final db = await database;
     final now = DateTime.now();
-    final dayStart = DateTime(now.year, now.month, now.day).toIso8601String();
+    final dayStart = DateTime(now.year, now.month, now.day);
+    final from = fromDate != null
+        ? DateTime(fromDate.year, fromDate.month, fromDate.day)
+        : dayStart;
+    final to = toDate != null
+        ? DateTime(toDate.year, toDate.month, toDate.day, 23, 59, 59, 999)
+        : DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+
+    final salesArgs = <dynamic>[];
+    String salesWhere = 'WHERE 1 = 1';
+    if (fromDate != null) {
+      salesWhere += ' AND date >= ?';
+      salesArgs.add(from.toIso8601String());
+    }
+    if (toDate != null) {
+      salesWhere += ' AND date <= ?';
+      salesArgs.add(to.toIso8601String());
+    }
 
     final salesToday = await db.rawQuery(
-      'SELECT COUNT(*) AS sales_count, COALESCE(SUM(total), 0) AS total FROM sales WHERE date >= ?',
-      [dayStart],
+      'SELECT COUNT(*) AS sales_count, COALESCE(SUM(total), 0) AS total FROM sales $salesWhere',
+      salesArgs,
     );
+
+    final storeArgs = <dynamic>[];
+    String storeWhere = '';
+    if (fromDate != null) {
+      storeWhere += 'sa.date >= ?';
+      storeArgs.add(from.toIso8601String());
+    }
+    if (toDate != null) {
+      if (storeWhere.isNotEmpty) {
+        storeWhere += ' AND ';
+      }
+      storeWhere += 'sa.date <= ?';
+      storeArgs.add(to.toIso8601String());
+    }
 
     final salesByStore = await db.rawQuery('''
       SELECT st.name, COUNT(sa.id) AS sales_count, COALESCE(SUM(sa.total), 0) AS total
       FROM stores st
-      LEFT JOIN sales sa ON sa.store_id = st.id
+      LEFT JOIN sales sa ON sa.store_id = st.id ${storeWhere.isEmpty ? '' : 'AND $storeWhere'}
       GROUP BY st.id, st.name
       ORDER BY total DESC, st.name ASC
-    ''');
+    ''', storeArgs);
+
+    final productArgs = <dynamic>[];
+    String productWhere = '';
+    if (fromDate != null) {
+      productWhere += 's.date >= ?';
+      productArgs.add(from.toIso8601String());
+    }
+    if (toDate != null) {
+      if (productWhere.isNotEmpty) {
+        productWhere += ' AND ';
+      }
+      productWhere += 's.date <= ?';
+      productArgs.add(to.toIso8601String());
+    }
 
     final topProducts = await db.rawQuery('''
       SELECT p.name, COALESCE(SUM(si.quantity), 0) AS units, COALESCE(SUM(si.quantity * si.price), 0) AS revenue
       FROM sale_items si
       INNER JOIN products p ON p.id = si.product_id
+      INNER JOIN sales s ON s.id = si.sale_id
+      ${productWhere.isEmpty ? '' : 'WHERE $productWhere'}
       GROUP BY p.id, p.name
       ORDER BY units DESC, revenue DESC
       LIMIT 10
-    ''');
+    ''', productArgs);
 
     return {
       'salesToday': salesToday.isNotEmpty
@@ -2505,6 +2752,57 @@ class DatabaseService {
   static bool get isOpen => _database != null && _database!.isOpen;
 
   static Future<void> closeDatabase() async => close();
+
+  static Future<int> insertAuditLog(Map<String, dynamic> values) async {
+    final db = await database;
+    return db.insert('audit_logs', values);
+  }
+
+  static Future<List<Map<String, dynamic>>> getAuditLogs({
+    String? search,
+    String? userId,
+    String? action,
+    String? module,
+    String? entity,
+    DateTime? from,
+    DateTime? to,
+    bool? success,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final db = await database;
+    final conditions = <String>[];
+    final args = <Object?>[];
+
+    void add(String condition, Object? value) {
+      conditions.add(condition);
+      args.add(value);
+    }
+
+    if (search?.trim().isNotEmpty == true) {
+      final value = '%${search!.trim()}%';
+      conditions.add(
+        '(user_name LIKE ? OR user_email LIKE ? OR action LIKE ? OR module LIKE ? OR entity LIKE ? OR description LIKE ?)',
+      );
+      args.addAll([value, value, value, value, value, value]);
+    }
+    if (userId != null) add('user_id = ?', userId);
+    if (action != null) add('action = ?', action);
+    if (module != null) add('module = ?', module);
+    if (entity != null) add('entity = ?', entity);
+    if (from != null) add('created_at >= ?', from.toUtc().toIso8601String());
+    if (to != null) add('created_at <= ?', to.toUtc().toIso8601String());
+    if (success != null) add('success = ?', success ? 1 : 0);
+
+    return db.query(
+      'audit_logs',
+      where: conditions.isEmpty ? null : conditions.join(' AND '),
+      whereArgs: args,
+      orderBy: 'created_at DESC, id DESC',
+      limit: limit,
+      offset: offset,
+    );
+  }
 
   static Future<List<Map<String, dynamic>>> rawQuery(
     String sql, [
@@ -2560,7 +2858,26 @@ class DatabaseService {
     }
   }
 
-  // Backup y restauración eliminados del servicio.
+  static Future<bool> createManualBackup({String? customName}) async {
+    try {
+      return await BackupService.createBackup(customName: customName);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> restoreFromBackup(String backupName) async {
+    try {
+      await closeDatabase();
+      final result = await BackupService.restoreFromBackup(backupName);
+      if (result) {
+        await reopen();
+      }
+      return result;
+    } catch (_) {
+      return false;
+    }
+  }
 
   // ─────────────────────────────────────────────
   // MeTODOS DE PAGO
@@ -2571,6 +2888,13 @@ class DatabaseService {
     return db.rawQuery(
       'SELECT id, name, is_cash FROM payment_methods ORDER BY id',
     );
+  }
+
+  static Future<String> getNextPurchaseInvoiceNumber() async {
+    final db = await database;
+    final rows = await db.rawQuery('SELECT COUNT(*) AS total FROM purchases');
+    final next = ((rows.first['total'] as num?)?.toInt() ?? 0) + 1;
+    return next.toString().padLeft(8, '0');
   }
 
   // ─────────────────────────────────────────────

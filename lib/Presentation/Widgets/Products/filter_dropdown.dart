@@ -1,5 +1,5 @@
-import 'package:tienda/Presentation/Utils/Colors.dart';
 import 'package:flutter/material.dart';
+import 'shared_inputs.dart';
 
 class FilterDropdown<T> extends StatelessWidget {
   const FilterDropdown({
@@ -11,7 +11,7 @@ class FilterDropdown<T> extends StatelessWidget {
   });
 
   final String label;
-  final T value;
+  final T? value;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?> onChanged;
 
@@ -22,43 +22,19 @@ class FilterDropdown<T> extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
       ),
       child: DropdownButtonFormField<T>(
+        elevation: 5,
         isExpanded: true,
         value: value,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: AppColors.primaryBlue,
-              width: 1.5,
-            ),
-          ),
-          filled: true,
-          fillColor: Colors.white,
+        style: const TextStyle(fontSize: 15, color: Colors.black87),
+        dropdownColor: Colors.white,
+        decoration: filterFieldDecoration(hint: label),
+        icon: Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Colors.grey.shade400,
+          size: 22,
         ),
-        icon: const Icon(Icons.keyboard_arrow_down_rounded),
         items: items,
         onChanged: onChanged,
       ),

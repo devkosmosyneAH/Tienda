@@ -1,5 +1,6 @@
 import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:tienda/Presentation/Services/audit_service.dart';
 
 class PosController extends ChangeNotifier {
   PosController() {
@@ -340,6 +341,14 @@ class PosController extends ChangeNotifier {
             },
           )
           .toList(),
+    );
+
+    await AuditService.log(
+      action: AuditAction.createSale, module: 'POS', page: 'POSView',
+      entity: 'sale', entityId: saleId,
+      newData: {'sale_id': saleId, 'total': saleTotal, 'customer_id': selectedCustomerId,
+        'products': cart, 'payment_method': normalizedPayments.map((p) => p['method_name']).toList()},
+      controller: 'PosController',
     );
 
     cart.clear();

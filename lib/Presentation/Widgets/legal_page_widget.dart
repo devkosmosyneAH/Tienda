@@ -31,78 +31,79 @@ class LegalPageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.primaryLogo,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Regresar',
-          onPressed: () => Navigator.of(context).pop(),
+    return SelectionArea(
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: AppColors.primaryLogo,
+          foregroundColor: Colors.white,
+          leading: const BackButton(),
+          title: Row(
+            children: [
+              Icon(_icon, size: 20),
+              const SizedBox(width: 10),
+              Text(
+                _title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
-        title: Row(
+        body: Column(
           children: [
-            Icon(_icon, size: 20),
-            const SizedBox(width: 10),
-            Text(
-              _title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            // Fecha de vigencia
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 13,
+                    color: AppColors.mediumGray,
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Última actualización: 17 de abril de 2026',
+                    style: TextStyle(fontSize: 11, color: AppColors.mediumGray),
+                  ),
+                ],
+              ),
+            ),
+            Divider(
+              color: AppColors.greyOverlay.withValues(alpha: 0.4),
+              height: 1,
+              indent: 20,
+              endIndent: 20,
+            ),
+
+            // Contenido
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
+                itemCount: _sections.length,
+                itemBuilder: (_, i) => _SectionTile(section: _sections[i]),
+              ),
+            ),
+
+            // Pie
+            Container(
+              color: AppColors.primaryLogo,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+              width: double.infinity,
+              child: const Text(
+                '© 2026 Bazar & Tienda Nicole · Todos los derechos reservados',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white54, fontSize: 11),
+              ),
             ),
           ],
         ),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          // Fecha de vigencia
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.calendar_today_outlined,
-                  size: 13,
-                  color: AppColors.mediumGray,
-                ),
-                const SizedBox(width: 6),
-                const Text(
-                  'Última actualización: 17 de abril de 2026',
-                  style: TextStyle(fontSize: 11, color: AppColors.mediumGray),
-                ),
-              ],
-            ),
-          ),
-          Divider(
-            color: AppColors.greyOverlay.withValues(alpha: 0.4),
-            height: 1,
-            indent: 20,
-            endIndent: 20,
-          ),
-
-          // Contenido
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              itemCount: _sections.length,
-              itemBuilder: (_, i) => _SectionTile(section: _sections[i]),
-            ),
-          ),
-
-          // Pie
-          Container(
-            color: AppColors.primaryLogo,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-            width: double.infinity,
-            child: const Text(
-              '© 2026 Tienda · Todos los derechos reservados',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 11),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -203,7 +204,7 @@ const List<_LegalSection> _termsSections = [
   _LegalSection(
     '01',
     'Aceptación de los términos',
-    'Al acceder y utilizar el catálogo web de Tienda (en adelante "el Sitio"), usted acepta cumplir y quedar vinculado a los presentes Términos y Condiciones. Si no está de acuerdo con alguna parte de estos términos, le pedimos que no utilice el Sitio.',
+    'Al acceder y utilizar el catálogo web de Bazar & Tienda Nicole (en adelante "el Sitio"), usted acepta cumplir y quedar vinculado a los presentes Términos y Condiciones. Si no está de acuerdo con alguna parte de estos términos, le pedimos que no utilice el Sitio.',
   ),
   _LegalSection(
     '02',
@@ -213,7 +214,7 @@ const List<_LegalSection> _termsSections = [
   _LegalSection(
     '03',
     'Propiedad intelectual',
-    'Todos los contenidos del Sitio —incluyendo textos, imágenes, logotipos, diseño y código fuente— son propiedad de Tienda o de sus respectivos propietarios y están protegidos por las leyes de propiedad intelectual vigentes en Ecuador. Queda prohibida su reproducción total o parcial sin autorización expresa.',
+    'Todos los contenidos del Sitio —incluyendo textos, imágenes, logotipos, diseño y código fuente— son propiedad de Bazar & Tienda Nicole o de sus respectivos propietarios y están protegidos por las leyes de propiedad intelectual vigentes en Ecuador. Queda prohibida su reproducción total o parcial sin autorización expresa.',
   ),
   _LegalSection(
     '04',
@@ -223,17 +224,17 @@ const List<_LegalSection> _termsSections = [
   _LegalSection(
     '05',
     'Exactitud de la información',
-    'Tienda realiza todos los esfuerzos razonables para mantener la información del catálogo actualizada y precisa. Sin embargo, no garantizamos que toda la información esté libre de errores. Ante cualquier discrepancia, la información del establecimiento físico prevalece.',
+    'Bazar & Tienda Nicole realiza todos los esfuerzos razonables para mantener la información del catálogo actualizada y precisa. Sin embargo, no garantizamos que toda la información esté libre de errores. Ante cualquier discrepancia, la información del establecimiento físico prevalece.',
   ),
   _LegalSection(
     '06',
     'Limitación de responsabilidad',
-    'En la máxima medida permitida por la ley ecuatoriana, Tienda no será responsable por daños directos, indirectos, incidentales o consecuentes derivados del uso o la imposibilidad de usar el Sitio, incluyendo pérdidas de datos o interrupciones del servicio.',
+    'En la máxima medida permitida por la ley ecuatoriana, Bazar & Tienda Nicole no será responsable por daños directos, indirectos, incidentales o consecuentes derivados del uso o la imposibilidad de usar el Sitio, incluyendo pérdidas de datos o interrupciones del servicio.',
   ),
   _LegalSection(
     '07',
     'Enlaces a terceros',
-    'El Sitio puede contener enlaces a sitios de terceros. Tienda no controla ni respalda el contenido de dichos sitios y no asume responsabilidad alguna por sus prácticas o contenidos.',
+    'El Sitio puede contener enlaces a sitios de terceros. Bazar & Tienda Nicole no controla ni respalda el contenido de dichos sitios y no asume responsabilidad alguna por sus prácticas o contenidos.',
   ),
   _LegalSection(
     '08',
@@ -258,7 +259,7 @@ const List<_LegalSection> _privacySections = [
   _LegalSection(
     '01',
     'Responsable del tratamiento',
-    'Tienda, con domicilio en Ecuador, es responsable del tratamiento de los datos personales que usted proporcione al interactuar con este Sitio, de conformidad con la Ley Orgánica de Protección de Datos Personales (LOPDP) y su reglamento.',
+    'Bazar & Tienda Nicole, con domicilio en Ecuador, es responsable del tratamiento de los datos personales que usted proporcione al interactuar con este Sitio, de conformidad con la Ley Orgánica de Protección de Datos Personales (LOPDP) y su reglamento.',
   ),
   _LegalSection(
     '02',
@@ -278,7 +279,7 @@ const List<_LegalSection> _privacySections = [
   _LegalSection(
     '05',
     'Compartición de datos',
-    'No vendemos, alquilamos ni compartimos sus datos personales con terceros con fines comerciales. Los datos pueden ser accedidos únicamente por:\n• Personal autorizado de Tienda.\n• Proveedores de servicios técnicos (p.ej. Google Firebase) sujetos a contratos de confidencialidad y políticas de privacidad propias.',
+    'No vendemos, alquilamos ni compartimos sus datos personales con terceros con fines comerciales. Los datos pueden ser accedidos únicamente por:\n• Personal autorizado de Bazar & Tienda Nicole.\n• Proveedores de servicios técnicos (p.ej. Google Firebase) sujetos a contratos de confidencialidad y políticas de privacidad propias.',
   ),
   _LegalSection(
     '06',

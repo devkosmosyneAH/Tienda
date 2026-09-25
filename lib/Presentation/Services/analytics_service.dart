@@ -8,7 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import 'database_service.dart';
 
 // ============================================================
-// AnalyticsService — Capa OLAP Enterprise para Tienda
+// AnalyticsService — Capa OLAP Enterprise para BazarNicole
 // ============================================================
 // Responsabilidades:
 //  • Leer SOLO las tablas summary_* y analytics_* (OLAP)

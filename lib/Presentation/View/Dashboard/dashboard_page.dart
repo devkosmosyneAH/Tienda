@@ -1,8 +1,11 @@
 import 'package:tienda/Presentation/Services/auth_service.dart';
+import 'package:tienda/Presentation/Controller/cash_controller.dart';
 import 'package:tienda/Presentation/View/Auth/app_routes.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
+import 'package:tienda/Presentation/Widgets/cash_stores_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -16,13 +19,13 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _currentUser;
   bool _isLoading = true;
   int _selectedIndex = 0;
-  final bool _hayCajaAbierta = false;
 
   final Map<String, String> _cardRoutes = {
     'Ventas': AppRoutes.pos,
     'Compras': AppRoutes.purchases,
     'Inventario': AppRoutes.inventory,
     'Productos': AppRoutes.products,
+    'Categorías': AppRoutes.categories,
     'Clientes': AppRoutes.customers,
     'Caja': AppRoutes.cash,
     'Reportes': AppRoutes.reports,
@@ -35,6 +38,9 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _loadCurrentUser();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CashController>().initialize();
+    });
   }
 
   Future<void> _loadCurrentUser() async {
@@ -76,7 +82,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return cards;
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(CashController cashController) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     return PreferredSize(
       preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -126,57 +132,18 @@ class _DashboardPageState extends State<DashboardPage> {
                 margin: const EdgeInsets.only(right: 16),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _hayCajaAbierta ? Colors.green : Colors.red,
+                  color: Colors.black26,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: isMobile
-                    ? _mobileapp()
-                    : Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _hayCajaAbierta ? Icons.check_circle : Icons.lock,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _hayCajaAbierta ? 'Caja Abierta' : 'Caja Cerrada',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                child: CashStoresStatus(
+                  controller: cashController,
+                  isMobile: isMobile,
+                ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _mobileapp() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          _hayCajaAbierta ? Icons.check_circle : Icons.lock,
-          color: Colors.white,
-          size: 16,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          _hayCajaAbierta ? 'Caja Abierta' : 'Caja Cerrada',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
     );
   }
 
@@ -249,42 +216,45 @@ class _DashboardPageState extends State<DashboardPage> {
     final role = _currentUser?['role'] ?? 'user';
     final cards = _buildCardsForRole(role);
 
-    return Scaffold(
-      backgroundColor: AppColors.lightGray,
-      appBar: _buildAppBar(),
-      drawer: _buildDrawer(),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: GridView.builder(
-              itemCount: cards.length,
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 200,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childAspectRatio: 1,
-              ),
-              itemBuilder: (context, index) => cards[index]
-                  .animate()
-                  .fadeIn(
-                    delay: Duration(milliseconds: 60 * index),
-                    duration: 350.ms,
-                  )
-                  .slideY(
-                    begin: 0.2,
-                    end: 0,
-                    delay: Duration(milliseconds: 60 * index),
-                    duration: 350.ms,
-                    curve: Curves.easeOut,
+    return Consumer<CashController>(
+      builder: (context, cashController, _) {
+        return Scaffold(
+          backgroundColor: AppColors.lightGray,
+          appBar: _buildAppBar(cashController),
+          drawer: _buildDrawer(),
+          body: IndexedStack(
+            index: _selectedIndex,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GridView.builder(
+                  itemCount: cards.length,
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 200,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1,
                   ),
-            ),
+                  itemBuilder: (context, index) => cards[index]
+                      .animate()
+                      .fadeIn(
+                        delay: Duration(milliseconds: 60 * index),
+                        duration: 350.ms,
+                      )
+                      .slideY(
+                        begin: 0.2,
+                        end: 0,
+                        delay: Duration(milliseconds: 60 * index),
+                        duration: 350.ms,
+                        curve: Curves.easeOut,
+                      ),
+                ),
+              ),
+              Center(child: Text('Perfil: ${_currentUser?['name'] ?? ''}')),
+            ],
           ),
-          // Perfil: placeholder hasta que exista la pantalla real
-          Center(child: Text('Perfil: ${_currentUser?['name'] ?? ''}')),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -296,6 +266,8 @@ class _DashboardPageState extends State<DashboardPage> {
         return Icons.shopping_bag_outlined;
       case 'Productos':
         return Icons.inventory_2_outlined;
+      case 'Categorías':
+        return Icons.category_outlined;
       case 'Inventario':
         return Icons.storefront_outlined;
       case 'Clientes':

@@ -55,33 +55,19 @@ class GalleryThumbnail extends StatelessWidget {
                         ]
                       : null,
                 ),
-                child: _buildImage(imageUrl),
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const ColoredBox(
+                    color: Color(0xFF242424),
+                    child: Icon(Icons.broken_image_outlined,
+                        color: Colors.white54),
+                  ),
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildImage(String imageUrl) {
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const ColoredBox(
-          color: Color(0xFF242424),
-          child: Icon(Icons.broken_image_outlined, color: Colors.white54),
-        ),
-      );
-    }
-
-    return Image.asset(
-      imageUrl,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const ColoredBox(
-        color: Color(0xFF242424),
-        child: Icon(Icons.broken_image_outlined, color: Colors.white54),
       ),
     );
   }

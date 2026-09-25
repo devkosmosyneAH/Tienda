@@ -1,5 +1,6 @@
 import 'package:tienda/Presentation/Controller/pos_controller.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
+import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -106,124 +107,34 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                   child: Column(
                     children: [
-                      TextField(
+                      SharedTextField(
                         controller: _codeController,
                         autofocus: true,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: AppColors.whiteOverlay,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: AppColors.whiteOverlay,
-                              width: 1.5,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: AppColors.whiteOverlay,
-                              width: 1.5,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(
-                              color: AppColors.whiteOverlay,
-                              width: 1.5,
-                            ),
-                          ),
-                          hintText:
-                              'Buscar por código, código auxiliar o código de barras...',
-                          prefixIcon: Icon(Icons.search),
-
-                          isDense: true,
-                        ),
+                        hint:
+                            'Buscar por código, código auxiliar o código de barras...',
+                        prefixIcon: const Icon(Icons.search),
+                        useFilterStyle: true,
                         onChanged: _updateSearch,
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
-                            child: TextField(
+                            child: SharedTextField(
                               controller: _nameController,
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: AppColors.whiteOverlay,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                    color: AppColors.whiteOverlay,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                    color: AppColors.whiteOverlay,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                    color: AppColors.whiteOverlay,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                hintText: 'Buscar por Producto...',
-                                prefixIcon: Icon(Icons.search, size: 18),
-
-                                isDense: true,
-                              ),
+                              hint: 'Buscar por Producto...',
+                              prefixIcon: const Icon(Icons.search, size: 18),
+                              useFilterStyle: true,
                               onChanged: _updateSearch,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: TextField(
+                            child: SharedTextField(
                               controller: _descController,
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: AppColors.whiteOverlay,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                    color: AppColors.whiteOverlay,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                    color: AppColors.whiteOverlay,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                    color: AppColors.whiteOverlay,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                hintText: 'Buscar por Descripción...',
-                                prefixIcon: Icon(Icons.search, size: 18),
-
-                                isDense: true,
-                              ),
+                              hint: 'Buscar por Descripción...',
+                              prefixIcon: const Icon(Icons.search, size: 18),
+                              useFilterStyle: true,
                               onChanged: _updateSearch,
                             ),
                           ),

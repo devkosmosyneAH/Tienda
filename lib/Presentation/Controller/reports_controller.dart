@@ -8,6 +8,8 @@ class ReportsController extends ChangeNotifier {
 
   bool isLoading = false;
   String? errorMessage;
+  DateTime? selectedFromDate;
+  DateTime? selectedToDate;
 
   Map<String, dynamic> salesToday = const {};
   List<Map<String, dynamic>> salesByStore = [];
@@ -29,7 +31,19 @@ class ReportsController extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    if (isLoading || salesByStore.isNotEmpty || topProducts.isNotEmpty) return;
+    if (isLoading) return;
+    await loadReports();
+  }
+
+  Future<void> setDateRange({DateTime? fromDate, DateTime? toDate}) async {
+    selectedFromDate = fromDate;
+    selectedToDate = toDate;
+    await loadReports();
+  }
+
+  Future<void> clearDateRange() async {
+    selectedFromDate = null;
+    selectedToDate = null;
     await loadReports();
   }
 
@@ -39,7 +53,10 @@ class ReportsController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final snapshot = await DatabaseService.getReportsSnapshot();
+      final snapshot = await DatabaseService.getReportsSnapshot(
+        fromDate: selectedFromDate,
+        toDate: selectedToDate,
+      );
       salesToday = Map<String, dynamic>.from(
         snapshot['salesToday'] as Map<String, dynamic>,
       );

@@ -1,4 +1,4 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:io';
 import 'package:tienda/Presentation/View/Auth/app_routes.dart';
 import 'package:tienda/Presentation/Services/auth_service.dart';
 import 'package:tienda/Presentation/Services/database_service.dart';
@@ -6,16 +6,18 @@ import 'package:tienda/Presentation/Services/background_job_service.dart';
 import 'package:tienda/Presentation/Services/database_maintenance_service.dart';
 import 'package:tienda/Presentation/Services/database_config.dart';
 import 'package:tienda/Presentation/Services/database_location_service.dart';
-import 'package:tienda/Presentation/Services/app_io.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
-import 'package:tienda/Presentation/display/database_initializer.dart';
-import 'dart:async';
-
+import 'package:tienda/Presentation/display/database_initializer_native.dart';
+import 'package:tienda/Presentation/display/window_manager_initializer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tienda/Presentation/Controller/Catalog/catalog_controller.dart';
+import 'package:tienda/Presentation/View/Catalog/catalog_repository.dart';
+import 'package:tienda/Presentation/View/Catalog/drive_catalog_repository.dart';
+import 'package:tienda/Presentation/View/Catalog/catalog_router.dart';
 import 'package:tienda/Presentation/Controller/auth_provider.dart';
 import 'package:tienda/Presentation/Controller/product_management_controller.dart';
 import 'package:tienda/Presentation/Controller/cash_controller.dart';
@@ -25,9 +27,10 @@ import 'package:tienda/Presentation/Controller/purchases_controller.dart';
 import 'package:tienda/Presentation/Controller/reports_controller.dart';
 import 'package:tienda/Presentation/Context/providers.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:tienda/Presentation/display/window_manager_initializer.dart';
-import 'package:tienda/controllers/local_server_controller.dart';
-import 'package:tienda/updater/update_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:tienda/Presentation/Services/catalog_sync_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -37,11 +40,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    await dotenv.load(fileName: "assets/env.txt");
-  } catch (e) {
-    debugPrint(e.toString());
-  }
+  await dotenv.load(fileName: "assets/env.txt");
 
   // 🌍 INICIALIZAR LOCALIZACIÓN PARA FECHAS
   await initializeDateFormatting('es', null);
@@ -56,6 +55,15 @@ Future<void> main() async {
   // 🗄️ INICIALIZAR BASE DE DATOS DE FORMA SEGURA
   await _initDatabaseSafely();
 
+  if (!kIsWeb) {
+    final appSupportDirectory = await getApplicationSupportDirectory();
+    CatalogSyncService.initialize(
+      exportDir: p.join(appSupportDirectory.path, 'catalog'),
+      gitRepoPath: appSupportDirectory.path,
+      dataDir: appSupportDirectory.path,
+    );
+  }
+
   // 🔄 INICIAR MOTOR DE BACKGROUND JOBS + MANTENIMIENTO (OLAP analytics)
   if (!kIsWeb) {
     final jobService = BackgroundJobService();
@@ -64,22 +72,19 @@ Future<void> main() async {
 
     // 🛠️ Motor de mantenimiento SQLite enterprise (cada 6h)
     DatabaseMaintenanceService().startPeriodicMaintenance(intervalHours: 6);
-
-    // 🧭 Iniciar servidor local para el nuevo motor de acceso por HTTP/WebSocket
-    final localServerController = LocalServerController();
-    await localServerController.initialize();
-
-    // 🔄 Comprobar actualizaciones del frontend web de forma no intrusiva
-    unawaited(
-      UpdateService.checkForUpdates().then((hasUpdate) async {
-        if (hasUpdate) {
-          await UpdateService.downloadAndApplyUpdate();
-        }
-      }),
-    );
   }
 
   // 🌐 Web: siempre muestra el catálogo público, sin autenticación
+  if (kIsWeb) {
+    final controller = CatalogController(
+      repository: CatalogRepository(
+        driveRepository: const DriveCatalogRepository(),
+      ),
+    );
+    final router = CatalogRouter.createRouter(controller: controller);
+    runApp(WebCatalogApp(router: router));
+    return;
+  }
 
   // 🖥️ Desktop / Móvil: flujo normal con login
   try {
@@ -98,7 +103,12 @@ Future<void> main() async {
 Future<void> _initDatabaseSafely() async {
   if (kIsWeb) return; // Web no usa SQLite local
   try {
-    await DatabaseService.database;
+    // Para iOS/Android, usar el DatabaseService compartido.
+    if (Platform.isIOS || Platform.isAndroid) {
+      await DatabaseService.database;
+    } else {
+      await DatabaseService.database;
+    }
   } catch (e) {
     // Intentar método fallback más seguro
     await _safeFallbackDatabaseInit();
@@ -111,16 +121,16 @@ Future<void> _safeFallbackDatabaseInit() async {
   if (kIsWeb) return; // Web no usa SQLite local
   try {
     final dbPath = await DatabaseLocationService.getDatabasePath();
-    final dbFile = AppIO();
+    final File dbFile = File(dbPath);
 
-    if (await dbFile.fileExists(dbPath)) {
+    if (await dbFile.exists()) {
       try {
         debugPrint('Opening database:');
         debugPrint(dbPath);
         await DatabaseService.database;
         return;
       } catch (e) {
-        await dbFile.deleteFile(dbPath);
+        await dbFile.delete();
       }
     }
 
@@ -131,7 +141,7 @@ Future<void> _safeFallbackDatabaseInit() async {
         data.lengthInBytes,
       );
 
-      await dbFile.writeBytes(dbPath, bytes);
+      await dbFile.writeAsBytes(bytes, flush: true);
       debugPrint('Opening database:');
       debugPrint(dbPath);
       await DatabaseService.database;
@@ -162,7 +172,7 @@ class MyApp extends StatelessWidget {
         ...AppProviders.getProviders(),
       ],
       child: MaterialApp(
-        title: 'Tienda',
+        title: 'Bazar & Tienda',
         theme: ThemeData(
           primaryColor: AppColors.primaryLogo,
           useMaterial3: true,
@@ -202,7 +212,7 @@ class WebCatalogApp extends StatelessWidget {
         ...AppProviders.getProviders(),
       ],
       child: MaterialApp.router(
-        title: 'Tienda',
+        title: 'Bazar & Tienda',
         theme: ThemeData(
           primaryColor: AppColors.primaryLogo,
           useMaterial3: true,

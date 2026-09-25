@@ -38,14 +38,20 @@ Future<void> showEditProductDialog(
     text: ((item['profit_iva'] as num?)?.toDouble() ?? 0).toStringAsFixed(2),
   );
 
+  int? editStoreId = item['store_id'] != null
+      ? (item['store_id'] as num).toInt()
+      : null;
   List<String> editImages =
       item['images'] != null && (item['images'] as String).isNotEmpty
       ? (item['images'] as String).split(',')
       : [];
   bool isUploadingEditImages = false;
   bool isSavingEdit = false;
-  final editStockController = TextEditingController(
-    text: ((item['total_stock'] as num?)?.toInt() ?? 0).toString(),
+  final bazarStockController = TextEditingController(
+    text: ((item['stock_bazar'] as num?)?.toInt() ?? 0).toString(),
+  );
+  final tiendaStockController = TextEditingController(
+    text: ((item['stock_tienda'] as num?)?.toInt() ?? 0).toString(),
   );
 
   await showDialog<void>(
@@ -53,6 +59,26 @@ Future<void> showEditProductDialog(
     builder: (ctx) {
       return StatefulBuilder(
         builder: (ctx, setDialogState) {
+          void recalculateSalePrice() {
+            double parse(TextEditingController field) =>
+                double.tryParse(field.text.trim().replaceAll(',', '.')) ?? 0;
+
+            final cost = parse(costPriceController);
+            final governmentTax = parse(ivaRateController);
+            final profit = parse(profitIvaController);
+            final salePrice =
+                cost * (1 + governmentTax / 100) * (1 + profit / 100);
+
+            setDialogState(() {
+              priceController.value = TextEditingValue(
+                text: salePrice.toStringAsFixed(2),
+                selection: TextSelection.collapsed(
+                  offset: salePrice.toStringAsFixed(2).length,
+                ),
+              );
+            });
+          }
+
           return Dialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
@@ -117,7 +143,7 @@ Future<void> showEditProductDialog(
                   // Body
                   Flexible(
                     child: Container(
-                      color: AppColors.whiteOverlay,
+                      color: AppColors.lightGray,
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.all(24),
                         child: Column(
@@ -126,11 +152,9 @@ Future<void> showEditProductDialog(
                             formSection(
                               title: 'Información básica',
                               children: [
-                                TextField(
+                                SharedTextField(
                                   controller: nameController,
-                                  decoration: modernInput(
-                                    label: 'Nombre del producto',
-                                  ),
+                                  label: 'Nombre del producto',
                                 ),
                                 const SizedBox(height: 12),
                                 DropdownButtonFormField<String?>(
@@ -158,38 +182,32 @@ Future<void> showEditProductDialog(
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: TextField(
+                                      child: SharedTextField(
                                         controller: skuController,
-                                        decoration: modernInput(label: 'SKU'),
+                                        label: 'SKU',
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
-                                      child: TextField(
+                                      child: SharedTextField(
                                         controller: auxCodeController,
-                                        decoration: modernInput(
-                                          label: 'Código auxiliar',
-                                        ),
+                                        label: 'Código auxiliar',
                                       ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                TextField(
+                                SharedTextField(
                                   controller: descriptionController,
                                   maxLines: 3,
-                                  decoration: modernInput(
-                                    label: 'Descripción',
-                                    hint: 'Describe el producto...',
-                                  ),
+                                  label: 'Descripción',
+                                  hint: 'Describe el producto...',
                                 ),
                                 const SizedBox(height: 12),
-                                TextField(
+                                SharedTextField(
                                   controller: tagsController,
-                                  decoration: modernInput(
-                                    label: 'Etiquetas',
-                                    hint: 'Ej: oferta, nuevo, importado',
-                                  ),
+                                  label: 'Etiquetas',
+                                  hint: 'Ej: oferta, nuevo, importado',
                                 ),
                               ],
                             ),
@@ -202,30 +220,29 @@ Future<void> showEditProductDialog(
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: TextField(
+                                      child: SharedTextField(
                                         controller: priceController,
+                                        readOnly: true,
                                         keyboardType:
                                             const TextInputType.numberWithOptions(
                                               decimal: true,
                                             ),
-                                        decoration: modernInput(
-                                          label: 'Precio de venta',
-                                          prefix: '\$',
-                                        ),
+                                        label: 'Precio de venta',
+                                        prefix: '\$',
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
-                                      child: TextField(
+                                      child: SharedTextField(
                                         controller: costPriceController,
                                         keyboardType:
                                             const TextInputType.numberWithOptions(
                                               decimal: true,
                                             ),
-                                        decoration: modernInput(
-                                          label: 'Precio de compra',
-                                          prefix: '\$',
-                                        ),
+                                        onChanged: (_) =>
+                                            recalculateSalePrice(),
+                                        label: 'Precio de compra',
+                                        prefix: '\$',
                                       ),
                                     ),
                                   ],
@@ -234,30 +251,30 @@ Future<void> showEditProductDialog(
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: TextField(
+                                      child: SharedTextField(
                                         controller: ivaRateController,
                                         keyboardType:
                                             const TextInputType.numberWithOptions(
                                               decimal: true,
                                             ),
-                                        decoration: modernInput(
-                                          label: 'IVA gubernamental',
-                                          suffix: '%',
-                                        ),
+                                        onChanged: (_) =>
+                                            recalculateSalePrice(),
+                                        label: 'IVA gubernamental',
+                                        suffix: '%',
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
-                                      child: TextField(
+                                      child: SharedTextField(
                                         controller: profitIvaController,
                                         keyboardType:
                                             const TextInputType.numberWithOptions(
                                               decimal: true,
                                             ),
-                                        decoration: modernInput(
-                                          label: 'IVA ganancia',
-                                          suffix: '%',
-                                        ),
+                                        onChanged: (_) =>
+                                            recalculateSalePrice(),
+                                        label: 'IVA ganancia',
+                                        suffix: '%',
                                       ),
                                     ),
                                   ],
@@ -267,7 +284,53 @@ Future<void> showEditProductDialog(
                             const SizedBox(height: 24),
                             Divider(color: Colors.grey.shade100),
                             const SizedBox(height: 24),
-
+                            formSection(
+                              title: 'Local e inventario',
+                              children: [
+                                DropdownButtonFormField<int?>(
+                                  value: editStoreId,
+                                  decoration: modernInput(
+                                    label: 'Local principal',
+                                  ),
+                                  items: [
+                                    const DropdownMenuItem<int?>(
+                                      value: null,
+                                      child: Text('Sin asignar'),
+                                    ),
+                                    ...controller.stores.map((s) {
+                                      final id = (s['id'] as num).toInt();
+                                      return DropdownMenuItem<int?>(
+                                        value: id,
+                                        child: Text(s['name'] as String),
+                                      );
+                                    }),
+                                  ],
+                                  onChanged: (v) =>
+                                      setDialogState(() => editStoreId = v),
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SharedTextField(
+                                        controller: bazarStockController,
+                                        keyboardType: TextInputType.number,
+                                        label: 'Cantidad Bazar',
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: SharedTextField(
+                                        controller: tiendaStockController,
+                                        keyboardType: TextInputType.number,
+                                        label: 'Cantidad Tienda',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
                             Divider(color: Colors.grey.shade100),
                             const SizedBox(height: 24),
                             formSection(
@@ -626,100 +689,64 @@ Future<void> showEditProductDialog(
                                   try {
                                     final productId = (item['id'] as num)
                                         .toInt();
-                                    final stockValue =
-                                        int.tryParse(
-                                          editStockController.text,
-                                        ) ??
-                                        0;
                                     final stockByStore = <int, int>{};
-                                    if (controller.stores.isNotEmpty) {
-                                      final selectedStoreId =
-                                          (controller.stores.first['id'] as num)
-                                              .toInt();
-                                      stockByStore[selectedStoreId] =
-                                          stockValue;
-                                      await controller.updateProductWithStock(
-                                        productId: productId,
-                                        name: nameController.text,
-                                        category: editCategory ?? '',
-                                        sku: skuController.text,
-                                        auxCode: auxCodeController.text,
-                                        description: descriptionController.text,
-                                        tags: tagsController.text,
-                                        price:
-                                            double.tryParse(
-                                              priceController.text.replaceAll(
-                                                ',',
-                                                '.',
-                                              ),
-                                            ) ??
-                                            0,
-                                        costPrice:
-                                            double.tryParse(
-                                              costPriceController.text
-                                                  .replaceAll(',', '.'),
-                                            ) ??
-                                            0,
-                                        ivaRate:
-                                            double.tryParse(
-                                              ivaRateController.text.replaceAll(
-                                                ',',
-                                                '.',
-                                              ),
-                                            ) ??
-                                            0,
-                                        profitIva:
-                                            double.tryParse(
-                                              profitIvaController.text
-                                                  .replaceAll(',', '.'),
-                                            ) ??
-                                            0,
-                                        storeId: selectedStoreId,
-                                        images: editImages,
-                                        stockByStore: stockByStore,
-                                      );
-                                    } else {
-                                      await controller.updateProductWithStock(
-                                        productId: productId,
-                                        name: nameController.text,
-                                        category: editCategory ?? '',
-                                        sku: skuController.text,
-                                        auxCode: auxCodeController.text,
-                                        description: descriptionController.text,
-                                        tags: tagsController.text,
-                                        price:
-                                            double.tryParse(
-                                              priceController.text.replaceAll(
-                                                ',',
-                                                '.',
-                                              ),
-                                            ) ??
-                                            0,
-                                        costPrice:
-                                            double.tryParse(
-                                              costPriceController.text
-                                                  .replaceAll(',', '.'),
-                                            ) ??
-                                            0,
-                                        ivaRate:
-                                            double.tryParse(
-                                              ivaRateController.text.replaceAll(
-                                                ',',
-                                                '.',
-                                              ),
-                                            ) ??
-                                            0,
-                                        profitIva:
-                                            double.tryParse(
-                                              profitIvaController.text
-                                                  .replaceAll(',', '.'),
-                                            ) ??
-                                            0,
-                                        storeId: null,
-                                        images: editImages,
-                                        stockByStore: stockByStore,
-                                      );
+                                    for (final store in controller.stores) {
+                                      final sid = (store['id'] as num).toInt();
+                                      final storeName = store['name'] as String;
+                                      stockByStore[sid] = storeName == 'Bazar'
+                                          ? int.tryParse(
+                                                  bazarStockController.text,
+                                                ) ??
+                                                0
+                                          : int.tryParse(
+                                                  tiendaStockController.text,
+                                                ) ??
+                                                0;
                                     }
+                                    await controller.updateProductWithStock(
+                                      productId: productId,
+                                      name: nameController.text,
+                                      category: editCategory ?? '',
+                                      sku: skuController.text,
+                                      auxCode: auxCodeController.text,
+                                      description: descriptionController.text,
+                                      tags: tagsController.text,
+                                      price:
+                                          double.tryParse(
+                                            priceController.text.replaceAll(
+                                              ',',
+                                              '.',
+                                            ),
+                                          ) ??
+                                          0,
+                                      costPrice:
+                                          double.tryParse(
+                                            costPriceController.text.replaceAll(
+                                              ',',
+                                              '.',
+                                            ),
+                                          ) ??
+                                          0,
+                                      ivaRate:
+                                          double.tryParse(
+                                            ivaRateController.text.replaceAll(
+                                              ',',
+                                              '.',
+                                            ),
+                                          ) ??
+                                          0,
+                                      profitIva:
+                                          double.tryParse(
+                                            profitIvaController.text.replaceAll(
+                                              ',',
+                                              '.',
+                                            ),
+                                          ) ??
+                                          0,
+                                      storeId: editStoreId,
+                                      images: editImages,
+                                      stockByStore: stockByStore,
+                                    );
                                     if (!context.mounted) return;
                                     navigator.pop();
                                     hideProgressNotification(context);

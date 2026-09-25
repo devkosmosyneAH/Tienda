@@ -1,6 +1,7 @@
 import 'package:tienda/Presentation/Controller/users_controller.dart';
 import 'package:tienda/Presentation/Model/user_model.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
+import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -222,13 +223,10 @@ class _UserCard extends StatelessWidget {
         title: Text('Cambiar contraseña\n${user.fullName}'),
         content: Form(
           key: formKey,
-          child: TextFormField(
+          child: SharedTextFormField(
             controller: passCtrl,
             obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'Nueva contraseña',
-              border: OutlineInputBorder(),
-            ),
+            label: 'Nueva contraseña',
             validator: (v) => (v == null || v.trim().length < 4)
                 ? 'Mínimo 4 caracteres'
                 : null,
@@ -355,40 +353,31 @@ class _UserFormDialogState extends State<_UserFormDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Nombre
-              TextFormField(
+              SharedTextFormField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre *',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
+                label: 'Nombre *',
+                prefixIcon: const Icon(Icons.person_outline),
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
               ),
               const SizedBox(height: 12),
               // Apellido
-              TextFormField(
+              SharedTextFormField(
                 controller: _lastnameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Apellido',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
+                label: 'Apellido',
+                prefixIcon: const Icon(Icons.person_outline),
               ),
               const SizedBox(height: 12),
               // Email — solo editable al crear
-              TextFormField(
+              SharedTextFormField(
                 controller: _emailCtrl,
                 enabled: !_isEditing,
                 keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Correo *',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  helperText: _isEditing
-                      ? 'El correo no se puede cambiar'
-                      : null,
-                ),
+                label: 'Correo *',
+                prefixIcon: const Icon(Icons.email_outlined),
+                helperText: _isEditing
+                    ? 'El correo no se puede cambiar'
+                    : null,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Campo requerido';
                   if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
@@ -400,14 +389,11 @@ class _UserFormDialogState extends State<_UserFormDialog> {
               const SizedBox(height: 12),
               // Contraseña — solo al crear
               if (!_isEditing)
-                TextFormField(
+                SharedTextFormField(
                   controller: _passCtrl,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Contraseña *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock_outline),
-                  ),
+                  label: 'Contraseña *',
+                  prefixIcon: const Icon(Icons.lock_outline),
                   validator: (v) => (v == null || v.trim().length < 4)
                       ? 'Mínimo 4 caracteres'
                       : null,

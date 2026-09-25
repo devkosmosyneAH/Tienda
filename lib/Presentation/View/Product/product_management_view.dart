@@ -12,6 +12,7 @@ import '../../Widgets/Products/shared_inputs.dart';
 // Shared helpers are in widgets/shared_inputs.dart; widget-specific imports kept below
 import '../../Widgets/Products/new_product_drawer.dart';
 import '../../Widgets/Products/edit_product_dialog.dart';
+import '../../Widgets/Products/filter_dropdown.dart';
 import '../../Widgets/Products/metric_card.dart';
 import '../../Widgets/Products/product_card.dart';
 import '../../Widgets/Products/add_product_button.dart';
@@ -42,9 +43,12 @@ class _ProductManagementViewState extends State<ProductManagementView> {
   final _costPriceController = TextEditingController(text: '0.00');
   final _ivaRateController = TextEditingController(text: '0.00');
   final _profitIvaController = TextEditingController(text: '0.00');
-  final _stockController = TextEditingController(text: '0');
+  final _bazarController = TextEditingController(text: '0');
+  final _tiendaController = TextEditingController(text: '0');
   final _searchController = TextEditingController();
   String? _selectedCategoryName;
+  int? _selectedStoreId;
+  int? _selectedStoreFilterId;
   String? _selectedCategoryFilterName;
   List<String> _imagePaths = [];
   bool _isUploadingImages = false;
@@ -71,7 +75,8 @@ class _ProductManagementViewState extends State<ProductManagementView> {
     _costPriceController.dispose();
     _ivaRateController.dispose();
     _profitIvaController.dispose();
-    _stockController.dispose();
+    _bazarController.dispose();
+    _tiendaController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -139,6 +144,15 @@ class _ProductManagementViewState extends State<ProductManagementView> {
     final controller = context.read<ProductManagementController>();
     final stocks = <int, int>{};
 
+    for (final store in controller.stores) {
+      final id = (store['id'] as num).toInt();
+      final name = store['name'] as String;
+      final source = name == 'Bazar'
+          ? _bazarController.text
+          : _tiendaController.text;
+      stocks[id] = int.tryParse(source) ?? 0;
+    }
+
     setState(() => _isSavingProduct = true);
     // show progress notification while saving
     showProgressNotification(context, 'Guardando producto...');
@@ -159,9 +173,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
         auxCode: _auxCodeController.text,
         description: _descriptionController.text,
         tags: _tagsController.text,
-        storeId: controller.stores.isNotEmpty
-            ? (controller.stores.first['id'] as num).toInt()
-            : null,
+        storeId: _selectedStoreId,
         images: _imagePaths,
         initialStock: stocks,
       );
@@ -177,8 +189,10 @@ class _ProductManagementViewState extends State<ProductManagementView> {
       _costPriceController.text = '0.00';
       _ivaRateController.text = '0.00';
       _profitIvaController.text = '0.00';
-      _stockController.text = '0';
+      _bazarController.text = '0';
+      _tiendaController.text = '0';
       setState(() {
+        _selectedStoreId = null;
         _imagePaths = [];
       });
 
@@ -224,6 +238,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
     final controller = context.read<ProductManagementController>();
     await controller.loadCatalog(
       search: _searchController.text.trim(),
+      storeId: _selectedStoreFilterId,
       category: _selectedCategoryFilterName,
     );
     if (mounted) setState(() {});
@@ -278,18 +293,21 @@ class _ProductManagementViewState extends State<ProductManagementView> {
               costPriceController: _costPriceController,
               ivaRateController: _ivaRateController,
               profitIvaController: _profitIvaController,
+              bazarController: _bazarController,
+              tiendaController: _tiendaController,
               selectedCategoryName: _selectedCategoryName,
+              selectedStoreId: _selectedStoreId,
               imagePaths: _imagePaths,
               isUploadingImages: _isUploadingImages,
               isSavingProduct: _isSavingProduct,
               onCategoryChanged: (v) =>
                   setState(() => _selectedCategoryName = v),
+              onStoreChanged: (v) => setState(() => _selectedStoreId = v),
               onRemoveImage: (i) => _removeImageAt(i),
               onPickImages: _pickImages,
               onSaveProduct: _saveProduct,
               scaffoldKey: _scaffoldKey,
               onClose: () => Navigator.of(sheetContext).pop(),
-              stockController: _stockController,
             ),
           ),
         );
@@ -315,17 +333,22 @@ class _ProductManagementViewState extends State<ProductManagementView> {
         final totalProducts = controller.products.length;
         final totalStock = controller.products.fold<int>(
           0,
-          (sum, p) => sum + ((p['total_stock'] as num?)?.toInt() ?? 0),
+          (sum, p) =>
+              sum +
+              ((p['stock_bazar'] as num?)?.toInt() ?? 0) +
+              ((p['stock_tienda'] as num?)?.toInt() ?? 0),
         );
         final inventoryValue = controller.products.fold<double>(0, (sum, p) {
           final cost = (p['cost_price'] as num?)?.toDouble() ?? 0;
-          final stock = (p['total_stock'] as num?)?.toInt() ?? 0;
+          final stock =
+              ((p['stock_bazar'] as num?)?.toInt() ?? 0) +
+              ((p['stock_tienda'] as num?)?.toInt() ?? 0);
           return sum + cost * stock;
         });
         final isMobile = MediaQuery.of(context).size.width < 600;
         return Scaffold(
           key: _scaffoldKey,
-          backgroundColor: const Color(0xFFF6F7F9),
+          backgroundColor: AppColors.lightGray,
           appBar: isMobile
               ? AppBar(
                   backgroundColor: AppColors.blackOverlay,
@@ -354,43 +377,48 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                 // Header
                 if (!isMobile)
                   SliverToBoxAdapter(
-                    child: Container(
-                      color: AppColors.blackOverlay,
-                      padding: const EdgeInsets.fromLTRB(24, 18, 24, 18),
-                      child: SizedBox(
-                        height: 72,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconButton(
-                              onPressed: () => Navigator.pop(context),
-                              icon: Icon(
-                                Icons.arrow_back,
-                                color: AppColors.whiteOverlay,
-                                size: 28,
-                              ),
+                    child: ClipRRect(
+                      clipBehavior: Clip.hardEdge,
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(25),
+                      ),
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: AppColors.blackOverlay,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Productos',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.whiteOverlay,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          ],
+                        ),
+                        child: AppBar(
+                          surfaceTintColor: Colors.transparent,
+                          backgroundColor: Colors.transparent,
+                          elevation: 0,
+                          toolbarHeight: 72,
+                          centerTitle: true,
+                          automaticallyImplyLeading: false,
+                          iconTheme: const IconThemeData(
+                            color: AppColors.whiteOverlay,
+                          ),
+                          leading: IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.arrow_back, size: 28),
+                          ),
+                          title: const Text(
+                            'Productos',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.whiteOverlay,
+                              letterSpacing: -0.3,
                             ),
-                            const SizedBox(width: 16),
+                          ),
+                          actions: [
                             _buildAddProductButton(),
+                            const SizedBox(width: 16),
                           ],
                         ),
                       ),
@@ -441,52 +469,32 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                       children: [
                         SizedBox(
                           height: 56,
-                          child: TextField(
+                          child: SharedTextField(
                             controller: _searchController,
-                            style: const TextStyle(fontSize: 15),
-                            decoration: InputDecoration(
-                              hintText: 'Buscar productos...',
-                              hintStyle: TextStyle(color: Colors.grey.shade400),
-                              prefixIcon: Icon(
-                                Icons.search_rounded,
-                                color: Colors.grey.shade400,
-                                size: 22,
-                              ),
-                              suffixIcon: _searchController.text.isEmpty
-                                  ? null
-                                  : IconButton(
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        _applyCatalogFilters();
-                                      },
-                                      icon: Icon(
-                                        Icons.close,
-                                        color: Colors.grey.shade400,
-                                        size: 18,
-                                      ),
-                                    ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 16,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: const BorderSide(
-                                  color: AppColors.primaryBlue,
-                                  width: 1.5,
-                                ),
-                              ),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Colors.black87,
                             ),
+                            hint: 'Buscar productos...',
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              color: Colors.grey.shade400,
+                              size: 22,
+                            ),
+                            suffixIcon: _searchController.text.isEmpty
+                                ? null
+                                : IconButton(
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      _applyCatalogFilters();
+                                    },
+                                    icon: Icon(
+                                      Icons.close,
+                                      color: Colors.grey.shade400,
+                                      size: 18,
+                                    ),
+                                  ),
+                            useFilterStyle: true,
                             onChanged: (value) {
                               setState(() {});
                               _applyCatalogFilters();
@@ -494,6 +502,63 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                           ),
                         ),
                         const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FilterDropdown<int?>(
+                                label: 'Por local',
+                                value: _selectedStoreFilterId,
+                                items: [
+                                  const DropdownMenuItem<int?>(
+                                    value: null,
+                                    child: Text('Locales'),
+                                  ),
+                                  ...controller.stores.map((store) {
+                                    final storeId = (store['id'] as num)
+                                        .toInt();
+                                    return DropdownMenuItem<int?>(
+                                      value: storeId,
+                                      child: Text(store['name'] as String),
+                                    );
+                                  }),
+                                ],
+                                onChanged: (value) {
+                                  setState(
+                                    () => _selectedStoreFilterId = value,
+                                  );
+                                  _applyCatalogFilters();
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilterDropdown<String?>(
+                                label: 'Por categoría',
+                                value: _selectedCategoryFilterName,
+                                items: [
+                                  const DropdownMenuItem<String?>(
+                                    value: null,
+                                    child: Text('Categorías'),
+                                  ),
+                                  ...controller.categories.map((category) {
+                                    final categoryName =
+                                        category['name'] as String;
+                                    return DropdownMenuItem<String?>(
+                                      value: categoryName,
+                                      child: Text(categoryName),
+                                    );
+                                  }),
+                                ],
+                                onChanged: (value) {
+                                  setState(
+                                    () => _selectedCategoryFilterName = value,
+                                  );
+                                  _applyCatalogFilters();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -635,7 +700,7 @@ class _HoverCardState extends State<_HoverCard> {
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.whiteOverlay,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(

@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:tienda/Presentation/Utils/Colors.dart';
+import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
@@ -10,9 +11,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../Services/database_config.dart';
 import '../Services/database_location_service.dart';
 import '../Services/database_service.dart';
+import '../Services/google_drive_backup_service.dart';
 
 /// Metadatos de esquema usados únicamente por el asistente SQL de administración.
 class _SqlTableInfo {
@@ -59,6 +62,15 @@ class _AdminDBPageState extends State<AdminDBPage>
   Set<String> _selectedColumnNames = <String>{};
   bool _isLoadingSchema = false;
 
+  // Google Drive Backup state
+  String _driveMessage = 'Inicia sesión con Google para hacer backup';
+  Color _driveMessageColor = AppColors.primaryBlue;
+  bool _driveLoading = false;
+  String? _driveFolderUrl;
+  List<String> _driveUploadedFiles = [];
+  String _driveProgressStep = '';
+  double _driveProgressPercent = 0;
+
   String? _actualDbPath; // Ruta real obtenida del DatabaseLocationService
 
   // ✅ MÉTODO MEJORADO: Obtener la ruta real usando DatabaseLocationService
@@ -75,6 +87,7 @@ class _AdminDBPageState extends State<AdminDBPage>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     DatabaseService.addDatabaseListener(_handleDatabaseChanged);
+    _initDriveSession();
     _loadQueryHistory();
     _openDB();
   }
@@ -751,6 +764,305 @@ class _AdminDBPageState extends State<AdminDBPage>
     }
   }
 
+  Future<void> _initDriveSession() async {
+    final email = await GoogleDriveBackupService.signInSilently();
+    if (email != null && mounted) {
+      setState(() {
+        _driveMessage = '✅ Sesión restaurada: $email';
+        _driveMessageColor = AppColors.darkGreen;
+      });
+    }
+  }
+
+  Future<void> _driveSignIn() async {
+    setState(() => _driveLoading = true);
+    try {
+      final email = await GoogleDriveBackupService.signIn();
+      setState(() {
+        _driveMessage = '✅ Sesión iniciada: $email';
+        _driveMessageColor = AppColors.darkGreen;
+      });
+    } catch (e) {
+      setState(() {
+        _driveMessage = '⛔ $e';
+        _driveMessageColor = AppColors.primaryRed;
+      });
+    } finally {
+      setState(() => _driveLoading = false);
+    }
+  }
+
+  Future<void> _driveSignOut() async {
+    await GoogleDriveBackupService.signOut();
+    setState(() {
+      _driveMessage = 'Sesión cerrada. Inicia sesión para hacer backup.';
+      _driveMessageColor = AppColors.primaryBlue;
+      _driveFolderUrl = null;
+      _driveUploadedFiles = [];
+    });
+  }
+
+  Future<void> _startDriveBackup() async {
+    setState(() {
+      _driveLoading = true;
+      _driveProgressStep = 'Iniciando backup...';
+      _driveProgressPercent = 0;
+      _driveFolderUrl = null;
+      _driveUploadedFiles = [];
+    });
+
+    final result = await GoogleDriveBackupService.performBackup(
+      onProgress: (progress) {
+        if (mounted) {
+          setState(() {
+            _driveProgressStep = progress.step;
+            _driveProgressPercent = progress.percent;
+          });
+        }
+      },
+    );
+
+    if (mounted) {
+      setState(() {
+        _driveLoading = false;
+        _driveMessage = result.message;
+        _driveMessageColor = result.success
+            ? AppColors.darkGreen
+            : AppColors.primaryRed;
+        _driveFolderUrl = result.driveFolderUrl;
+        _driveUploadedFiles = result.uploadedFiles;
+      });
+    }
+  }
+
+  Widget _buildDriveBackupTab() {
+    final isSignedIn = GoogleDriveBackupService.isSignedIn;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header info
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.blackOverlay.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.blackOverlay.withOpacity(0.1),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.cloud_upload,
+                      size: 28,
+                      color: Color(0xFF4285F4),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Backup a Google Drive',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Exporta todas las tablas de la base de datos en formato JSON y sube las imágenes al Drive.',
+                  style: TextStyle(color: AppColors.mediumGray, fontSize: 13),
+                ),
+                const SizedBox(height: 6),
+                if (isSignedIn)
+                  Text(
+                    '👤 ${GoogleDriveBackupService.currentUserEmail}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF4285F4),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Botones de sesión
+          if (!isSignedIn)
+            ElevatedButton.icon(
+              onPressed: _driveLoading ? null : _driveSignIn,
+              icon: const Icon(Icons.login),
+              label: const Text('Iniciar sesión con Google'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4285F4),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: ElevatedButton.icon(
+                    onPressed: _driveLoading ? null : _startDriveBackup,
+                    icon: const Icon(Icons.backup),
+                    label: const Text('Iniciar Backup'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.darkGreen,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 1,
+                  child: OutlinedButton.icon(
+                    onPressed: _driveLoading ? null : _driveSignOut,
+                    icon: const Icon(Icons.logout, size: 18),
+                    label: const Text('Salir'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primaryRed,
+                      side: const BorderSide(color: AppColors.primaryRed),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          const SizedBox(height: 20),
+
+          // Progreso
+          if (_driveLoading) ...[
+            LinearProgressIndicator(
+              value: _driveProgressPercent == 0 ? null : _driveProgressPercent,
+              backgroundColor: AppColors.blackOverlay.withOpacity(0.1),
+              color: const Color(0xFF4285F4),
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _driveProgressStep,
+              style: TextStyle(color: AppColors.mediumGray, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Mensaje de estado
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _driveMessageColor.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _driveMessageColor.withOpacity(0.4)),
+            ),
+            child: Text(
+              _driveMessage,
+              style: TextStyle(
+                color: _driveMessageColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+
+          // Enlace a carpeta Drive
+          if (_driveFolderUrl != null) ...[
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final uri = Uri.parse(_driveFolderUrl!);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Abrir carpeta en Google Drive'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4285F4),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+
+          // Lista de archivos subidos
+          if (_driveUploadedFiles.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              'ARCHIVOS SUBIDOS (${_driveUploadedFiles.length})',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: AppColors.mediumGray,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.darkGray.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppColors.blackOverlay.withOpacity(0.1),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _driveUploadedFiles.map((file) {
+                  final isImage =
+                      file.endsWith('.jpg') ||
+                      file.endsWith('.png') ||
+                      file.endsWith('.jpeg') ||
+                      file.endsWith('.webp');
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isImage ? Icons.image : Icons.description,
+                          size: 16,
+                          color: isImage
+                              ? AppColors.primaryBlue
+                              : AppColors.darkGreen,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(file, style: const TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
   void _clearConsole() {
     setState(() {
       _queryResult = [];
@@ -765,7 +1077,7 @@ class _AdminDBPageState extends State<AdminDBPage>
     try {
       final now = DateTime.now();
       final folderName =
-          'BazarNicole_JSON_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+          'tienda_JSON_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
 
       final docsDir = await getApplicationDocumentsDirectory();
       final exportDir = Directory('${docsDir.path}/$folderName');
@@ -796,7 +1108,7 @@ class _AdminDBPageState extends State<AdminDBPage>
             .toList();
         await Share.shareXFiles(
           xFiles,
-          text: 'Exportación JSON de BazarNicole',
+          text: 'Exportación JSON de tienda',
         );
       } else {
         ProcessResult result;
@@ -1735,22 +2047,14 @@ class _AdminDBPageState extends State<AdminDBPage>
                         ),
                       ],
                     ),
-                    child: TextField(
+                    child: SharedTextField(
                       controller: _queryController,
-                      decoration: InputDecoration(
-                        labelText: 'Escribe tu consulta SQL aquí',
-                        labelStyle: TextStyle(
-                          color: AppColors.mediumGray,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.all(20),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.play_circle_fill),
-                          color: AppColors.primaryBlue,
-                          iconSize: 36,
-                          onPressed: _runQuery,
-                        ),
+                      label: 'Escribe tu consulta SQL aquí',
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.play_circle_fill),
+                        color: AppColors.primaryBlue,
+                        iconSize: 36,
+                        onPressed: _runQuery,
                       ),
                       style: TextStyle(
                         color: AppColors.darkGray,
@@ -2007,7 +2311,11 @@ class _AdminDBPageState extends State<AdminDBPage>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [_buildSQLTab(), _buildReplaceDBTab()],
+        children: [
+          _buildSQLTab(),
+          _buildReplaceDBTab(),
+          _buildDriveBackupTab(),
+        ],
       ),
     );
   }

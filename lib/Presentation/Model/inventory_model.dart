@@ -2,6 +2,8 @@ class InventoryItem {
   final int productId;
   final String name;
   final String sku;
+  final String auxCode;
+  final String description;
   final String category;
   final double sellPrice;
   final double costPrice;
@@ -15,6 +17,8 @@ class InventoryItem {
     required this.productId,
     required this.name,
     required this.sku,
+    this.auxCode = '',
+    this.description = '',
     required this.category,
     required this.sellPrice,
     required this.costPrice,
@@ -78,6 +82,8 @@ class InventoryItem {
       productId: (map['product_id'] as num).toInt(),
       name: map['name'] as String,
       sku: map['sku'] as String,
+      auxCode: map['aux_code'] as String? ?? '',
+      description: map['description'] as String? ?? '',
       category: map['category'] as String? ?? 'Sin categoría',
       sellPrice: sellPrice,
       costPrice: costPrice,

@@ -1,5 +1,6 @@
 import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:tienda/Presentation/Services/session_service.dart';
+import 'package:tienda/Presentation/Services/audit_service.dart';
 export 'package:tienda/Presentation/Services/database_service.dart'
     show generateFirebaseId;
 
@@ -18,9 +19,19 @@ class AuthService {
 
         // Verificar contraseña y que el usuario esté activo
         if (user['password'] != null && user['password'] != password) {
+          await AuditService.log(
+            action: AuditAction.loginFailed, module: 'Auth', page: 'LoginView',
+            metadata: {'email': email}, service: 'AuthService',
+            success: false, error: 'Credenciales invalidas',
+          );
           return null;
         }
         if ((user['is_active'] as int?) == 0) {
+          await AuditService.log(
+            action: AuditAction.loginFailed, module: 'Auth', page: 'LoginView',
+            metadata: {'email': email}, service: 'AuthService',
+            success: false, error: 'Usuario inactivo',
+          );
           return null;
         }
 
@@ -35,11 +46,27 @@ class AuthService {
         if (sessionSaved) {
         } else {}
 
+        await AuditService.log(
+          action: AuditAction.loginSuccess, module: 'Auth', page: 'LoginView',
+          entity: 'user', entityId: userData['uid'],
+          metadata: {'email': email}, service: 'AuthService',
+        );
+
         return userData;
       } else {
+        await AuditService.log(
+          action: AuditAction.loginFailed, module: 'Auth', page: 'LoginView',
+          metadata: {'email': email}, service: 'AuthService',
+          success: false, error: 'Usuario no encontrado',
+        );
         return null;
       }
     } catch (e) {
+      await AuditService.log(
+        action: AuditAction.loginFailed, module: 'Auth', page: 'LoginView',
+        metadata: {'email': email}, service: 'AuthService',
+        success: false, error: e,
+      );
       return null;
     }
   }
@@ -287,6 +314,12 @@ class AuthService {
   Future<bool> logout() async {
     try {
       final success = await SessionService.logout();
+
+      await AuditService.log(
+        action: AuditAction.logout, module: 'Auth', page: 'AuthView',
+        service: 'AuthService', success: success,
+        error: success ? null : 'No se pudo cerrar la sesion',
+      );
 
       if (success) {
       } else {}

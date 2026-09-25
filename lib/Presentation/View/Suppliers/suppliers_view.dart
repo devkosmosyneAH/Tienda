@@ -1,6 +1,7 @@
 import 'package:tienda/Presentation/Controller/suppliers_controller.dart';
 import 'package:tienda/Presentation/Model/supplier_model.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
+import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -45,35 +46,22 @@ class _SuppliersViewState extends State<SuppliersView> {
           preferredSize: const Size.fromHeight(56),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-            child: TextField(
+            child: SharedTextField(
               controller: _searchCtrl,
               onChanged: (v) =>
                   context.read<SuppliersController>().updateSearch(v),
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Buscar proveedor...',
-                hintStyle: const TextStyle(color: Colors.white54),
-                prefixIcon: const Icon(Icons.search, color: Colors.white54),
-                suffixIcon: _searchCtrl.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.white54),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          context.read<SuppliersController>().updateSearch('');
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.white12,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 0,
-                  horizontal: 12,
-                ),
-              ),
+              hint: 'Buscar proveedor...',
+              prefixIcon: const Icon(Icons.search, color: Colors.white54),
+              suffixIcon: _searchCtrl.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, color: Colors.white54),
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        context.read<SuppliersController>().updateSearch('');
+                      },
+                    )
+                  : null,
+              useFilterStyle: true,
             ),
           ),
         ),
@@ -430,36 +418,27 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
+              SharedTextFormField(
                 controller: _nameCtrl,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre *',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.business_outlined),
-                ),
+                label: 'Nombre *',
+                prefixIcon: const Icon(Icons.business_outlined),
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              SharedTextFormField(
                 controller: _phoneCtrl,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Teléfono',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.phone_outlined),
-                ),
+                label: 'Teléfono',
+                prefixIcon: const Icon(Icons.phone_outlined),
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              SharedTextFormField(
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Correo',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
+                label: 'Correo',
+                prefixIcon: const Icon(Icons.email_outlined),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return null;
                   if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
@@ -469,15 +448,12 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
                 },
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              SharedTextFormField(
                 controller: _notesCtrl,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Notas',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.notes_outlined),
-                  alignLabelWithHint: true,
-                ),
+                label: 'Notas',
+                prefixIcon: const Icon(Icons.notes_outlined),
+                alignLabelWithHint: true,
               ),
             ],
           ),

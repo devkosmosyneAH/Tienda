@@ -1,5 +1,6 @@
 import 'package:tienda/Presentation/Controller/pos_controller.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
+import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -101,47 +102,15 @@ class _PosClientSearchDialogState extends State<PosClientSearchDialog> {
             // ── Campo de búsqueda
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: TextField(
+              child: SharedTextField(
                 autofocus: true,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: AppColors.whiteOverlay,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-
-                    borderSide: const BorderSide(
-                      color: Color.fromRGBO(238, 238, 238, 1),
-                      width: 1.5,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-
-                    borderSide: const BorderSide(
-                      color: Color.fromRGBO(238, 238, 238, 1),
-                      width: 1.5,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                      color: Color.fromRGBO(238, 238, 238, 1),
-                      width: 1.5,
-                    ),
-                  ),
-                  hintText: 'Ingrese criterio de búsqueda',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    size: 18,
-                    color: Colors.black38,
-                  ),
-                  isDense: true,
+                hint: 'Ingrese criterio de búsqueda',
+                prefixIcon: const Icon(
+                  Icons.search,
+                  size: 18,
+                  color: Colors.black38,
                 ),
+                useFilterStyle: true,
                 onChanged: (v) => setState(() => _query = v),
               ),
             ),

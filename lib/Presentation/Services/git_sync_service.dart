@@ -1,7 +1,6 @@
 // ignore_for_file: avoid_print
 
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 
 /// Resultado de una operación git.
 class GitOperationResult {
@@ -203,7 +202,12 @@ class GitSyncService {
     print('[GitSyncService] Ejecutando: $command (en $repoPath)');
 
     try {
-      final result = await _runProcess(executable, arguments);
+      final result = await Process.run(
+        executable,
+        arguments,
+        workingDirectory: repoPath,
+        runInShell: Platform.isWindows,
+      );
 
       final out = result.stdout as String? ?? '';
       final err = result.stderr as String? ?? '';
@@ -242,21 +246,6 @@ class GitSyncService {
         command: command,
       );
     }
-  }
-
-  Future<dynamic> _runProcess(String executable, List<String> arguments) async {
-    if (kIsWeb) {
-      return Future.value(
-        ProcessResult(0, 0, '', 'Git sync unavailable on web'),
-      );
-    }
-
-    return Process.run(
-      executable,
-      arguments,
-      workingDirectory: repoPath,
-      runInShell: false,
-    );
   }
 
   bool _isDivergenceError(String stderr) =>

@@ -1,5 +1,6 @@
 import 'package:tienda/Presentation/Context/pos_sale_provider.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
+import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -88,20 +89,12 @@ class _PosResumenVentaCardState extends State<PosResumenVentaCard>
                         const Text('\$ '),
                         SizedBox(
                           width: 80,
-                          child: TextField(
+                          child: SharedTextField(
                             controller: sale.discountController,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             textAlign: TextAlign.right,
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 6,
-                                horizontal: 4,
-                              ),
-                              border: UnderlineInputBorder(),
-                            ),
                             onChanged: context
                                 .read<PosSaleProvider>()
                                 .setDiscount,
@@ -117,20 +110,12 @@ class _PosResumenVentaCardState extends State<PosResumenVentaCard>
                         const Text('\$ '),
                         SizedBox(
                           width: 80,
-                          child: TextField(
+                          child: SharedTextField(
                             controller: sale.transportController,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             textAlign: TextAlign.right,
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 6,
-                                horizontal: 4,
-                              ),
-                              border: UnderlineInputBorder(),
-                            ),
                             onChanged: context
                                 .read<PosSaleProvider>()
                                 .setTransport,
@@ -184,20 +169,12 @@ class _PosResumenVentaCardState extends State<PosResumenVentaCard>
                         const Text('\$ '),
                         SizedBox(
                           width: 100,
-                          child: TextField(
+                          child: SharedTextField(
                             controller: sale.receivedController,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             textAlign: TextAlign.right,
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 6,
-                                horizontal: 4,
-                              ),
-                              border: UnderlineInputBorder(),
-                            ),
                             onChanged: context
                                 .read<PosSaleProvider>()
                                 .onReceivedChanged,

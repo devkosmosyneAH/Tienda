@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tienda/Presentation/Model/user_model.dart';
 import 'package:tienda/Presentation/Services/database_service.dart';
+import 'package:tienda/Presentation/Services/audit_service.dart';
 
 class UsersController extends ChangeNotifier {
   List<UserModel> _users = [];
@@ -49,7 +50,7 @@ class UsersController extends ChangeNotifier {
       }
 
       final uid = generateFirebaseId();
-      await DatabaseService.rawInsert(
+      final userId = await DatabaseService.rawInsert(
         '''INSERT INTO users (uid, email, password, name, lastname, role, is_active, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
         [
@@ -63,6 +64,13 @@ class UsersController extends ChangeNotifier {
           DateTime.now().toIso8601String(),
         ],
       );
+      await AuditService.log(
+        action: AuditAction.createUser, module: 'Users', page: 'UsersView',
+        entity: 'user', entityId: userId,
+        newData: {'email': email.trim(), 'name': name.trim(),
+          'lastname': lastname.trim(), 'role': role, 'is_active': 1},
+        controller: 'UsersController',
+      );
 
       await loadUsers();
       return null;
@@ -74,10 +82,24 @@ class UsersController extends ChangeNotifier {
   /// Actualizar rol y estado de un usuario.
   Future<String?> updateUser(UserModel user) async {
     try {
-      await DatabaseService.rawQuery(
+      final before = await DatabaseService.rawQuery(
+        'SELECT * FROM users WHERE id = ? LIMIT 1', [user.id],
+      );
+      await DatabaseService.rawUpdate(
         '''UPDATE users SET name = ?, lastname = ?, role = ?, is_active = ?
            WHERE id = ?''',
         [user.name, user.lastname, user.role, user.isActive ? 1 : 0, user.id],
+      );
+      final after = await DatabaseService.rawQuery(
+        'SELECT * FROM users WHERE id = ? LIMIT 1', [user.id],
+      );
+      await AuditService.log(
+        action: before.isNotEmpty && before.first['role'] != user.role
+            ? AuditAction.changeRole : AuditAction.updateUser,
+        module: 'Users', page: 'UsersView', entity: 'user', entityId: user.id,
+        oldData: before.isEmpty ? null : before.first,
+        newData: after.isEmpty ? null : after.first,
+        controller: 'UsersController',
       );
       await loadUsers();
       return null;
@@ -89,7 +111,7 @@ class UsersController extends ChangeNotifier {
   /// Cambiar contraseña de un usuario.
   Future<String?> changePassword(int userId, String newPassword) async {
     try {
-      await DatabaseService.rawQuery(
+      await DatabaseService.rawUpdate(
         'UPDATE users SET password = ? WHERE id = ?',
         [newPassword, userId],
       );
@@ -122,9 +144,18 @@ class UsersController extends ChangeNotifier {
       }
     }
     try {
-      await DatabaseService.rawQuery(
+      final before = await DatabaseService.rawQuery(
+        'SELECT * FROM users WHERE id = ? LIMIT 1', [user.id],
+      );
+      await DatabaseService.rawDelete(
         'DELETE FROM users WHERE id = ?',
         [user.id],
+      );
+      await AuditService.log(
+        action: AuditAction.deleteUser, module: 'Users', page: 'UsersView',
+        entity: 'user', entityId: user.id,
+        oldData: before.isEmpty ? null : before.first,
+        controller: 'UsersController',
       );
       await loadUsers();
       return null;
