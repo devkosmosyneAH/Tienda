@@ -120,7 +120,8 @@ flutter:
     - assets/database/tienda.db
     - assets/env.txt
     - .env
-    - assets/images/branding.png
+    - assets/image/logo.jpg
+    - assets/image/logotienda.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
