@@ -4,7 +4,7 @@ setlocal
 
 echo ================================================================
 echo COMPILADOR EXE - INSTALADOR PREMIUM MODERN
-echo Tienda SAAS v2.0.0
+echo Tienda v2.0.0
 echo ================================================================
 echo.
 

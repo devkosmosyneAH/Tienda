@@ -212,7 +212,7 @@ class WebCatalogApp extends StatelessWidget {
         ...AppProviders.getProviders(),
       ],
       child: MaterialApp.router(
-        title: 'Bazar & Tienda',
+        title: 'Tienda',
         theme: ThemeData(
           primaryColor: AppColors.primaryLogo,
           useMaterial3: true,

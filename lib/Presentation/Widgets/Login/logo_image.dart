@@ -21,9 +21,10 @@ class _LogoImageState extends State<LogoImage>
       duration: const Duration(milliseconds: 750),
     );
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _scale = Tween<double>(begin: 0.55, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack),
-    );
+    _scale = Tween<double>(
+      begin: 0.55,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
     _ctrl.forward();
   }
 
@@ -57,7 +58,7 @@ class _LogoImageState extends State<LogoImage>
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12.0),
             child: Image.asset(
-              'assets/image/logobazasr.png',
+              'assets/image/logotienda.png',
               fit: BoxFit.cover,
               height: 180,
               errorBuilder: (context, error, stackTrace) {

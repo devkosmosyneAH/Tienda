@@ -1,12 +1,12 @@
 ; ============================================================================
-; INSTALADOR PREMIUM - Tienda SAAS
+; INSTALADOR PREMIUM - Tienda
 ; Diseño Moderno Estilo Discord/VS Code/Notion
 ; Compatible con Windows 10/11
 ; ============================================================================
 
-#define AppName "Tienda SAAS"
+#define AppName "Tienda"
 #define AppVersion "2.0.0"
-#define AppPublisher "Tienda SAAS"
+#define AppPublisher "Tienda"
 #define AppExeName "tienda.exe"
 #define AppId "A92AAE7F-C65A-4B2C-8D1E-1F2E3D4C5B6A"
 
@@ -76,15 +76,15 @@ VersionInfoProductVersion={#AppVersion}
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [CustomMessages]
-spanish.WelcomeLabel1=Tienda SAAS
+spanish.WelcomeLabel1=Tienda
 spanish.WelcomeLabel2=Sistema de Gestión Empresarial Premium%n%nModerno • Rápido • Profesional
 spanish.FinishedHeadingLabel=Instalación completada exitosamente
-spanish.FinishedLabelNoIcons=Tienda SAAS está listo para usar.
-spanish.FinishedLabel=Tienda SAAS está listo para usar.%n%nPuedes iniciarlo desde el menú de inicio o el escritorio.
+spanish.FinishedLabelNoIcons=Tienda está listo para usar.
+spanish.FinishedLabel=Tienda está listo para usar.%n%nPuedes iniciarlo desde el menú de inicio o el escritorio.
 spanish.ClickFinish=Finalizar
 spanish.SelectDirLabel3=El instalador necesita permisos de administrador para instalar en esta ubicación.
 spanish.SelectDirBrowseLabel=Haga clic en Siguiente para continuar con la instalación.
-spanish.PreparingDesc=Preparando la instalación de Tienda SAAS...
+spanish.PreparingDesc=Preparando la instalación de Tienda...
 
 [Tasks]
 Name: "desktopicon"; Description: "Crear icono en el &escritorio"; GroupDescription: "Accesos directos:"; Flags: unchecked
@@ -312,7 +312,7 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   case CurStep of
     ssInstall:
-      WizardForm.StatusLabel.Caption := 'Instalando Tienda SAAS...';
+      WizardForm.StatusLabel.Caption := 'Instalando Tienda...';
     ssPostInstall:
       WizardForm.StatusLabel.Caption := 'Finalizando instalación...';
   end;

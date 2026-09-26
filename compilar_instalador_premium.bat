@@ -5,7 +5,7 @@ color 0A
 
 echo ╔════════════════════════════════════════════════════════════════╗
 echo ║         COMPILADOR DE INSTALADOR PREMIUM                       ║
-echo ║              Bazar y Papelería v2.0.0                            ║
+echo ║              Tienda v2.0.0                            ║
 echo ╚════════════════════════════════════════════════════════════════╝
 echo.
 

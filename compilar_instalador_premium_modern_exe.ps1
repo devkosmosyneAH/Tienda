@@ -125,10 +125,10 @@ $compilerParams = @{
     requireAdmin = $true
     winFormsDPIAware = $true
     embedFiles = $embedFiles
-    title = "Instalador Tienda SAAS"
-    description = "Instalador premium WinForms de Tienda SAAS"
-    company = "Tienda SAAS"
-    product = "Tienda SAAS"
+    title = "Instalador Tienda"
+    description = "Instalador premium WinForms de Tienda"
+    company = "DevKosmosyne"
+    product = "Tienda"
     version = "2.0.0"
 }
 
