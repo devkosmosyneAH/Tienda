@@ -19,6 +19,7 @@ import 'package:tienda/Presentation/View/Catalog/catalog_repository.dart';
 import 'package:tienda/Presentation/View/Catalog/drive_catalog_repository.dart';
 import 'package:tienda/Presentation/View/Catalog/catalog_router.dart';
 import 'package:tienda/Presentation/Controller/auth_provider.dart';
+import 'package:tienda/Presentation/Controller/license_provider.dart';
 import 'package:tienda/Presentation/Controller/product_management_controller.dart';
 import 'package:tienda/Presentation/Controller/cash_controller.dart';
 import 'package:tienda/Presentation/Controller/customers_controller.dart';
@@ -31,6 +32,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:tienda/Presentation/Services/catalog_sync_service.dart';
+import 'package:tienda/Presentation/Services/license_service.dart';
+import 'package:tienda/Presentation/Services/license_storage.dart';
+import 'package:tienda/Presentation/Widgets/license_gate.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -86,6 +90,19 @@ Future<void> main() async {
     return;
   }
 
+  final licenseProvider = LicenseProvider(
+    service: LocalLicenseService(
+      persistence: LocalLicensePersistence(),
+      fingerprint: MachineLicenseFingerprint(),
+      clock: const SystemLicenseClock(),
+      idGenerator: const UuidLicenseIdGenerator(),
+      verifier: Ed25519LicenseCodeVerifier(
+        publicKeyBase64: const String.fromEnvironment('LICENSE_PUBLIC_KEY'),
+      ),
+    ),
+  );
+  await licenseProvider.initialize();
+
   // 🖥️ Desktop / Móvil: flujo normal con login
   try {
     final authService = AuthService();
@@ -93,9 +110,11 @@ Future<void> main() async {
 
     final initialRoute = isLoggedIn ? AppRoutes.dashboard : AppRoutes.login;
 
-    runApp(MyApp(initialRoute: initialRoute));
+    runApp(MyApp(initialRoute: initialRoute, licenseProvider: licenseProvider));
   } catch (e) {
-    runApp(MyApp(initialRoute: AppRoutes.login));
+    runApp(
+      MyApp(initialRoute: AppRoutes.login, licenseProvider: licenseProvider),
+    );
   }
 }
 
@@ -155,12 +174,18 @@ Future<void> _safeFallbackDatabaseInit() async {
 
 class MyApp extends StatelessWidget {
   final String initialRoute;
-  const MyApp({super.key, required this.initialRoute});
+  final LicenseProvider licenseProvider;
+  const MyApp({
+    super.key,
+    required this.initialRoute,
+    required this.licenseProvider,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: licenseProvider),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductManagementController()),
         ChangeNotifierProvider(create: (_) => CashController()),
@@ -186,6 +211,12 @@ class MyApp extends StatelessWidget {
             builder: (ctx) => SelectionArea(child: builder(ctx)),
           );
         },
+        builder: (context, child) => LicenseGate(
+          child: child ?? const SizedBox.shrink(),
+          onStatusTap: () {
+            navigatorKey.currentState?.pushNamed(AppRoutes.license);
+          },
+        ),
         debugShowCheckedModeBanner: false,
         navigatorKey: navigatorKey,
       ),

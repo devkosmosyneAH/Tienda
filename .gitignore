@@ -129,3 +129,4 @@ installer_output/
 .env.*
 *.env
 .venv
+/license_keys/

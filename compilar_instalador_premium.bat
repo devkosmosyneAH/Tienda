@@ -98,7 +98,15 @@ echo [4/6] Compilando aplicación Flutter...
 echo   Esto puede tardar varios minutos...
 echo.
 
-flutter build windows --release
+if not defined LICENSE_PUBLIC_KEY (
+    echo ERROR: LICENSE_PUBLIC_KEY no está definido.
+    echo Genera el par Ed25519 y configura la clave pública antes de distribuir.
+    echo Consulta docs\licencias-locales.md.
+    pause
+    exit /b 1
+)
+
+flutter build windows --release --dart-define=LICENSE_PUBLIC_KEY=%LICENSE_PUBLIC_KEY%
 
 if errorlevel 1 (
     echo.

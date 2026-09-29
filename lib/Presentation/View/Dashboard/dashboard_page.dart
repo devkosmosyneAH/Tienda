@@ -188,6 +188,14 @@ class _DashboardPageState extends State<DashboardPage> {
               Navigator.pop(context);
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.verified_user_outlined),
+            title: const Text('Estado de licencia'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, AppRoutes.license);
+            },
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),

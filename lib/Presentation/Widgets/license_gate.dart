@@ -1,0 +1,63 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:tienda/Presentation/Controller/license_provider.dart';
+import 'package:tienda/Presentation/Services/license_service.dart';
+import 'package:tienda/Presentation/View/License/license_status_page.dart';
+
+class LicenseGate extends StatelessWidget {
+  const LicenseGate({
+    required this.child,
+    required this.onStatusTap,
+    super.key,
+  });
+
+  final Widget child;
+  final VoidCallback onStatusTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<LicenseProvider>(
+      builder: (context, provider, _) {
+        if (provider.loading) return child;
+        final status = provider.status;
+        if (provider.snapshot?.isBlocked ?? true) {
+          return const LicenseStatusPage(locked: true);
+        }
+
+        if (status == LicenseStatus.DEMO_ACTIVA ||
+            status == LicenseStatus.DEMO_POR_VENCER) {
+          final color = status == LicenseStatus.DEMO_POR_VENCER
+              ? Colors.deepOrange
+              : Colors.teal.shade700;
+          final days = provider.remainingDays;
+          return Column(
+            children: [
+              Material(
+                color: color,
+                child: SizedBox(
+                  height: 30,
+                  width: double.infinity,
+                  child: InkWell(
+                    onTap: onStatusTap,
+                    child: Center(
+                      child: Text(
+                        'DEMO · quedan $days ${days == 1 ? 'día' : 'días'}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(child: child),
+            ],
+          );
+        }
+        return child;
+      },
+    );
+  }
+}

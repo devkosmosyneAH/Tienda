@@ -14,6 +14,7 @@ import 'package:tienda/Presentation/View/Users/users_view.dart';
 import 'package:tienda/Presentation/View/Suppliers/suppliers_view.dart';
 import 'package:tienda/Presentation/admin/AdminDBPage.dart';
 import 'package:tienda/Presentation/View/Admin/audit_logs_page.dart';
+import 'package:tienda/Presentation/View/License/license_status_page.dart';
 import 'package:tienda/Presentation/Widgets/legal_page_widget.dart';
 
 class AppRoutes {
@@ -37,6 +38,7 @@ class AppRoutes {
   static const suppliers = '/suppliers';
   static const adminDb = '/admin-db';
   static const auditLogs = '/audit-logs';
+  static const license = '/license';
   static const catalog = '/catalog';
   static const terms = '/terms';
   static const privacy = '/privacy';
@@ -57,6 +59,7 @@ class AppRoutes {
     suppliers: (context) => const SuppliersView(),
     adminDb: (context) => const AdminDBPage(),
     auditLogs: (context) => const AuditLogsPage(),
+    license: (context) => const LicenseStatusPage(),
 
     if (kIsWeb)
       terms: (context) => const LegalPageWidget(type: LegalDocType.terms),
@@ -85,6 +88,7 @@ class AppRoutes {
       suppliers,
       adminDb,
       auditLogs,
+      license,
     ],
     // Administrador: sin gestión de usuarios
     'administrador': [
@@ -100,9 +104,10 @@ class AppRoutes {
       reports,
       cash,
       suppliers,
+      license,
     ],
     // Cajero: solo ventas
-    'cajero': [login, authenticate, dashboard, pos, customers, cash],
+    'cajero': [login, authenticate, dashboard, pos, customers, cash, license],
     // Compatibilidad con rol 'admin' antiguo
     'admin': [
       login,
@@ -122,6 +127,7 @@ class AppRoutes {
       suppliers,
       adminDb,
       auditLogs,
+      license,
     ],
   };
 
