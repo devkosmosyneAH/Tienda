@@ -10,12 +10,15 @@ class LicenseProvider extends ChangeNotifier {
   LicenseSnapshot? _snapshot;
   bool _loading = true;
   bool _activating = false;
+  final Set<Object> _demoAppBarOwners = {};
+  bool _disposed = false;
   Timer? _refreshTimer;
   Timer? _expirationTimer;
 
   LicenseSnapshot? get snapshot => _snapshot;
   bool get loading => _loading;
   bool get activating => _activating;
+  bool get demoShownInAppBar => _demoAppBarOwners.isNotEmpty;
   LicenseStatus get status =>
       _snapshot?.status ?? LicenseStatus.LICENCIA_INVALIDA;
 
@@ -24,6 +27,18 @@ class LicenseProvider extends ChangeNotifier {
     if (milliseconds <= 0) return 0;
     return (milliseconds + Duration.millisecondsPerDay - 1) ~/
         Duration.millisecondsPerDay;
+  }
+
+  void setDemoShownInAppBar(bool value, {required Object owner}) {
+    if (_disposed) return;
+    final wasShownInAppBar = demoShownInAppBar;
+    if (value) {
+      _demoAppBarOwners.add(owner);
+    } else {
+      _demoAppBarOwners.remove(owner);
+    }
+    if (wasShownInAppBar == demoShownInAppBar) return;
+    notifyListeners();
   }
 
   Future<void> initialize() async {
@@ -98,6 +113,7 @@ class LicenseProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _refreshTimer?.cancel();
     _expirationTimer?.cancel();
     super.dispose();

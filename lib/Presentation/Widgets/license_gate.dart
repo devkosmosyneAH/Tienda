@@ -26,6 +26,7 @@ class LicenseGate extends StatelessWidget {
 
         if (status == LicenseStatus.DEMO_ACTIVA ||
             status == LicenseStatus.DEMO_POR_VENCER) {
+          if (provider.demoShownInAppBar) return child;
           final color = status == LicenseStatus.DEMO_POR_VENCER
               ? Colors.deepOrange
               : Colors.teal.shade700;

@@ -8,6 +8,9 @@ import 'package:tienda/Presentation/Controller/license_provider.dart';
 import 'package:tienda/Presentation/Services/license_service.dart';
 import 'package:tienda/Presentation/Services/license_storage.dart';
 import 'package:tienda/Presentation/Widgets/license_gate.dart';
+import 'package:tienda/Presentation/View/License/license_status_page.dart';
+import 'package:tienda/Presentation/Widgets/Login/custom_app_bar.dart';
+import 'package:tienda/Presentation/View/Auth/app_routes.dart';
 
 void main() {
   final start = DateTime.utc(2026, 1, 1, 12);
@@ -311,6 +314,95 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       provider.dispose();
     });
+
+    testWidgets(
+      'muestra el contador DEMO a la derecha y volver a la izquierda',
+      (tester) async {
+        tester.view.physicalSize = const Size(1000, 800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final service = createService(
+          persistence: FakePersistence(),
+          clock: FakeClock(DateTime.now().toUtc()),
+        );
+        final provider = LicenseProvider(service: service);
+        await provider.initialize();
+
+        await tester.pumpWidget(
+          ChangeNotifierProvider.value(
+            value: provider,
+            child: const MaterialApp(
+              home: LicenseGate(
+                onStatusTap: _emptyCallback,
+                child: LicenseStatusPage(),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final demoLabel = find.text('DEMO · quedan 7 días');
+        final arrow = find.byIcon(Icons.arrow_back);
+        expect(demoLabel, findsOneWidget);
+        expect(arrow, findsOneWidget);
+        expect(
+          tester.getRect(arrow).left,
+          lessThan(tester.getRect(demoLabel).left),
+        );
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        provider.dispose();
+      },
+    );
+
+    testWidgets('el botón DEMO del login abre el estado de licencia', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1000, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final service = createService(
+        persistence: FakePersistence(),
+        clock: FakeClock(DateTime.now().toUtc()),
+      );
+      final provider = LicenseProvider(service: service);
+      await provider.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: provider,
+          child: MaterialApp(
+            home: LicenseGate(
+              onStatusTap: _emptyCallback,
+              child: const Scaffold(
+                appBar: CustomLoginAppBar(),
+                body: Text('Formulario de inicio'),
+              ),
+            ),
+            routes: {
+              AppRoutes.license: (_) => const Scaffold(
+                body: Center(child: Text('Estado de licencia abierto')),
+              ),
+            },
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final demoButton = find.text('DEMO · quedan 7 días');
+      expect(demoButton, findsOneWidget);
+      expect(find.text('Formulario de inicio'), findsOneWidget);
+      await tester.tap(demoButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Estado de licencia abierto'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      provider.dispose();
+    });
   });
 
   group('LocalLicensePersistence', () {
@@ -407,3 +499,5 @@ class FakeBlobStore implements LicenseBlobStore {
     value = newValue;
   }
 }
+
+void _emptyCallback() {}

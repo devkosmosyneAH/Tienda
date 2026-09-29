@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tienda/Presentation/Controller/license_provider.dart';
 import 'package:tienda/Presentation/Services/license_service.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LicenseStatusPage extends StatefulWidget {
@@ -17,9 +18,27 @@ class _LicenseStatusPageState extends State<LicenseStatusPage> {
   final _codeController = TextEditingController();
   String? _feedback;
   bool _feedbackIsError = false;
+  LicenseProvider? _licenseProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final provider = context.read<LicenseProvider>();
+    if (identical(provider, _licenseProvider)) return;
+    _licenseProvider = provider;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        provider.setDemoShownInAppBar(!widget.locked, owner: this);
+      }
+    });
+  }
 
   @override
   void dispose() {
+    final provider = _licenseProvider;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      provider?.setDemoShownInAppBar(false, owner: this);
+    });
     _codeController.dispose();
     super.dispose();
   }
@@ -59,7 +78,8 @@ class _LicenseStatusPageState extends State<LicenseStatusPage> {
   };
 
   Color _statusColor(LicenseStatus status) => switch (status) {
-    LicenseStatus.DEMO_ACTIVA || LicenseStatus.LICENCIA_ACTIVA => Colors.green,
+    LicenseStatus.DEMO_ACTIVA ||
+    LicenseStatus.LICENCIA_ACTIVA => AppColors.blackOverlay,
     LicenseStatus.DEMO_POR_VENCER => Colors.deepOrange,
     _ => Colors.red.shade700,
   };
@@ -77,10 +97,86 @@ class _LicenseStatusPageState extends State<LicenseStatusPage> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F4),
+      backgroundColor: AppColors.lightWhite,
       appBar: widget.locked
           ? null
-          : AppBar(title: const Text('Estado de licencia')),
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+
+              child: Container(
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  gradient: LinearGradient(
+                    colors: [AppColors.primaryLogo, AppColors.primaryLogo],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      offset: Offset(-10, 10),
+                      color: Color.fromARGB(80, 0, 0, 0),
+                      blurRadius: 10,
+                    ),
+                    BoxShadow(
+                      offset: Offset(-10, -10),
+                      color: Color.fromARGB(150, 255, 255, 255),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: AppBar(
+                  leading: IconButton(
+                    tooltip: 'Volver',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Color(0xfff4f4f4),
+                    ),
+                  ),
+                  title: const Text(
+                    'Estado de licencia',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xfff4f4f4),
+                    ),
+                  ),
+                  actions: [
+                    if (status == LicenseStatus.DEMO_ACTIVA ||
+                        status == LicenseStatus.DEMO_POR_VENCER)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.16),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              'DEMO · quedan ${provider.remainingDays} ${provider.remainingDays == 1 ? 'día' : 'días'}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                  automaticallyImplyLeading: false,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  centerTitle: true,
+                ),
+              ),
+            ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -167,7 +263,7 @@ class _LicenseStatusPageState extends State<LicenseStatusPage> {
                     style: TextStyle(
                       color: _feedbackIsError
                           ? Colors.red.shade700
-                          : Colors.green,
+                          : AppColors.blackOverlay,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
