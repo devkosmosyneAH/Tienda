@@ -58,7 +58,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     final isTablet = screenWidth >= 600 && screenWidth < 1000;
@@ -90,9 +90,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final productName = widget.product.name.isEmpty
         ? 'Producto destacado'
         : widget.product.name;
-    final categoryLabel = widget.product.categoryName.isEmpty
-        ? 'Catálogo'
-        : widget.product.categoryName;
+    //final categoryLabel = widget.product.categoryName.isEmpty
+      //  ? 'Catálogo'
+       // : widget.product.categoryName;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAF8),
