@@ -93,6 +93,7 @@ dependencies:
   web: ^1.1.1
   flutter_image_compress: ^2.0.0
   exif: ^2.0.2
+  sri_xml_validator: ^0.0.3
 
 dev_dependencies:
   flutter_test:

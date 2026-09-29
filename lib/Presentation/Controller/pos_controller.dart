@@ -1,6 +1,7 @@
 import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tienda/Presentation/Services/audit_service.dart';
+import 'package:tienda/Presentation/Services/sri_invoice_service.dart';
 
 class PosController extends ChangeNotifier {
   PosController() {
@@ -344,12 +345,41 @@ class PosController extends ChangeNotifier {
     );
 
     await AuditService.log(
-      action: AuditAction.createSale, module: 'POS', page: 'POSView',
-      entity: 'sale', entityId: saleId,
-      newData: {'sale_id': saleId, 'total': saleTotal, 'customer_id': selectedCustomerId,
-        'products': cart, 'payment_method': normalizedPayments.map((p) => p['method_name']).toList()},
+      action: AuditAction.createSale,
+      module: 'POS',
+      page: 'POSView',
+      entity: 'sale',
+      entityId: saleId,
+      newData: {
+        'sale_id': saleId,
+        'total': saleTotal,
+        'customer_id': selectedCustomerId,
+        'products': cart,
+        'payment_method': normalizedPayments
+            .map((p) => p['method_name'])
+            .toList(),
+      },
       controller: 'PosController',
     );
+
+    try {
+      await SriInvoiceService.emitForSale(
+        saleId: saleId,
+        storeId: selectedStoreId!,
+      );
+    } catch (e) {
+      await AuditService.log(
+        action: 'SRI_CHECKOUT_SKIPPED',
+        module: 'POS',
+        page: 'POSView',
+        entity: 'sale',
+        entityId: saleId,
+        description:
+            'Fallo aislado de SRI durante checkout; la venta ya quedó registrada.',
+        error: e,
+        controller: 'PosController',
+      );
+    }
 
     cart.clear();
     await _loadProducts();

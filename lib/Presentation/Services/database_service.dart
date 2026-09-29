@@ -672,10 +672,93 @@ class DatabaseService {
         client_id INTEGER,
         date TEXT NOT NULL,
         total REAL NOT NULL DEFAULT 0,
+        electronic_invoice_id INTEGER,
+        sri_status TEXT,
         FOREIGN KEY (store_id) REFERENCES stores(id),
         FOREIGN KEY (client_id) REFERENCES clients(id)
       )
     ''');
+
+    await _ensureColumn(
+      db,
+      table: 'sales',
+      column: 'electronic_invoice_id',
+      definition: 'INTEGER',
+    );
+    await _ensureColumn(
+      db,
+      table: 'sales',
+      column: 'sri_status',
+      definition: 'TEXT',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS sri_store_config (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        store_id INTEGER NOT NULL UNIQUE,
+        sri_enabled INTEGER NOT NULL DEFAULT 0,
+        auto_emit_on_checkout INTEGER NOT NULL DEFAULT 0,
+        ambiente INTEGER NOT NULL DEFAULT 1,
+        ruc TEXT,
+        razon_social TEXT,
+        nombre_comercial TEXT,
+        direccion_matriz TEXT,
+        codigo_establecimiento TEXT DEFAULT '001',
+        punto_emision TEXT DEFAULT '001',
+        tipo_emision TEXT DEFAULT 'NORMAL',
+        path_p12 TEXT,
+        p12_password TEXT,
+        factura_tipo TEXT DEFAULT '01',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (store_id) REFERENCES stores(id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS sri_sequences (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        store_id INTEGER NOT NULL,
+        cod_doc TEXT NOT NULL DEFAULT '01',
+        estab TEXT NOT NULL DEFAULT '001',
+        pto_emi TEXT NOT NULL DEFAULT '001',
+        current_value INTEGER NOT NULL DEFAULT 1,
+        updated_at TEXT NOT NULL,
+        UNIQUE(store_id, cod_doc, estab, pto_emi),
+        FOREIGN KEY (store_id) REFERENCES stores(id)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS electronic_invoices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        store_id INTEGER NOT NULL,
+        sale_id INTEGER NOT NULL,
+        client_id INTEGER,
+        document_code TEXT NOT NULL DEFAULT '01',
+        clave_acceso TEXT,
+        estado TEXT NOT NULL DEFAULT 'PENDIENTE',
+        ambiente INTEGER NOT NULL DEFAULT 1,
+        xml TEXT,
+        authorization_number TEXT,
+        error_message TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (store_id) REFERENCES stores(id),
+        FOREIGN KEY (sale_id) REFERENCES sales(id),
+        FOREIGN KEY (client_id) REFERENCES clients(id)
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_sri_config_store ON sri_store_config(store_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_electronic_invoices_store_estado ON electronic_invoices(store_id, estado)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_sri_sequences_store ON sri_sequences(store_id, cod_doc, estab, pto_emi)',
+    );
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS sale_items (
@@ -1781,7 +1864,8 @@ class DatabaseService {
   }) async {
     final db = await database;
     final cleanName = _cleanName(name);
-    if (cleanName.isEmpty) throw Exception('El nombre de la categoría es obligatorio.');
+    if (cleanName.isEmpty)
+      throw Exception('El nombre de la categoría es obligatorio.');
     final slug = _buildCategorySlug(cleanName);
     final id = await db.rawInsert(
       'INSERT INTO categories (name, slug, store_id, image_url) VALUES (?, ?, ?, ?)',
@@ -1799,10 +1883,17 @@ class DatabaseService {
   }) async {
     final db = await database;
     final cleanName = _cleanName(name);
-    if (cleanName.isEmpty) throw Exception('El nombre de la categoría es obligatorio.');
+    if (cleanName.isEmpty)
+      throw Exception('El nombre de la categoría es obligatorio.');
     await db.rawUpdate(
       'UPDATE categories SET name = ?, slug = ?, store_id = ?, image_url = ? WHERE id = ?',
-      [cleanName, _buildCategorySlug(cleanName), storeId, imageUrl.trim(), categoryId],
+      [
+        cleanName,
+        _buildCategorySlug(cleanName),
+        storeId,
+        imageUrl.trim(),
+        categoryId,
+      ],
     );
     notifyDatabaseChanged();
   }
@@ -1815,7 +1906,9 @@ class DatabaseService {
     );
     final total = (products.first['total'] as num?)?.toInt() ?? 0;
     if (total > 0) {
-      throw Exception('No puedes eliminar esta categoría porque tiene $total producto(s) asociado(s).');
+      throw Exception(
+        'No puedes eliminar esta categoría porque tiene $total producto(s) asociado(s).',
+      );
     }
     await db.rawDelete('DELETE FROM categories WHERE id = ?', [categoryId]);
     notifyDatabaseChanged();
