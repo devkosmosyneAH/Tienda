@@ -40,13 +40,40 @@ $iconFile = Resolve-FirstExistingPath -Candidates @(
     (Join-Path $repoRoot "windows\runner\resources\app_icon.ico")
 )
 
-Write-Step "[1/5] Verificando archivos base..."
+Write-Step "[1/7] Configurando clave pública de licencia..."
+$licensePublicKey = $env:LICENSE_PUBLIC_KEY
+if ([string]::IsNullOrWhiteSpace($licensePublicKey)) {
+    $publicKeyPath = Read-Host "Ruta del archivo tienda-public.txt"
+    if ([string]::IsNullOrWhiteSpace($publicKeyPath) -or -not (Test-Path -LiteralPath $publicKeyPath -PathType Leaf)) {
+        throw "No se encontro el archivo de clave publica indicado."
+    }
+
+    $licensePublicKey = [System.IO.File]::ReadAllText($publicKeyPath).Trim()
+}
+
+if ([string]::IsNullOrWhiteSpace($licensePublicKey)) {
+    throw "LICENSE_PUBLIC_KEY esta vacia."
+}
+
+Write-Step "[2/7] Compilando Flutter con la clave pública..."
+Push-Location $repoRoot
+try {
+    & flutter build windows --release "--dart-define=LICENSE_PUBLIC_KEY=$licensePublicKey"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Fallo la compilacion de Flutter."
+    }
+}
+finally {
+    Pop-Location
+}
+
+Write-Step "[3/7] Verificando archivos base..."
 if (-not (Test-Path $installerScript)) {
     throw "No se encontro el instalador PowerShell en installer_output\\instalador_premium_modern.ps1"
 }
 
 if (-not (Test-Path (Join-Path $buildSource "tienda.exe"))) {
-    throw "No se encontro build\\windows\\x64\\runner\\Release\\tienda.exe. Ejecuta flutter build windows --release antes de compilar el EXE."
+    throw "No se encontro build\\windows\\x64\\runner\\Release\\tienda.exe despues de compilar Flutter."
 }
 
 $buildFiles = Get-ChildItem -Path $buildSource -File -Recurse
@@ -60,7 +87,7 @@ if ($duplicateNames) {
     throw "PS2EXE requiere nombres de archivo unicos para embedFiles. Duplicados detectados: $duplicateList"
 }
 
-Write-Step "[2/5] Preparando PS2EXE..."
+Write-Step "[4/7] Preparando PS2EXE..."
 $installedModule = Get-Module -ListAvailable -Name ps2exe | Sort-Object Version -Descending | Select-Object -First 1
 if (-not $installedModule -or $installedModule.Version -lt [version]"1.0.17") {
     if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
@@ -78,7 +105,7 @@ if (-not $installedModule -or $installedModule.Version -lt [version]"1.0.17") {
 
 Import-Module ps2exe -MinimumVersion 1.0.17 -Force
 
-Write-Step "[3/5] Construyendo payload embebido..."
+Write-Step "[5/7] Construyendo payload embebido..."
 $embedFiles = @{}
 $embeddedResourceNames = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
 foreach ($file in $buildFiles) {
@@ -116,7 +143,7 @@ foreach ($embed in $optionalEmbeds) {
     }
 }
 
-Write-Step "[4/5] Compilando instalador EXE..."
+Write-Step "[6/7] Compilando instalador EXE..."
 $compilerParams = @{
     inputFile = $installerScript
     outputFile = $outputFile
@@ -138,7 +165,7 @@ if ($iconFile) {
 
 Invoke-ps2exe @compilerParams -Verbose
 
-Write-Step "[5/5] Verificando salida..."
+Write-Step "[7/7] Verificando salida..."
 if (-not (Test-Path $outputFile)) {
     throw "PS2EXE no genero el archivo esperado en $outputFile"
 }

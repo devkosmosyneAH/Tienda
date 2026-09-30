@@ -15,6 +15,7 @@ import 'package:tienda/Presentation/View/Suppliers/suppliers_view.dart';
 import 'package:tienda/Presentation/admin/AdminDBPage.dart';
 import 'package:tienda/Presentation/View/Admin/audit_logs_page.dart';
 import 'package:tienda/Presentation/View/License/license_status_page.dart';
+import 'package:tienda/Presentation/View/SRI/sri_settings_page.dart';
 import 'package:tienda/Presentation/Widgets/legal_page_widget.dart';
 
 class AppRoutes {
@@ -39,6 +40,7 @@ class AppRoutes {
   static const adminDb = '/admin-db';
   static const auditLogs = '/audit-logs';
   static const license = '/license';
+  static const sriConfig = '/sri-config';
   static const catalog = '/catalog';
   static const terms = '/terms';
   static const privacy = '/privacy';
@@ -60,6 +62,7 @@ class AppRoutes {
     adminDb: (context) => const AdminDBPage(),
     auditLogs: (context) => const AuditLogsPage(),
     license: (context) => const LicenseStatusPage(),
+    sriConfig: (context) => const SriSettingsPage(),
 
     if (kIsWeb)
       terms: (context) => const LegalPageWidget(type: LegalDocType.terms),
@@ -89,6 +92,7 @@ class AppRoutes {
       adminDb,
       auditLogs,
       license,
+      sriConfig,
     ],
     // Administrador: sin gestión de usuarios
     'administrador': [
@@ -105,6 +109,7 @@ class AppRoutes {
       cash,
       suppliers,
       license,
+      sriConfig,
     ],
     // Cajero: solo ventas
     'cajero': [login, authenticate, dashboard, pos, customers, cash, license],
@@ -128,6 +133,7 @@ class AppRoutes {
       adminDb,
       auditLogs,
       license,
+      sriConfig,
     ],
   };
 

@@ -1,9 +1,14 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../Model/sri_store_config_model.dart';
 import 'database_service.dart';
 
 class SriConfigService {
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+
+  static String _passwordKey(int storeId) => 'sri_p12_password_$storeId';
+
   static bool get globalEnabled =>
       (dotenv.env['SRI_ENABLED'] ?? 'false').trim().toLowerCase() == 'true';
 
@@ -23,7 +28,24 @@ class SriConfigService {
       [storeId],
     );
     if (rows.isEmpty) return null;
-    return SriStoreConfig.fromMap(rows.first);
+
+    final row = Map<String, Object?>.from(rows.first);
+    final passwordKey = _passwordKey(storeId);
+    var p12Password = await _secureStorage.read(key: passwordKey);
+    final legacyPassword = (row['p12_password'] as String?) ?? '';
+    if (legacyPassword.isNotEmpty) {
+      if (p12Password == null) {
+        await _secureStorage.write(key: passwordKey, value: legacyPassword);
+        p12Password = legacyPassword;
+      }
+      await db.rawUpdate(
+        'UPDATE sri_store_config SET p12_password = ? WHERE store_id = ?',
+        ['', storeId],
+      );
+    }
+
+    row['p12_password'] = p12Password ?? '';
+    return SriStoreConfig.fromMap(row);
   }
 
   static Future<Object> saveConfig({
@@ -39,10 +61,22 @@ class SriConfigService {
     String puntoEmision = '001',
     String tipoEmision = 'NORMAL',
     String pathP12 = '',
-    String p12Password = '',
+    String? p12Password,
     String facturaTipo = '01',
   }) async {
     final db = await DatabaseService.database;
+    final existing = await getConfig(storeId);
+    if (p12Password != null) {
+      if (p12Password.isEmpty) {
+        await _secureStorage.delete(key: _passwordKey(storeId));
+      } else {
+        await _secureStorage.write(
+          key: _passwordKey(storeId),
+          value: p12Password,
+        );
+      }
+    }
+
     final now = DateTime.now().toIso8601String();
     final record = SriStoreConfig(
       id: 0,
@@ -60,13 +94,12 @@ class SriConfigService {
       puntoEmision: puntoEmision.trim().isEmpty ? '001' : puntoEmision.trim(),
       tipoEmision: tipoEmision.trim().isEmpty ? 'NORMAL' : tipoEmision.trim(),
       pathP12: pathP12.trim(),
-      p12Password: p12Password.trim(),
+      p12Password: p12Password ?? existing?.p12Password ?? '',
       facturaTipo: facturaTipo.trim().isEmpty ? '01' : facturaTipo.trim(),
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
 
-    final existing = await getConfig(storeId);
     if (existing == null) {
       await db.rawInsert(
         '''
@@ -90,7 +123,7 @@ class SriConfigService {
           record.puntoEmision,
           record.tipoEmision,
           record.pathP12,
-          record.p12Password,
+          '',
           record.facturaTipo,
           now,
           now,
@@ -128,7 +161,7 @@ class SriConfigService {
           record.puntoEmision,
           record.tipoEmision,
           record.pathP12,
-          record.p12Password,
+          '',
           record.facturaTipo,
           now,
           storeId,

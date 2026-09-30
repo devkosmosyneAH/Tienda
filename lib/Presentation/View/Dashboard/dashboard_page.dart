@@ -1,6 +1,8 @@
 import 'package:tienda/Presentation/Services/auth_service.dart';
 import 'package:tienda/Presentation/Controller/cash_controller.dart';
+import 'package:tienda/Presentation/Controller/license_provider.dart';
 import 'package:tienda/Presentation/View/Auth/app_routes.dart';
+import 'package:tienda/Presentation/Services/license_service.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
 import 'package:tienda/Presentation/Widgets/cash_stores_status.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +21,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _currentUser;
   bool _isLoading = true;
   int _selectedIndex = 0;
+  LicenseProvider? _licenseProvider;
 
   final Map<String, String> _cardRoutes = {
     'Ventas': AppRoutes.pos,
@@ -31,6 +34,7 @@ class _DashboardPageState extends State<DashboardPage> {
     'Reportes': AppRoutes.reports,
     'Usuarios': AppRoutes.users,
     'Proveedores': AppRoutes.suppliers,
+    'Facturación SRI': AppRoutes.sriConfig,
     'Admin DB': AppRoutes.adminDb,
   };
 
@@ -41,6 +45,26 @@ class _DashboardPageState extends State<DashboardPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CashController>().initialize();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final provider = context.read<LicenseProvider>();
+    if (identical(provider, _licenseProvider)) return;
+    _licenseProvider = provider;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) provider.setDemoShownInAppBar(true, owner: this);
+    });
+  }
+
+  @override
+  void dispose() {
+    final provider = _licenseProvider;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      provider?.setDemoShownInAppBar(false, owner: this);
+    });
+    super.dispose();
   }
 
   Future<void> _loadCurrentUser() async {
@@ -82,8 +106,19 @@ class _DashboardPageState extends State<DashboardPage> {
     return cards;
   }
 
-  PreferredSizeWidget _buildAppBar(CashController cashController) {
+  PreferredSizeWidget _buildAppBar(
+    CashController cashController,
+    LicenseProvider licenseProvider,
+  ) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final licenseStatus = licenseProvider.status;
+    final showDemo =
+        licenseStatus == LicenseStatus.DEMO_ACTIVA ||
+        licenseStatus == LicenseStatus.DEMO_POR_VENCER;
+    final remainingDays = licenseProvider.remainingDays;
+    final demoLabel = isMobile
+        ? 'DEMO · ${remainingDays}d'
+        : 'DEMO · quedan $remainingDays ${remainingDays == 1 ? 'día' : 'días'}';
     return PreferredSize(
       preferredSize: const Size.fromHeight(kToolbarHeight),
       child: ClipRRect(
@@ -128,6 +163,41 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
             actions: [
+              if (showDemo)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Center(
+                    child: Tooltip(
+                      message:
+                          'DEMO · quedan $remainingDays ${remainingDays == 1 ? 'día' : 'días'}',
+                      child: TextButton(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, AppRoutes.license),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor:
+                              licenseStatus == LicenseStatus.DEMO_POR_VENCER
+                              ? Colors.deepOrange
+                              : Colors.teal.shade700,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isMobile ? 7 : 12,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: Text(
+                          demoLabel,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: isMobile ? 10 : 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               Container(
                 margin: const EdgeInsets.only(right: 16),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -224,11 +294,11 @@ class _DashboardPageState extends State<DashboardPage> {
     final role = _currentUser?['role'] ?? 'user';
     final cards = _buildCardsForRole(role);
 
-    return Consumer<CashController>(
-      builder: (context, cashController, _) {
+    return Consumer2<CashController, LicenseProvider>(
+      builder: (context, cashController, licenseProvider, _) {
         return Scaffold(
           backgroundColor: AppColors.lightGray,
-          appBar: _buildAppBar(cashController),
+          appBar: _buildAppBar(cashController, licenseProvider),
           drawer: _buildDrawer(),
           body: IndexedStack(
             index: _selectedIndex,
@@ -288,6 +358,8 @@ class _DashboardPageState extends State<DashboardPage> {
         return Icons.manage_accounts_outlined;
       case 'Proveedores':
         return Icons.local_shipping_outlined;
+      case 'Facturación SRI':
+        return Icons.receipt_long_outlined;
       case 'Admin DB':
         return Icons.admin_panel_settings_outlined;
       default:

@@ -1,4 +1,5 @@
 @echo off
+setlocal EnableDelayedExpansion
 chcp 65001 >nul
 cls
 color 0A
@@ -99,7 +100,20 @@ echo   Esto puede tardar varios minutos...
 echo.
 
 if not defined LICENSE_PUBLIC_KEY (
-    echo ERROR: LICENSE_PUBLIC_KEY no está definido.
+    echo LICENSE_PUBLIC_KEY no está definido.
+    echo Indica la ruta del archivo tienda-public.txt generado para esta aplicación.
+    set /p "LICENSE_PUBLIC_KEY_FILE=Ruta del archivo de clave pública: "
+    if defined LICENSE_PUBLIC_KEY_FILE (
+        if exist "!LICENSE_PUBLIC_KEY_FILE!" (
+            set /p LICENSE_PUBLIC_KEY=<"!LICENSE_PUBLIC_KEY_FILE!"
+        ) else (
+            echo ERROR: No se encuentra el archivo indicado.
+        )
+    )
+)
+
+if not defined LICENSE_PUBLIC_KEY (
+    echo ERROR: No se pudo cargar LICENSE_PUBLIC_KEY.
     echo Genera el par Ed25519 y configura la clave pública antes de distribuir.
     echo Consulta docs\licencias-locales.md.
     pause

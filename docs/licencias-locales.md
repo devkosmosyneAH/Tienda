@@ -8,7 +8,7 @@ Genera una pareja Ed25519 en un equipo de administración desconectado. Guarda l
 dart run tool/license_issuer.dart keygen /ruta-segura/tienda-private.json /ruta-segura/tienda-public.txt
 ```
 
-La clave pública se distribuye con el binario; la privada nunca. Antes de compilar define `LICENSE_PUBLIC_KEY` con el contenido de `tienda-public.txt`. En Windows, el script `compilar_instalador_premium.bat` lo inyecta como `--dart-define`. En otras plataformas, usa el mismo argumento en `flutter build`.
+La clave pública se distribuye con el binario; la privada nunca. Antes de compilar define `LICENSE_PUBLIC_KEY` con el contenido de `tienda-public.txt`. En Windows, `compilar_instalador_premium.bat` y `compilar_instalador_premium_modern_exe.bat` la inyectan como `--dart-define`; si la variable no está definida, solicitan la ruta al archivo `tienda-public.txt`. El generador del EXE moderno compila Flutter antes de empaquetar. En otras plataformas, usa el mismo argumento en `flutter build`.
 
 Solicita al cliente los valores de Instalación y Huella del equipo visibles en Estado de licencia. Emite el código localmente:
 

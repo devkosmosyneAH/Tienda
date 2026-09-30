@@ -1,9 +1,14 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tienda/Presentation/Model/sri_store_config_model.dart';
 import 'package:tienda/Presentation/Services/sri_config_service.dart';
 import 'package:tienda/Presentation/Services/sri_invoice_service.dart';
 
 void main() {
+  setUpAll(() {
+    dotenv.testLoad(fileInput: 'SRI_ENABLED=false\n');
+  });
+
   group('SRI unit tests', () {
     test(
       'T01 - clave de acceso tiene 49 caracteres y dígito verificador válido',

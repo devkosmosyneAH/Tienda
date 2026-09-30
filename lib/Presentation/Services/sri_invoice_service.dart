@@ -23,12 +23,6 @@ class SriInvoiceService {
   static bool get isGlobalEnabled =>
       (dotenv.env['SRI_ENABLED'] ?? 'false').trim().toLowerCase() == 'true';
 
-  static bool get autoEmitEnabled =>
-      (dotenv.env['SRI_AUTO_EMIT_ON_CHECKOUT'] ?? 'false')
-          .trim()
-          .toLowerCase() ==
-      'true';
-
   static Future<SriEmitResult> emitForSale({
     required int saleId,
     required int storeId,
@@ -48,6 +42,12 @@ class SriInvoiceService {
         message: validationError.isEmpty
             ? 'No hay configuración SRI para este local.'
             : validationError,
+      );
+    }
+    if (!config.autoEmitOnCheckout) {
+      return const SriEmitResult(
+        status: 'SKIPPED',
+        message: 'La emisión automática está desactivada para este local.',
       );
     }
 
@@ -270,7 +270,7 @@ class SriInvoiceService {
     final dateString =
         '${date.day.toString().padLeft(2, '0')}${date.month.toString().padLeft(2, '0')}${date.year}';
     final base =
-        '$dateString${ruc.trim()}${documentCode.padLeft(2, '0')}${estab.padLeft(3, '0')}${ptoEmi.padLeft(3, '0')}${sequence.toString().padLeft(9, '0')}${ambiente}${1}00000000';
+        '$dateString${ruc.trim()}${documentCode.padLeft(2, '0')}${estab.padLeft(3, '0')}${ptoEmi.padLeft(3, '0')}${sequence.toString().padLeft(9, '0')}${ambiente}100000000';
     final code = _calculateModulo11(base);
     return '$base$code';
   }
