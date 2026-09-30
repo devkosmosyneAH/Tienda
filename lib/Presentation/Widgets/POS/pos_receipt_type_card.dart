@@ -3,6 +3,7 @@ import 'package:tienda/Presentation/Model/pos_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 // ─────────────────────────────────────────────────────────────────
 //  Widget: Tipo de comprobante
@@ -19,7 +20,7 @@ class PosReceiptTypeCard extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 460),
         child: Card(
           elevation: 2,
-          color: const Color(0xFFF0EDEA),
+          color: AppColors.softCream,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -46,7 +47,7 @@ class PosReceiptTypeCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black87,
+                        color: AppColors.plumGray87,
                       ),
                       items: PosReceiptType.all
                           .map(
@@ -61,14 +62,17 @@ class PosReceiptTypeCard extends StatelessWidget {
                     ),
                     const Text(
                       'Cada tipo tiene numeración independiente',
-                      style: TextStyle(fontSize: 11, color: Colors.black54),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.plumGray54,
+                      ),
                     ),
                     SizedBox(height: 10),
                     Text(
                       'Fecha: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Colors.black54,
+                        color: AppColors.plumGray54,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

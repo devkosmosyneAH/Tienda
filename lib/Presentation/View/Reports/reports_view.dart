@@ -40,9 +40,7 @@ class _ReportsViewState extends State<ReportsView> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo generar el reporte PDF.'),
-        ),
+        const SnackBar(content: Text('No se pudo generar el reporte PDF.')),
       );
     } finally {
       if (mounted) {
@@ -68,10 +66,7 @@ class _ReportsViewState extends State<ReportsView> {
 
     if (picked == null) return;
 
-    await controller.setDateRange(
-      fromDate: picked.start,
-      toDate: picked.end,
-    );
+    await controller.setDateRange(fromDate: picked.start, toDate: picked.end);
   }
 
   @override
@@ -88,15 +83,15 @@ class _ReportsViewState extends State<ReportsView> {
           ),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.blackOverlay,
+              color: AppColors.lightWhite,
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppColors.blackOverlay, AppColors.blackOverlay],
+                colors: [AppColors.lightWhite, AppColors.lightWhite],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black26,
+                  color: AppColors.plumGray26,
                   blurRadius: 5,
                   offset: Offset(0, 3),
                 ),
@@ -109,7 +104,7 @@ class _ReportsViewState extends State<ReportsView> {
               leading: IconButton(
                 icon: const Icon(
                   Icons.arrow_back,
-                  color: AppColors.whiteOverlay,
+                  color: AppColors.blackOverlay,
                   size: 30,
                 ),
                 onPressed: () {
@@ -125,7 +120,7 @@ class _ReportsViewState extends State<ReportsView> {
                     style: TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.whiteOverlay,
+                      color: AppColors.blackOverlay,
                     ),
                   ),
                   SizedBox(height: 3),
@@ -133,7 +128,7 @@ class _ReportsViewState extends State<ReportsView> {
                     'Resumen del rendimiento de tu negocio',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.greyOverlay,
+                      color: AppColors.blackOverlay,
                     ),
                   ),
                 ],
@@ -330,7 +325,7 @@ class _ReportCard extends StatelessWidget {
         border: Border.all(color: AppColors.lightSlateGrey.withAlpha(89)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x12000000),
+            color: AppColors.plumGray07,
             blurRadius: 18,
             offset: Offset(0, 6),
           ),
@@ -356,7 +351,9 @@ class _ReportsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasRange = controller.selectedFromDate != null || controller.selectedToDate != null;
+    final hasRange =
+        controller.selectedFromDate != null ||
+        controller.selectedToDate != null;
     final rangeLabel = hasRange
         ? '${controller.selectedFromDate != null ? _formatDate(controller.selectedFromDate!) : 'Inicio'} - ${controller.selectedToDate != null ? _formatDate(controller.selectedToDate!) : 'Fin'}'
         : 'Hoy';
@@ -367,24 +364,27 @@ class _ReportsHeader extends StatelessWidget {
           ? const SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.cream,
+              ),
             )
           : const Icon(Icons.picture_as_pdf_outlined),
-      label: Text(isGenerating ? 'Generando reporte...' : 'Generar reporte PDF'),
+      label: Text(
+        isGenerating ? 'Generando reporte...' : 'Generar reporte PDF',
+      ),
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.blackOverlay,
         foregroundColor: AppColors.whiteOverlay,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
 
     final dateButton = Container(
       height: 56,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cream,
         borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
@@ -397,7 +397,7 @@ class _ReportsHeader extends StatelessWidget {
             children: [
               const Icon(
                 Icons.calendar_month_outlined,
-                color: Colors.grey,
+                color: AppColors.mediumGray,
                 size: 20,
               ),
               const SizedBox(width: 10),
@@ -406,7 +406,7 @@ class _ReportsHeader extends StatelessWidget {
                   rangeLabel,
                   style: const TextStyle(
                     fontSize: 15,
-                    color: Colors.black87,
+                    color: AppColors.plumGray87,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -414,7 +414,7 @@ class _ReportsHeader extends StatelessWidget {
               const SizedBox(width: 8),
               Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: Colors.grey.shade400,
+                color: AppColors.mediumGray,
                 size: 22,
               ),
             ],
@@ -438,9 +438,11 @@ class _ReportsHeader extends StatelessWidget {
                   dateButton,
                   if (hasRange)
                     TextButton.icon(
-                      onPressed: isGenerating ? null : () async {
-                        await controller.clearDateRange();
-                      },
+                      onPressed: isGenerating
+                          ? null
+                          : () async {
+                              await controller.clearDateRange();
+                            },
                       icon: const Icon(Icons.clear),
                       label: const Text('Limpiar'),
                     ),
@@ -458,9 +460,11 @@ class _ReportsHeader extends StatelessWidget {
             const SizedBox(width: 12),
             if (hasRange)
               TextButton.icon(
-                onPressed: isGenerating ? null : () async {
-                  await controller.clearDateRange();
-                },
+                onPressed: isGenerating
+                    ? null
+                    : () async {
+                        await controller.clearDateRange();
+                      },
                 icon: const Icon(Icons.clear),
                 label: const Text('Limpiar'),
               ),

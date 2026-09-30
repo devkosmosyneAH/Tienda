@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 /// Botón de navegación lateral para [ProductGalleryViewer].
 class GalleryArrow extends StatefulWidget {
@@ -21,8 +22,8 @@ class _GalleryArrowState extends State<GalleryArrow> {
   @override
   Widget build(BuildContext context) {
     final background = _isHovering
-        ? Colors.white.withValues(alpha: 0.28)
-        : Colors.black.withValues(alpha: 0.42);
+        ? AppColors.cream.withValues(alpha: 0.28)
+        : AppColors.plumGray42;
 
     return Semantics(
       button: true,
@@ -40,7 +41,7 @@ class _GalleryArrowState extends State<GalleryArrow> {
             boxShadow: _isHovering
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.28),
+                      color: AppColors.plumGray28,
                       blurRadius: 16,
                       offset: const Offset(0, 5),
                     ),
@@ -52,7 +53,7 @@ class _GalleryArrowState extends State<GalleryArrow> {
             onPressed: widget.onPressed,
             iconSize: 34,
             padding: const EdgeInsets.all(13),
-            color: Colors.white,
+            color: AppColors.cream,
             icon: Icon(
               widget.isPrevious
                   ? Icons.chevron_left_rounded

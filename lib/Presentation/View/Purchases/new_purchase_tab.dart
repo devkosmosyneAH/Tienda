@@ -132,7 +132,7 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       children: [
         if (icon != null) ...[
-          Icon(icon, size: 22, color: Colors.black87),
+          Icon(icon, size: 22, color: AppColors.plumGray87),
           const SizedBox(width: 8),
         ],
         Expanded(
@@ -197,7 +197,7 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
                 controller: widget.supplierController,
                 hint: 'Seleccionar proveedor',
                 prefixIcon: const Icon(Icons.business),
-                style: const TextStyle(fontSize: 15, color: Colors.black87),
+                style: TextStyle(fontSize: 15, color: AppColors.plumGray87),
                 useFilterStyle: true,
               ),
               const SizedBox(height: 8),
@@ -206,7 +206,7 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
                 hint: 'Teléfono del proveedor',
                 prefixIcon: const Icon(Icons.phone_outlined),
                 keyboardType: TextInputType.phone,
-                style: const TextStyle(fontSize: 15, color: Colors.black87),
+                style: TextStyle(fontSize: 15, color: AppColors.plumGray87),
                 useFilterStyle: true,
               ),
             ],
@@ -316,10 +316,10 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
                           setState(() => _considerVatProfit = value);
                           widget.controller.setConsiderVatProfit(value);
                         },
-                        activeColor: Colors.white,
-                        activeTrackColor: Color(0xFF6B4EAA),
-                        inactiveThumbColor: Colors.white,
-                        inactiveTrackColor: Colors.black26,
+                        activeColor: AppColors.cream,
+                        activeTrackColor: AppColors.plumGray,
+                        inactiveThumbColor: AppColors.cream,
+                        inactiveTrackColor: AppColors.plumGray26,
                       ),
                     ),
                     if (_considerVatProfit) ...[
@@ -351,19 +351,19 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppColors.lightBlue.withValues(alpha: 0.45),
-                        border: Border.all(color: Colors.lightBlue),
+                        border: Border.all(color: AppColors.mutedMauve),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.info_outline, color: Colors.blue),
+                          Icon(Icons.info_outline, color: AppColors.mutedMauve),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'El IVA gubernamental se aplica a esta compra. La ganancia IVA se utiliza únicamente cuando el producto sea revendido.',
                               style: TextStyle(
-                                color: Colors.blue,
+                                color: AppColors.mutedMauve,
                                 fontSize: 12,
                               ),
                             ),
@@ -472,7 +472,7 @@ class _CatalogPanel extends StatelessWidget {
                   flex: 2,
                   child: SharedTextField(
                     controller: searchController,
-                    style: const TextStyle(fontSize: 15, color: Colors.black87),
+                    style: TextStyle(fontSize: 15, color: AppColors.plumGray87),
                     hint: 'Código o descripción del producto',
                     prefixIcon: const Icon(Icons.search),
                     useFilterStyle: true,
@@ -482,15 +482,15 @@ class _CatalogPanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 children: [
                   Expanded(
                     child: Text(
                       'PRODUCTO Y SKU',
                       style: TextStyle(
-                        color: Colors.black54,
+                        color: AppColors.plumGray54,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
@@ -499,12 +499,12 @@ class _CatalogPanel extends StatelessWidget {
                   Text(
                     'P. COMPRA',
                     style: TextStyle(
-                      color: Colors.black54,
+                      color: AppColors.plumGray54,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  SizedBox(width: 52),
+                  const SizedBox(width: 52),
                 ],
               ),
             ),
@@ -569,8 +569,8 @@ class _CatalogPanel extends StatelessWidget {
                                             const SizedBox(height: 3),
                                             Text(
                                               'SKU: ${product['sku'] ?? 'Sin código'}',
-                                              style: const TextStyle(
-                                                color: Colors.black54,
+                                              style: TextStyle(
+                                                color: AppColors.plumGray54,
                                                 fontSize: 12,
                                               ),
                                             ),
@@ -641,7 +641,7 @@ class _SummaryPanel extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.black,
+              color: AppColors.plumGray,
               borderRadius: BorderRadius.circular(9),
             ),
             child: Row(
@@ -650,7 +650,7 @@ class _SummaryPanel extends StatelessWidget {
                   child: Text(
                     'Productos Agregados',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.cream,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
@@ -661,7 +661,7 @@ class _SummaryPanel extends StatelessWidget {
                   onPressed: onAddProduct,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  color: Colors.white,
+                  color: AppColors.cream,
                   icon: const Icon(Icons.add_circle_outline, size: 25),
                 ),
               ],
@@ -674,8 +674,8 @@ class _SummaryPanel extends StatelessWidget {
                     width: double.infinity,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      border: Border.all(color: Colors.grey.shade300),
+                      color: AppColors.mediumGray,
+                      border: Border.all(color: AppColors.mediumGray),
                       borderRadius: BorderRadius.circular(9),
                     ),
                     child: const Padding(
@@ -686,13 +686,13 @@ class _SummaryPanel extends StatelessWidget {
                           Icon(
                             Icons.inventory_2_outlined,
                             size: 52,
-                            color: Colors.grey,
+                            color: AppColors.mediumGray,
                           ),
                           SizedBox(height: 12),
                           Text(
                             'No se han agregado productos',
                             style: TextStyle(
-                              color: Colors.grey,
+                              color: AppColors.mediumGray,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -700,7 +700,7 @@ class _SummaryPanel extends StatelessWidget {
                           Text(
                             'Agrega productos usando el buscador superior',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: AppColors.mediumGray),
                           ),
                         ],
                       ),
@@ -781,16 +781,16 @@ class _PurchaseTotalsState extends State<_PurchaseTotals> {
           value: hasVat
               ? '\$${controller.vatTotal.toStringAsFixed(2)}'
               : 'No aplicado',
-          color: hasVat ? Colors.orange : Colors.black45,
+          color: hasVat ? AppColors.paleMauve : AppColors.plumGray45,
           italic: !hasVat,
         ),
         if (hasVat) ...[
           const SizedBox(height: 4),
           Text(
             'Productos con IVA: ${controller.productsWithVat}/${controller.cart.length}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Colors.black54,
+              color: AppColors.plumGray54,
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -831,7 +831,7 @@ class _PurchaseTotalsState extends State<_PurchaseTotals> {
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
-                color: Colors.green,
+                color: AppColors.plumGray,
               ),
             ),
           ],
@@ -842,8 +842,8 @@ class _PurchaseTotalsState extends State<_PurchaseTotals> {
           child: FilledButton.icon(
             onPressed: controller.cart.isEmpty ? null : widget.onSave,
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.plumGray,
+              foregroundColor: AppColors.cream,
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             icon: const Icon(Icons.save_outlined),
@@ -859,7 +859,7 @@ class _TotalLine extends StatelessWidget {
   const _TotalLine({
     required this.label,
     required this.value,
-    this.color = Colors.black87,
+    this.color = AppColors.plumGray87,
     this.italic = false,
   });
 
@@ -942,7 +942,7 @@ class _PurchaseCartRowState extends State<_PurchaseCartRow> {
             const SizedBox(height: 4),
             Text(
               'Código: ${widget.item['product_id']}',
-              style: const TextStyle(fontSize: 11, color: Colors.black54),
+              style: const TextStyle(fontSize: 11, color: AppColors.plumGray54),
             ),
           ],
         );
@@ -977,14 +977,17 @@ class _PurchaseCartRowState extends State<_PurchaseCartRow> {
             _ValueBadge(
               label: 'Total',
               value: '\$${total.toStringAsFixed(2)}',
-              color: const Color(0xFFE7FFD8),
-              textColor: const Color(0xFF267A16),
+              color: AppColors.mutedCream,
+              textColor: AppColors.plumGray,
             ),
             const SizedBox(width: 8),
             IconButton(
               tooltip: 'Quitar producto',
               onPressed: () => widget.controller.removeFromCart(productId),
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              icon: const Icon(
+                Icons.delete_outline,
+                color: AppColors.dustyRose,
+              ),
             ),
           ],
         );
@@ -1058,8 +1061,8 @@ class _ValueBadge extends StatelessWidget {
   const _ValueBadge({
     required this.label,
     required this.value,
-    this.color = const Color(0xFFFFF2BF),
-    this.textColor = const Color(0xFFB88600),
+    this.color = AppColors.paleCream,
+    this.textColor = AppColors.dustyRose,
   });
 
   final String label;

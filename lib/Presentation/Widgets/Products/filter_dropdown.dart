@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'shared_inputs.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 class FilterDropdown<T> extends StatelessWidget {
   const FilterDropdown({
@@ -20,19 +21,19 @@ class FilterDropdown<T> extends StatelessWidget {
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cream,
         borderRadius: BorderRadius.circular(16),
       ),
       child: DropdownButtonFormField<T>(
         elevation: 5,
         isExpanded: true,
         value: value,
-        style: const TextStyle(fontSize: 15, color: Colors.black87),
-        dropdownColor: Colors.white,
+        style: const TextStyle(fontSize: 15, color: AppColors.plumGray87),
+        dropdownColor: AppColors.cream,
         decoration: filterFieldDecoration(hint: label),
         icon: Icon(
           Icons.keyboard_arrow_down_rounded,
-          color: Colors.grey.shade400,
+          color: AppColors.mediumGray,
           size: 22,
         ),
         items: items,

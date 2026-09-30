@@ -28,7 +28,11 @@ class InventoryDonutChart extends StatelessWidget {
         color: AppColors.whiteOverlay,
         borderRadius: BorderRadius.circular(14),
         boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(
+            color: AppColors.plumGray12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -54,13 +58,13 @@ class InventoryDonutChart extends StatelessWidget {
                   ),
                   PieChartSectionData(
                     value: toOrder.toDouble(),
-                    color: Colors.orange,
+                    color: AppColors.paleMauve,
                     title: '',
                     radius: 40,
                   ),
                   PieChartSectionData(
                     value: stable.toDouble(),
-                    color: Colors.green,
+                    color: AppColors.plumGray,
                     title: '',
                     radius: 40,
                   ),
@@ -81,12 +85,12 @@ class InventoryDonutChart extends StatelessWidget {
             value: outOfStock,
           ),
           InventoryChartLegend(
-            color: Colors.orange,
+            color: AppColors.paleMauve,
             label: 'Pedir',
             value: toOrder,
           ),
           InventoryChartLegend(
-            color: Colors.green,
+            color: AppColors.plumGray,
             label: 'Estable',
             value: stable,
           ),
@@ -102,10 +106,7 @@ class InventoryDonutChart extends StatelessWidget {
 }
 
 class InventoryBarChart extends StatelessWidget {
-  const InventoryBarChart({
-    super.key,
-    required this.items,
-  });
+  const InventoryBarChart({super.key, required this.items});
 
   final List<InventoryItem> items;
 
@@ -117,16 +118,21 @@ class InventoryBarChart extends StatelessWidget {
     final r3 = items.where((i) => i.quantity >= 11 && i.quantity <= 20).length;
     final r4 = items.where((i) => i.quantity >= 21 && i.quantity <= 50).length;
     final r5 = items.where((i) => i.quantity > 50).length;
-    final maxY = [r0, r1, r2, r3, r4, r5]
-        .fold<int>(1, (m, v) => v > m ? v : m)
-        .toDouble();
+    final maxY = [
+      r0,
+      r1,
+      r2,
+      r3,
+      r4,
+      r5,
+    ].fold<int>(1, (m, v) => v > m ? v : m).toDouble();
     final colors = [
       AppColors.primaryRed,
-      Colors.orange,
-      const Color(0xFFD4A017),
-      AppColors.primaryBlue,
-      Colors.green,
-      Colors.purple,
+      AppColors.paleMauve,
+      AppColors.mutedCream,
+      AppColors.mutedMauve,
+      AppColors.plumGray,
+      AppColors.blush,
     ];
     final labels = ['0', '1-5', '6-10', '11-20', '21-50', '50+'];
     final counts = [r0, r1, r2, r3, r4, r5];
@@ -137,7 +143,11 @@ class InventoryBarChart extends StatelessWidget {
         color: AppColors.whiteOverlay,
         borderRadius: BorderRadius.circular(14),
         boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(
+            color: AppColors.plumGray12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(

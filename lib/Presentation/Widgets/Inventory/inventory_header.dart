@@ -28,15 +28,13 @@ class InventoryHeader extends StatelessWidget implements PreferredSizeWidget {
       preferredSize: preferredSize,
       child: ClipRRect(
         clipBehavior: Clip.hardEdge,
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(25),
-        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(25)),
         child: Container(
           decoration: const BoxDecoration(
-            color: AppColors.blackOverlay,
+            color: AppColors.lightWhite,
             boxShadow: [
               BoxShadow(
-                color: Colors.black26,
+                color: AppColors.plumGray26,
                 blurRadius: 5,
                 offset: Offset(0, 3),
               ),
@@ -49,7 +47,7 @@ class InventoryHeader extends StatelessWidget implements PreferredSizeWidget {
             leading: IconButton(
               icon: const Icon(
                 Icons.arrow_back,
-                color: AppColors.whiteOverlay,
+                color: AppColors.blackOverlay,
                 size: 26,
               ),
               onPressed: onBack,
@@ -59,16 +57,13 @@ class InventoryHeader extends StatelessWidget implements PreferredSizeWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.whiteOverlay,
+                color: AppColors.blackOverlay,
               ),
             ),
             centerTitle: true,
             actions: [
               IconButton(
-                icon: const Icon(
-                  Icons.refresh,
-                  color: AppColors.whiteOverlay,
-                ),
+                icon: const Icon(Icons.refresh, color: AppColors.blackOverlay),
                 onPressed: onRefresh,
               ),
             ],

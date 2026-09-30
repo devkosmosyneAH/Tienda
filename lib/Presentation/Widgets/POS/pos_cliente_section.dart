@@ -44,18 +44,18 @@ class PosClienteSection extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade600,
+                  color: AppColors.plumGray,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check, color: Colors.white, size: 13),
+                    Icon(Icons.check, color: AppColors.cream, size: 13),
                     SizedBox(width: 4),
                     Text(
                       'Seleccionado',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.cream,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -220,7 +220,7 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Cliente actualizado correctamente'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.plumGray,
           ),
         );
       }
@@ -229,7 +229,7 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.dustyRose,
           ),
         );
       }
@@ -252,7 +252,9 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
               decoration: BoxDecoration(
                 color: AppColors.blackOverlay.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.blackOverlay.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: AppColors.blackOverlay.withValues(alpha: 0.2),
+                ),
               ),
               child: Row(
                 children: [
@@ -296,7 +298,7 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
                       icon: const Icon(Icons.arrow_drop_down, size: 18),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: AppColors.plumGray87,
                         fontSize: 14,
                       ),
                       items: _idTypes
@@ -319,7 +321,7 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
                         _idType,
                         style: const TextStyle(
                           fontSize: 11,
-                          color: Colors.black45,
+                          color: AppColors.plumGray45,
                         ),
                       ),
                       SharedTextField(
@@ -417,10 +419,7 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
                   'Dirección',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-                SharedTextField(
-                  controller: _direccionCtrl,
-                  label: 'Dirección',
-                ),
+                SharedTextField(controller: _direccionCtrl, label: 'Dirección'),
               ],
             ),
             const SizedBox(height: 20),
@@ -441,7 +440,7 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: AppColors.cream,
                           ),
                         )
                       : const Icon(Icons.save_outlined, size: 18),

@@ -202,12 +202,12 @@ class _ProductManagementViewState extends State<ProductManagementView> {
         SnackBar(
           content: const Row(
             children: [
-              Icon(Icons.check_circle_outline, color: Colors.white),
+              Icon(Icons.check_circle_outline, color: AppColors.cream),
               SizedBox(width: 8),
               Text('Producto creado en el catálogo compartido'),
             ],
           ),
-          backgroundColor: const Color(0xff1a7f4b),
+          backgroundColor: AppColors.plumGray,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -221,7 +221,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.dustyRose,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -351,7 +351,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
           backgroundColor: AppColors.lightGray,
           appBar: isMobile
               ? AppBar(
-                  backgroundColor: AppColors.blackOverlay,
+                  backgroundColor: AppColors.lightWhite,
                   toolbarHeight: 64,
                   automaticallyImplyLeading: false,
                   leading: const SizedBox.shrink(),
@@ -365,7 +365,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                       bottomLeft: Radius.circular(20),
                       bottomRight: Radius.circular(20),
                     ),
-                    side: BorderSide(color: Color(0xFF1a1a1a), width: 0.5),
+                    side: BorderSide(color: AppColors.plumGray, width: 0.5),
                   ),
                 )
               : null,
@@ -384,10 +384,10 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                       ),
                       child: Container(
                         decoration: const BoxDecoration(
-                          color: AppColors.blackOverlay,
+                          color: AppColors.lightWhite,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black26,
+                              color: AppColors.plumGray26,
                               blurRadius: 5,
                               offset: Offset(0, 3),
                             ),
@@ -401,7 +401,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                           centerTitle: true,
                           automaticallyImplyLeading: false,
                           iconTheme: const IconThemeData(
-                            color: AppColors.whiteOverlay,
+                            color: AppColors.blackOverlay,
                           ),
                           leading: IconButton(
                             onPressed: () => Navigator.pop(context),
@@ -412,7 +412,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.whiteOverlay,
+                              color: AppColors.blackOverlay,
                               letterSpacing: -0.3,
                             ),
                           ),
@@ -443,7 +443,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                           icon: Icons.warehouse_outlined,
                           title: 'Stock Total',
                           value: '$totalStock',
-                          color: const Color(0xFF1a7f4b),
+                          color: AppColors.plumGray,
                           index: 1,
                         ),
                         const SizedBox(width: 12),
@@ -473,12 +473,12 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                             controller: _searchController,
                             style: const TextStyle(
                               fontSize: 15,
-                              color: Colors.black87,
+                              color: AppColors.plumGray87,
                             ),
                             hint: 'Buscar productos...',
                             prefixIcon: Icon(
                               Icons.search_rounded,
-                              color: Colors.grey.shade400,
+                              color: AppColors.mediumGray,
                               size: 22,
                             ),
                             suffixIcon: _searchController.text.isEmpty
@@ -490,7 +490,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                                     },
                                     icon: Icon(
                                       Icons.close,
-                                      color: Colors.grey.shade400,
+                                      color: AppColors.mediumGray,
                                       size: 18,
                                     ),
                                   ),
@@ -572,21 +572,23 @@ class _ProductManagementViewState extends State<ProductManagementView> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFE5E5),
+                          color: AppColors.blush,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           children: [
                             const Icon(
                               Icons.error_outline,
-                              color: Colors.red,
+                              color: AppColors.dustyRose,
                               size: 18,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 controller.errorMessage!,
-                                style: const TextStyle(color: Colors.red),
+                                style: const TextStyle(
+                                  color: AppColors.dustyRose,
+                                ),
                               ),
                             ),
                           ],
@@ -646,7 +648,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: AppColors.whiteOverlay),
+            icon: const Icon(Icons.arrow_back, color: AppColors.blackOverlay),
             splashRadius: 20,
           ),
           const SizedBox(width: 8),
@@ -656,7 +658,7 @@ class _ProductManagementViewState extends State<ProductManagementView> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
-                color: AppColors.whiteOverlay,
+                color: AppColors.blackOverlay,
                 letterSpacing: -0.3,
               ),
               textAlign: TextAlign.center,
@@ -704,7 +706,9 @@ class _HoverCardState extends State<_HoverCard> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: _hovered ? 0.10 : 0.05),
+                color: AppColors.plumGray.withValues(
+                  alpha: _hovered ? 0.10 : 0.05,
+                ),
                 blurRadius: _hovered ? 20 : 10,
                 offset: Offset(0, _hovered ? 8 : 4),
               ),

@@ -81,7 +81,7 @@ class InventoryProductsTab extends StatelessWidget {
                     child: const Icon(
                       Icons.clear,
                       size: 18,
-                      color: Colors.black38,
+                      color: AppColors.plumGray38,
                     ),
                   ),
               ],
@@ -123,7 +123,7 @@ class InventoryProductsTab extends StatelessWidget {
                       prefixIcon: const Icon(
                         Icons.search,
                         size: 18,
-                        color: Colors.black38,
+                        color: AppColors.plumGray38,
                       ),
                       suffixIcon: searchController.text.isEmpty
                           ? null
@@ -135,7 +135,7 @@ class InventoryProductsTab extends StatelessWidget {
                               child: const Icon(
                                 Icons.clear,
                                 size: 16,
-                                color: Colors.black38,
+                                color: AppColors.plumGray38,
                               ),
                             ),
                       useFilterStyle: true,
@@ -152,7 +152,7 @@ class InventoryProductsTab extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
             '${filtered.length} productos encontrados',
-            style: const TextStyle(fontSize: 12, color: Colors.black54),
+            style: const TextStyle(fontSize: 12, color: AppColors.plumGray54),
           ),
         ),
         Expanded(
@@ -163,12 +163,12 @@ class InventoryProductsTab extends StatelessWidget {
                     final crossAxisCount = constraints.maxWidth >= 1100
                         ? 4
                         : constraints.maxWidth >= 700
-                            ? 3
-                            : 2;
+                        ? 3
+                        : 2;
                     final availableWidth = constraints.maxWidth - 24;
                     final cardWidth =
                         (availableWidth - (crossAxisCount - 1) * 10) /
-                            crossAxisCount;
+                        crossAxisCount;
 
                     return ListView(
                       padding: const EdgeInsets.symmetric(
@@ -183,27 +183,28 @@ class InventoryProductsTab extends StatelessWidget {
                             filtered.length,
                             (i) => SizedBox(
                               width: cardWidth,
-                              child: InventoryProductCard(
-                                item: filtered[i],
-                                fmt: fmt,
-                                onTap: () => onOpenDetail(filtered[i]),
-                              )
-                                  .animate()
-                                  .fadeIn(
-                                    delay: Duration(
-                                      milliseconds: 25 * (i % 24),
-                                    ),
-                                    duration: 300.ms,
-                                  )
-                                  .slideY(
-                                    begin: 0.15,
-                                    end: 0,
-                                    delay: Duration(
-                                      milliseconds: 25 * (i % 24),
-                                    ),
-                                    duration: 300.ms,
-                                    curve: Curves.easeOut,
-                                  ),
+                              child:
+                                  InventoryProductCard(
+                                        item: filtered[i],
+                                        fmt: fmt,
+                                        onTap: () => onOpenDetail(filtered[i]),
+                                      )
+                                      .animate()
+                                      .fadeIn(
+                                        delay: Duration(
+                                          milliseconds: 25 * (i % 24),
+                                        ),
+                                        duration: 300.ms,
+                                      )
+                                      .slideY(
+                                        begin: 0.15,
+                                        end: 0,
+                                        delay: Duration(
+                                          milliseconds: 25 * (i % 24),
+                                        ),
+                                        duration: 300.ms,
+                                        curve: Curves.easeOut,
+                                      ),
                             ),
                           ),
                         ),

@@ -45,7 +45,7 @@ class InventoryStatusCards extends StatelessWidget {
             icon: Icons.cancel_outlined,
             iconColor: AppColors.primaryRed,
             iconBgColor: AppColors.lightRed,
-            bgColor: const Color(0xFFFFE8E6),
+            bgColor: AppColors.blush,
             valueColor: AppColors.primaryRed,
           ),
           InventoryStatusCard(
@@ -55,19 +55,19 @@ class InventoryStatusCards extends StatelessWidget {
                 ? '0.0% del total'
                 : '${(toOrder / itemsCount * 100).toStringAsFixed(1)}% del total',
             badge: 'Requiere atención',
-            badgeColor: Colors.orange,
+            badgeColor: AppColors.dustyRose,
             icon: Icons.warning_amber_rounded,
-            iconColor: Colors.orange,
-            iconBgColor: const Color(0xFFFFEDD5),
-            bgColor: const Color(0xFFFFF3E0),
-            valueColor: Colors.orange,
+            iconColor: AppColors.dustyRose,
+            iconBgColor: AppColors.paleMauve,
+            bgColor: AppColors.paleCream,
+            valueColor: AppColors.dustyRose,
           ),
           InventoryStatusCard(
             value: stable.toString(),
             label: 'Estable (Mín<St<Máx)',
             sublabel: 'Stock óptimo',
             icon: Icons.check_circle_outline,
-            iconColor: Colors.green,
+            iconColor: AppColors.plumGray,
             iconBgColor: AppColors.lightGreen,
             bgColor: AppColors.whiteOverlay,
             valueColor: AppColors.darkGray,
@@ -127,7 +127,7 @@ class InventoryStatusCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: const [
             BoxShadow(
-              color: Colors.black12,
+              color: AppColors.plumGray12,
               blurRadius: 4,
               offset: Offset(0, 2),
             ),
@@ -166,7 +166,10 @@ class InventoryStatusCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 sublabel,
-                style: const TextStyle(fontSize: 10, color: Colors.black54),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.plumGray54,
+                ),
                 maxLines: 2,
               ),
               if (badge != null) ...[

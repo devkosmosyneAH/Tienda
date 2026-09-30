@@ -27,19 +27,22 @@ class InventoryFilterChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: active ? color : Colors.transparent,
-          border: Border.all(color: active ? color : Colors.black26, width: 1),
+          border: Border.all(
+            color: active ? color : AppColors.plumGray26,
+            width: 1,
+          ),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 13, color: active ? Colors.white : color),
+            Icon(icon, size: 13, color: active ? AppColors.cream : color),
             const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: active ? Colors.white : Colors.black87,
+                color: active ? AppColors.cream : AppColors.plumGray87,
                 fontWeight: active ? FontWeight.bold : FontWeight.normal,
               ),
             ),

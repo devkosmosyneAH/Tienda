@@ -299,12 +299,12 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
               boxShadow: [
                 BoxShadow(
                   offset: Offset(-10, 10),
-                  color: Color.fromARGB(80, 0, 0, 0),
+                  color: AppColors.plumGray31,
                   blurRadius: 10,
                 ),
                 BoxShadow(
                   offset: Offset(-10, -10),
-                  color: Color.fromARGB(150, 255, 255, 255),
+                  color: AppColors.cream59,
                   blurRadius: 10,
                 ),
               ],
@@ -312,8 +312,8 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
             child: AppBar(
               title: const Text('Facturación SRI'),
               centerTitle: true,
-              backgroundColor: AppColors.blackOverlay,
-              foregroundColor: AppColors.whiteOverlay,
+              backgroundColor: AppColors.lightWhite,
+              foregroundColor: AppColors.blackOverlay,
               surfaceTintColor: Colors.transparent,
             ),
           ),
@@ -380,8 +380,8 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
         backgroundColor: AppColors.lightGray,
         appBar: AppBar(
           title: const Text('Facturación SRI'),
-          backgroundColor: AppColors.blackOverlay,
-          foregroundColor: AppColors.whiteOverlay,
+          backgroundColor: AppColors.lightWhite,
+          foregroundColor: AppColors.blackOverlay,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
         ),

@@ -7,6 +7,7 @@ import 'package:tienda/Presentation/Widgets/gallery_thumbnail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 /// Visor a pantalla completa para una colección de URLs de imágenes.
 ///
@@ -172,7 +173,7 @@ class _ProductGalleryViewerState extends State<ProductGalleryViewer> {
                 // de la página desde la que se abrió la galería.
                 BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-                  child: ColoredBox(color: Colors.black.withValues(alpha: 0.9)),
+                  child: ColoredBox(color: AppColors.plumGray90),
                 ),
                 SafeArea(
                   child: LayoutBuilder(
@@ -216,12 +217,12 @@ class _ProductGalleryViewerState extends State<ProductGalleryViewer> {
                                   '${index + 1} / ${widget.images.length}',
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.cream,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                     shadows: [
                                       Shadow(
-                                        color: Colors.black,
+                                        color: AppColors.plumGray,
                                         blurRadius: 8,
                                       ),
                                     ],
@@ -373,14 +374,16 @@ class _GalleryImageState extends State<_GalleryImage> {
               errorBuilder: (_, __, ___) => const Center(
                 child: Icon(
                   Icons.broken_image_outlined,
-                  color: Colors.white54,
+                  color: AppColors.paleMauve54,
                   size: 56,
                 ),
               ),
               loadingBuilder: (_, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return const Center(
-                  child: CircularProgressIndicator(color: Colors.white70),
+                  child: CircularProgressIndicator(
+                    color: AppColors.paleMauve70,
+                  ),
                 );
               },
             ),

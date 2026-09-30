@@ -71,7 +71,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final accentColor =
         widget.product.categoryName.toLowerCase().contains('bazar')
         ? AppColors.blackOverlay
-        : const Color(0xFF2E7D32);
+        : AppColors.mutedMauve;
 
     final images = heroImages;
     final currentImage = images.isEmpty
@@ -91,11 +91,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ? 'Producto destacado'
         : widget.product.name;
     //final categoryLabel = widget.product.categoryName.isEmpty
-      //  ? 'Catálogo'
-       // : widget.product.categoryName;
+    //  ? 'Catálogo'
+    // : widget.product.categoryName;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF8),
+      backgroundColor: AppColors.paleCream,
       extendBodyBehindAppBar: true,
       body: CustomScrollView(
         controller: _scrollController,
@@ -104,8 +104,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             expandedHeight: heroHeight + 28,
             pinned: true,
             floating: false,
-            backgroundColor: Colors.transparent,
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.lightWhite,
+            foregroundColor: AppColors.blackOverlay,
             surfaceTintColor: Colors.transparent,
             forceMaterialTransparency: true,
             automaticallyImplyLeading: false,
@@ -154,7 +154,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             duration: const Duration(milliseconds: 250),
                             curve: Curves.easeOutCubic,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(
+                              color: AppColors.cream.withValues(
                                 alpha: overlayOpacity,
                               ),
                             ),
@@ -405,10 +405,7 @@ class _HeroSection extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.44),
-                  Colors.transparent,
-                ],
+                colors: [AppColors.plumGray44, Colors.transparent],
               ),
             ),
           ),
@@ -444,11 +441,11 @@ class _ProductMediaCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cream,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: AppColors.plumGray04,
             blurRadius: 24,
             offset: const Offset(0, 16),
           ),
@@ -510,7 +507,7 @@ class _ProductMediaCard extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
+                          color: AppColors.plumGray04,
                           blurRadius: 10,
                           offset: const Offset(0, 8),
                         ),
@@ -819,11 +816,11 @@ class _SectionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cream,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: AppColors.plumGray04,
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -843,11 +840,11 @@ class _RoundBackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
+        color: AppColors.cream.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(999),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: AppColors.plumGray06,
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -925,7 +922,7 @@ Widget _fallbackDecoration(Color accentColor) {
     child: const Center(
       child: Icon(
         Icons.image_not_supported_outlined,
-        color: Colors.white70,
+        color: AppColors.paleMauve70,
         size: 56,
       ),
     ),

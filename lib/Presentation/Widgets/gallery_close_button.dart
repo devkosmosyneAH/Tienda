@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 /// Botón de cierre consistente para el visor de galería.
 class GalleryCloseButton extends StatelessWidget {
@@ -14,14 +15,14 @@ class GalleryCloseButton extends StatelessWidget {
       child: Tooltip(
         message: 'Cerrar (Esc)',
         child: Material(
-          color: Colors.black.withValues(alpha: 0.36),
+          color: AppColors.plumGray36,
           shape: const CircleBorder(),
           child: IconButton(
             onPressed: onPressed,
             icon: const Icon(Icons.close_rounded),
             iconSize: 31,
             padding: const EdgeInsets.all(12),
-            color: Colors.white,
+            color: AppColors.cream,
             mouseCursor: SystemMouseCursors.click,
           ),
         ),

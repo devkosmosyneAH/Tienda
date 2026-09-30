@@ -193,7 +193,7 @@ class _CustomersViewState extends State<CustomersView> {
                     child: FilledButton.icon(
                       onPressed: _saveCustomer,
                       style: FilledButton.styleFrom(
-                        backgroundColor: Colors.black,
+                        backgroundColor: AppColors.plumGray,
                         foregroundColor: AppColors.whiteOverlay,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
@@ -540,11 +540,11 @@ class _CustomersViewState extends State<CustomersView> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cream,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 12),
+                  color: AppColors.plumGray12,
                   blurRadius: 30,
                   offset: const Offset(0, 12),
                 ),
@@ -589,7 +589,7 @@ class _CustomersViewState extends State<CustomersView> {
                     style: const TextStyle(
                       fontSize: 14,
                       height: 1.5,
-                      color: Colors.black54,
+                      color: AppColors.plumGray54,
                     ),
                     children: [
                       const TextSpan(
@@ -623,7 +623,7 @@ class _CustomersViewState extends State<CustomersView> {
                         },
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(48),
-                          side: BorderSide(color: Colors.grey.shade300),
+                          side: BorderSide(color: AppColors.mediumGray),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -655,7 +655,7 @@ class _CustomersViewState extends State<CustomersView> {
                         ),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.primaryRed,
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppColors.cream,
                           minimumSize: const Size.fromHeight(48),
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -685,8 +685,8 @@ class _CustomersViewState extends State<CustomersView> {
     return Scaffold(
       backgroundColor: AppColors.lightGray,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryLogo,
-        foregroundColor: AppColors.whiteOverlay,
+        backgroundColor: AppColors.lightWhite,
+        foregroundColor: AppColors.blackOverlay,
         title: const Text('Clientes'),
       ),
       body: Consumer<CustomersController>(
@@ -808,7 +808,7 @@ class _CustomersViewState extends State<CustomersView> {
                                                 child: SharedTextFormField(
                                                   style: const TextStyle(
                                                     fontSize: 15,
-                                                    color: Colors.black87,
+                                                    color: AppColors.plumGray87,
                                                   ),
                                                   controller: _nameController,
                                                   label: 'Nombre completo',
@@ -827,7 +827,7 @@ class _CustomersViewState extends State<CustomersView> {
                                                 child: SharedTextField(
                                                   style: const TextStyle(
                                                     fontSize: 15,
-                                                    color: Colors.black87,
+                                                    color: AppColors.plumGray87,
                                                   ),
                                                   controller:
                                                       _lastNameController,
@@ -842,7 +842,7 @@ class _CustomersViewState extends State<CustomersView> {
                                                 child: SharedTextField(
                                                   style: const TextStyle(
                                                     fontSize: 15,
-                                                    color: Colors.black87,
+                                                    color: AppColors.plumGray87,
                                                   ),
                                                   controller: _phoneController,
                                                   label: 'Teléfono',
@@ -862,7 +862,7 @@ class _CustomersViewState extends State<CustomersView> {
                                                 child: SharedTextFormField(
                                                   style: const TextStyle(
                                                     fontSize: 15,
-                                                    color: Colors.black87,
+                                                    color: AppColors.plumGray87,
                                                   ),
                                                   controller: _emailController,
                                                   label: 'Correo',
@@ -891,7 +891,7 @@ class _CustomersViewState extends State<CustomersView> {
                                                 child: SharedTextField(
                                                   style: const TextStyle(
                                                     fontSize: 15,
-                                                    color: Colors.black87,
+                                                    color: AppColors.plumGray87,
                                                   ),
                                                   controller: _idController,
                                                   label: 'Cédula',
@@ -911,7 +911,7 @@ class _CustomersViewState extends State<CustomersView> {
                                                 child: SharedTextField(
                                                   style: const TextStyle(
                                                     fontSize: 15,
-                                                    color: Colors.black87,
+                                                    color: AppColors.plumGray87,
                                                   ),
                                                   controller:
                                                       _addressController,
@@ -926,7 +926,7 @@ class _CustomersViewState extends State<CustomersView> {
                                                 child: SharedTextField(
                                                   style: const TextStyle(
                                                     fontSize: 15,
-                                                    color: Colors.black87,
+                                                    color: AppColors.plumGray87,
                                                   ),
                                                   controller:
                                                       _referencesController,
@@ -971,7 +971,7 @@ class _CustomersViewState extends State<CustomersView> {
                                         child: FilledButton.icon(
                                           onPressed: _saveCustomer,
                                           style: FilledButton.styleFrom(
-                                            backgroundColor: Colors.black,
+                                            backgroundColor: AppColors.plumGray,
                                             foregroundColor:
                                                 AppColors.whiteOverlay,
                                             shape: RoundedRectangleBorder(
@@ -1058,7 +1058,7 @@ class _CustomersViewState extends State<CustomersView> {
                                           child: SharedTextField(
                                             style: const TextStyle(
                                               fontSize: 15,
-                                              color: Colors.black87,
+                                              color: AppColors.plumGray87,
                                             ),
                                             controller: _searchController,
                                             hint:

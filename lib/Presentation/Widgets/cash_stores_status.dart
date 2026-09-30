@@ -1,5 +1,6 @@
 import 'package:tienda/Presentation/Controller/cash_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 class CashStoresStatus extends StatelessWidget {
   const CashStoresStatus({
@@ -17,7 +18,7 @@ class CashStoresStatus extends StatelessWidget {
       return const Text(
         'Cajas',
         style: TextStyle(
-          color: Colors.white,
+          color: AppColors.cream,
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
@@ -30,7 +31,7 @@ class CashStoresStatus extends StatelessWidget {
       children: controller.stores.map((store) {
         final storeId = (store['id'] as num).toInt();
         final isOpen = controller.isStoreOpen(storeId);
-        final color = isOpen ? Colors.green.shade300 : Colors.red.shade300;
+        final color = isOpen ? AppColors.plumGray : AppColors.dustyRose;
 
         return Row(
           mainAxisSize: MainAxisSize.min,

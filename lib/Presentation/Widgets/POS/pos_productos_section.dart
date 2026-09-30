@@ -11,10 +11,7 @@ import 'package:provider/provider.dart';
 class PosProductosSection extends StatelessWidget {
   final void Function(BuildContext, PosController) onShowProductSearch;
 
-  const PosProductosSection({
-    super.key,
-    required this.onShowProductSearch,
-  });
+  const PosProductosSection({super.key, required this.onShowProductSearch});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +30,10 @@ class PosProductosSection extends StatelessWidget {
             if (controller.cart.isNotEmpty)
               Text(
                 '${controller.totalItems} unidades',
-                style: const TextStyle(color: Colors.black54, fontSize: 13),
+                style: const TextStyle(
+                  color: AppColors.plumGray54,
+                  fontSize: 13,
+                ),
               ),
           ],
         ),
@@ -53,14 +53,14 @@ class PosProductosSection extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             controller.errorMessage!,
-            style: const TextStyle(color: Colors.red, fontSize: 13),
+            style: const TextStyle(color: AppColors.dustyRose, fontSize: 13),
           ),
         ],
         if (controller.cart.isNotEmpty) ...[
           const SizedBox(height: 12),
           Card(
             elevation: 4,
-            color: Colors.white,
+            color: AppColors.cream,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),

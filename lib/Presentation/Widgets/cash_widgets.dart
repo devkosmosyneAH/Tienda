@@ -2,6 +2,7 @@ import 'package:tienda/Presentation/Model/cash_model.dart';
 import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 // ─── Widget principal: entrada de denominaciones ──────────────────────────────
 
@@ -209,7 +210,7 @@ class _DenominationRowState extends State<_DenominationRow> {
                   fontSize: 13,
                   color: subtotal > 0
                       ? Theme.of(context).colorScheme.primary
-                      : Colors.grey,
+                      : AppColors.mediumGray,
                 ),
               ),
             ),
@@ -231,14 +232,14 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
+        Icon(icon, size: 16, color: AppColors.softCream),
         const SizedBox(width: 6),
         Text(
           label,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 13,
-            color: Colors.grey[700],
+            color: AppColors.softCream,
           ),
         ),
       ],
@@ -359,7 +360,7 @@ class CashBreakdownSummary extends StatelessWidget {
         if (billEntries.isNotEmpty) ...[
           const Text(
             'Billetes',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(fontSize: 12, color: AppColors.mediumGray),
           ),
           ...billEntries.map((e) => _ReadOnlyRow(entry: e)),
         ],
@@ -367,7 +368,7 @@ class CashBreakdownSummary extends StatelessWidget {
           const SizedBox(height: 4),
           const Text(
             'Monedas',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(fontSize: 12, color: AppColors.mediumGray),
           ),
           ...coinEntries.map((e) => _ReadOnlyRow(entry: e)),
         ],
@@ -427,7 +428,7 @@ class _ReadOnlyRow extends StatelessWidget {
           ),
           Text(
             '× ${entry.quantity}',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+            style: const TextStyle(fontSize: 12, color: AppColors.mediumGray),
           ),
           const Spacer(),
           Text(

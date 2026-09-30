@@ -25,7 +25,7 @@ class InventoryProductCard extends StatelessWidget {
     final stockColor = isZero
         ? AppColors.primaryRed
         : isLow
-        ? Colors.orange
+        ? AppColors.paleMauve
         : AppColors.darkGreen.withValues(alpha: 0.2);
 
     return GestureDetector(
@@ -36,7 +36,7 @@ class InventoryProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(
-              color: Colors.black12,
+              color: AppColors.plumGray12,
               blurRadius: 3,
               offset: Offset(0, 1),
             ),
@@ -70,7 +70,9 @@ class InventoryProductCard extends StatelessWidget {
                           padding: const EdgeInsets.only(left: 2),
                           child: Icon(
                             Icons.warning_rounded,
-                            color: isZero ? AppColors.primaryRed : Colors.orange,
+                            color: isZero
+                                ? AppColors.primaryRed
+                                : AppColors.paleMauve,
                             size: 21,
                           ),
                         ),
@@ -79,11 +81,14 @@ class InventoryProductCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Código:',
-                    style: TextStyle(fontSize: 8, color: Colors.grey[500]),
+                    style: TextStyle(fontSize: 8, color: AppColors.softCream),
                   ),
                   Text(
                     code,
-                    style: const TextStyle(fontSize: 13, color: Colors.black54),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.plumGray54,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -92,7 +97,10 @@ class InventoryProductCard extends StatelessWidget {
                     children: [
                       Text(
                         'Almacén: ',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.softCream,
+                        ),
                       ),
                       Text(
                         item.quantity.toString(),

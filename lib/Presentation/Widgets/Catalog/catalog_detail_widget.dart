@@ -25,8 +25,7 @@ class CatalogDetailWidget extends StatelessWidget {
 
   bool get _isBazar => storeName.toLowerCase() == 'bazar';
 
-  Color get _accent =>
-      _isBazar ? AppColors.blackOverlay : const Color(0xFF2E7D32);
+  Color get _accent => _isBazar ? AppColors.blackOverlay : AppColors.mutedMauve;
 
   String get _storeLabel => _isBazar ? 'Bazar Nicole' : storeName;
 
@@ -50,7 +49,7 @@ class CatalogDetailWidget extends StatelessWidget {
       builder: (_, scrollController) {
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cream,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -107,13 +106,13 @@ class CatalogDetailWidget extends StatelessWidget {
                                     Icon(
                                       _storeIcon,
                                       size: 13,
-                                      color: Colors.white,
+                                      color: AppColors.cream,
                                     ),
                                     const SizedBox(width: 5),
                                     Text(
                                       _storeLabel,
                                       style: const TextStyle(
-                                        color: Colors.white,
+                                        color: AppColors.cream,
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -129,7 +128,7 @@ class CatalogDetailWidget extends StatelessWidget {
                                     width: 8,
                                     height: 8,
                                     decoration: const BoxDecoration(
-                                      color: Color(0xFF43A047),
+                                      color: AppColors.mutedMauve,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -267,7 +266,7 @@ class _HeroImage extends StatelessWidget {
             ),
             child: const Icon(
               Icons.photo_library_outlined,
-              color: Colors.white38,
+              color: AppColors.paleMauve38,
               size: 64,
             ),
           ),
@@ -310,7 +309,7 @@ class _HeroImage extends StatelessWidget {
                         ),
                         child: const Icon(
                           Icons.photo_library_outlined,
-                          color: Colors.white38,
+                          color: AppColors.paleMauve38,
                           size: 64,
                         ),
                       ),
@@ -330,7 +329,7 @@ class _HeroImage extends StatelessWidget {
               ),
               child: const Icon(
                 Icons.photo_library_outlined,
-                color: Colors.white38,
+                color: AppColors.paleMauve38,
                 size: 64,
               ),
             ),
@@ -345,10 +344,7 @@ class _HeroImage extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.4),
-                    Colors.transparent,
-                  ],
+                  colors: [AppColors.plumGray40, Colors.transparent],
                 ),
               ),
             ),
@@ -479,7 +475,7 @@ class _ContactCTA extends StatelessWidget {
             ),
             child: const Icon(
               Icons.storefront_outlined,
-              color: Colors.white,
+              color: AppColors.cream,
               size: 22,
             ),
           ),
@@ -570,12 +566,12 @@ class _ProductRow extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cream,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: color.withValues(alpha: 0.15)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: AppColors.plumGray04,
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -763,7 +759,7 @@ class _ProductRow extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.cream,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: color.withValues(alpha: 0.16)),
                       boxShadow: [
@@ -846,7 +842,7 @@ class _ProductRow extends StatelessWidget {
                       label: const Text('Listo'),
                       style: FilledButton.styleFrom(
                         backgroundColor: color,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.cream,
                         minimumSize: const Size.fromHeight(44),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

@@ -47,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('¡Bienvenido, ${user['email'] ?? email}!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.plumGray,
           ),
         );
 
@@ -56,14 +56,17 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Credenciales inválidas'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.dustyRose,
           ),
         );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: AppColors.dustyRose,
+        ),
       );
     } finally {
       if (mounted) {
@@ -88,29 +91,52 @@ class _LoginPageState extends State<LoginPage> {
                 const LogoImage()
                     .animate()
                     .fadeIn(duration: 500.ms)
-                    .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1), duration: 500.ms, curve: Curves.easeOut),
+                    .scale(
+                      begin: const Offset(0.8, 0.8),
+                      end: const Offset(1, 1),
+                      duration: 500.ms,
+                      curve: Curves.easeOut,
+                    ),
                 const SizedBox(height: 30),
                 EmailInput(controller: emailController)
                     .animate()
                     .fadeIn(delay: 200.ms, duration: 400.ms)
-                    .slideY(begin: 0.2, end: 0, delay: 200.ms, duration: 400.ms, curve: Curves.easeOut),
+                    .slideY(
+                      begin: 0.2,
+                      end: 0,
+                      delay: 200.ms,
+                      duration: 400.ms,
+                      curve: Curves.easeOut,
+                    ),
                 const SizedBox(height: 16),
                 PasswordInput(
-                  controller: passwordController,
-                  obscurePassword: _obscurePassword,
-                  onToggle: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
-                )
+                      controller: passwordController,
+                      obscurePassword: _obscurePassword,
+                      onToggle: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                    )
                     .animate()
                     .fadeIn(delay: 320.ms, duration: 400.ms)
-                    .slideY(begin: 0.2, end: 0, delay: 320.ms, duration: 400.ms, curve: Curves.easeOut),
+                    .slideY(
+                      begin: 0.2,
+                      end: 0,
+                      delay: 320.ms,
+                      duration: 400.ms,
+                      curve: Curves.easeOut,
+                    ),
                 const SizedBox(height: 24),
                 (loading
-                    ? const CircularProgressIndicator()
-                    : LoginButton(onPressed: login))
+                        ? const CircularProgressIndicator()
+                        : LoginButton(onPressed: login))
                     .animate()
                     .fadeIn(delay: 440.ms, duration: 400.ms)
-                    .slideY(begin: 0.2, end: 0, delay: 440.ms, duration: 400.ms, curve: Curves.easeOut),
+                    .slideY(
+                      begin: 0.2,
+                      end: 0,
+                      delay: 440.ms,
+                      duration: 400.ms,
+                      curve: Curves.easeOut,
+                    ),
                 const SizedBox(height: 24),
                 const SizedBox(height: 24),
               ],

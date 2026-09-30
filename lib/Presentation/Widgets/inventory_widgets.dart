@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tienda/Presentation/Hooks/use_currency_formatter.dart';
 import 'package:tienda/Presentation/Model/inventory_model.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 /// Tarjeta de Resumen de Inversión
 class InventoryInvestmentCard extends StatelessWidget {
@@ -46,21 +47,21 @@ class InventoryInvestmentCard extends StatelessWidget {
                     summary.totalPotentialGain,
                   ),
                   subValue: 'Si se vende todo',
-                  valueColor: Colors.green,
+                  valueColor: AppColors.mutedMauve,
                 ),
                 _MetricTile(
                   icon: '📊',
                   label: 'ROI Potencial',
                   value: '${summary.potentialROI.toStringAsFixed(1)}%',
                   subValue: 'Retorno inversión',
-                  valueColor: Colors.blue,
+                  valueColor: AppColors.accentColor,
                 ),
                 _MetricTile(
                   icon: '🎯',
                   label: 'Margen Promedio',
                   value: '${summary.averageMarginPercent.toStringAsFixed(1)}%',
                   subValue: 'Ganancia por unidad',
-                  valueColor: Colors.purple,
+                  valueColor: AppColors.plumGray,
                 ),
               ],
             ),
@@ -76,7 +77,7 @@ class InventoryInvestmentCard extends StatelessWidget {
                 _DetailRow(
                   label: 'Stock Bajo',
                   value: '${summary.lowStockCount}',
-                  valueColor: Colors.red,
+                  valueColor: AppColors.dustyRose,
                 ),
                 _DetailRow(
                   label: 'Valor Promedio/Producto',
@@ -149,9 +150,9 @@ class _MetricTileState extends State<_MetricTile>
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.grey.shade50,
+            color: AppColors.mediumGray,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: AppColors.mediumGray),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +165,10 @@ class _MetricTileState extends State<_MetricTile>
                   Expanded(
                     child: Text(
                       widget.label,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.mediumGray,
+                      ),
                     ),
                   ),
                 ],
@@ -183,7 +187,10 @@ class _MetricTileState extends State<_MetricTile>
               ),
               Text(
                 widget.subValue,
-                style: const TextStyle(fontSize: 10, color: Colors.grey),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.mediumGray,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -208,7 +215,10 @@ class _DetailRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.mediumGray),
+        ),
         const SizedBox(height: 4),
         Text(
           value,
@@ -238,7 +248,9 @@ class InventoryProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stockColor = item.isLowStock ? Colors.red : Colors.green;
+    final stockColor = item.isLowStock
+        ? AppColors.dustyRose
+        : AppColors.plumGray;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -295,7 +307,7 @@ class InventoryProductCard extends StatelessWidget {
                       value: CurrencyFormatter.formatCurrency(
                         item.marginPerUnit,
                       ),
-                      valueColor: Colors.green,
+                      valueColor: AppColors.plumGray,
                     ),
                   ],
                 ),
@@ -322,13 +334,13 @@ class InventoryProductCard extends StatelessWidget {
                       value: CurrencyFormatter.formatCurrency(
                         item.potentialGain,
                       ),
-                      valueColor: Colors.green,
+                      valueColor: AppColors.plumGray,
                     ),
                     _InvestmentInfo(
                       icon: '📊',
                       label: 'Margen %',
                       value: '${item.marginPercent.toStringAsFixed(1)}%',
-                      valueColor: Colors.blue,
+                      valueColor: AppColors.mutedMauve,
                     ),
                   ],
                 ),
@@ -412,10 +424,10 @@ class _SaleabilityBadge extends StatelessWidget {
 
 /// Obtiene color según score de vendibilidad
 Color _getSaleabilityColor(int score) {
-  if (score >= 80) return Colors.green;
-  if (score >= 60) return Colors.orange;
-  if (score >= 40) return Colors.amber;
-  return Colors.red;
+  if (score >= 80) return AppColors.plumGray;
+  if (score >= 60) return AppColors.paleMauve;
+  if (score >= 40) return AppColors.paleMauve;
+  return AppColors.dustyRose;
 }
 
 /// Widget de información de precio
@@ -431,7 +443,10 @@ class _PriceInfo extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.mediumGray),
+        ),
         const SizedBox(height: 4),
         Text(
           value,
@@ -470,7 +485,7 @@ class _InvestmentInfo extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: Colors.grey),
+            style: const TextStyle(fontSize: 10, color: AppColors.mediumGray),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 2),
@@ -502,7 +517,10 @@ class _StatInfo extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.mediumGray),
+        ),
         const SizedBox(height: 4),
         Text(
           value,
@@ -587,7 +605,7 @@ class TopProductsList extends StatelessWidget {
                             'Stock: ${item.quantity} · ${item.category}',
                             style: const TextStyle(
                               fontSize: 11,
-                              color: Colors.grey,
+                              color: AppColors.mediumGray,
                             ),
                           ),
                         ],
@@ -614,7 +632,7 @@ class TopProductsList extends StatelessWidget {
                           ),
                           style: const TextStyle(
                             fontSize: 11,
-                            color: Colors.grey,
+                            color: AppColors.mediumGray,
                           ),
                         ),
                       ],
@@ -632,13 +650,13 @@ class TopProductsList extends StatelessWidget {
   Color _getPositionColor(int position) {
     switch (position) {
       case 1:
-        return Colors.amber;
+        return AppColors.paleMauve;
       case 2:
-        return Colors.grey;
+        return AppColors.mediumGray;
       case 3:
-        return Colors.orange;
+        return AppColors.paleMauve;
       default:
-        return Colors.blue;
+        return AppColors.mutedMauve;
     }
   }
 }

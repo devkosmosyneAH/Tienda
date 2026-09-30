@@ -27,13 +27,13 @@ class _UsersViewState extends State<UsersView> {
     return Scaffold(
       backgroundColor: AppColors.lightWhite,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryLogo,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.lightWhite,
+        foregroundColor: AppColors.blackOverlay,
         title: const Text(
           'Usuarios y Roles',
-          style: TextStyle(color: AppColors.threeColor),
+          style: TextStyle(color: AppColors.blackOverlay),
         ),
-        iconTheme: const IconThemeData(color: AppColors.threeColor),
+        iconTheme: const IconThemeData(color: AppColors.blackOverlay),
       ),
       body: Consumer<UsersController>(
         builder: (context, ctrl, _) {
@@ -118,8 +118,8 @@ class _UserCard extends StatelessWidget {
             if (!user.isActive)
               const Chip(
                 label: Text('Inactivo', style: TextStyle(fontSize: 10)),
-                backgroundColor: Colors.red,
-                labelStyle: TextStyle(color: Colors.white),
+                backgroundColor: AppColors.dustyRose,
+                labelStyle: TextStyle(color: AppColors.cream),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 padding: EdgeInsets.zero,
               ),
@@ -183,7 +183,10 @@ class _UserCard extends StatelessWidget {
             ),
             const PopupMenuItem(
               value: 'delete',
-              child: Text('Eliminar', style: TextStyle(color: Colors.red)),
+              child: Text(
+                'Eliminar',
+                style: TextStyle(color: AppColors.dustyRose),
+              ),
             ),
           ],
         ),
@@ -196,20 +199,20 @@ class _UserCard extends StatelessWidget {
       case 'admin':
         return Colors.deepPurple;
       case 'cajero':
-        return Colors.teal;
+        return AppColors.mutedMauve;
       case 'bodega':
-        return Colors.orange;
+        return AppColors.paleMauve;
       case 'reportes':
-        return Colors.blue;
+        return AppColors.mutedMauve;
       default:
-        return Colors.grey;
+        return AppColors.mediumGray;
     }
   }
 
   void _showError(BuildContext context, String msg) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: AppColors.dustyRose),
+    );
   }
 
   void _showPasswordDialog(BuildContext context, UserModel user) {
@@ -276,7 +279,9 @@ class _UserCard extends StatelessWidget {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.dustyRose,
+            ),
             onPressed: () async {
               final err = await ctrl.deleteUser(user);
               if (!ctx.mounted) return;
@@ -287,7 +292,7 @@ class _UserCard extends StatelessWidget {
             },
             child: const Text(
               'Eliminar',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.cream),
             ),
           ),
         ],
@@ -375,9 +380,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 keyboardType: TextInputType.emailAddress,
                 label: 'Correo *',
                 prefixIcon: const Icon(Icons.email_outlined),
-                helperText: _isEditing
-                    ? 'El correo no se puede cambiar'
-                    : null,
+                helperText: _isEditing ? 'El correo no se puede cambiar' : null,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Campo requerido';
                   if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
@@ -441,7 +444,7 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppColors.cream,
                   ),
                 )
               : Text(_isEditing ? 'Guardar' : 'Crear'),
@@ -477,9 +480,9 @@ class _UserFormDialogState extends State<_UserFormDialog> {
     setState(() => _saving = false);
 
     if (err != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: AppColors.dustyRose),
+      );
     } else {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(

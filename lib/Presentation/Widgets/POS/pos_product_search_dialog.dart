@@ -78,7 +78,6 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: SizedBox(
-
             height: 600,
             child: Column(
               children: [
@@ -152,7 +151,7 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: AppColors.mediumGray,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -177,7 +176,7 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                             'Use las flechas para navegar, Enter para seleccionar',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.black54,
+                              color: AppColors.plumGray54,
                             ),
                           ),
                         ),
@@ -187,7 +186,7 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade700,
+                            color: AppColors.mutedMauve,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -195,7 +194,7 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                                 ? '0/0'
                                 : '${_selectedIndex + 1}/${ctrl.products.length}',
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.cream,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
@@ -284,14 +283,14 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                                                 'Código: ${product['sku']?.toString() ?? ''}',
                                                 style: const TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.black54,
+                                                  color: AppColors.plumGray54,
                                                 ),
                                               ),
                                               Text(
                                                 'Precio: \$${price.toStringAsFixed(2)}',
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.green.shade700,
+                                                  color: AppColors.plumGray,
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
@@ -300,8 +299,8 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: stock <= 2
-                                                      ? Colors.red
-                                                      : Colors.green.shade700,
+                                                      ? AppColors.dustyRose
+                                                      : AppColors.plumGray,
                                                 ),
                                               ),
                                             ],
@@ -314,7 +313,7 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                                             radius: 16,
                                             child: const Icon(
                                               Icons.check,
-                                              color: Colors.white,
+                                              color: AppColors.cream,
                                               size: 18,
                                             ),
                                           )
@@ -328,12 +327,12 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                                                 : null,
                                             child: CircleAvatar(
                                               backgroundColor: stock > 0
-                                                  ? Colors.green.shade600
-                                                  : Colors.grey.shade400,
+                                                  ? AppColors.plumGray
+                                                  : AppColors.mediumGray,
                                               radius: 16,
                                               child: const Icon(
                                                 Icons.add,
-                                                color: Colors.white,
+                                                color: AppColors.cream,
                                                 size: 18,
                                               ),
                                             ),
@@ -384,7 +383,7 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                                       'Pvp: \$${((selectedProduct['price'] as num?)?.toDouble() ?? 0).toStringAsFixed(2)}',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.orange.shade800,
+                                        color: AppColors.paleMauve,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -393,7 +392,7 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                                       'Stock Disponible: ${((selectedProduct['stock'] as num?)?.toInt()) ?? 0}',
                                       style: const TextStyle(
                                         fontSize: 12,
-                                        color: Colors.red,
+                                        color: AppColors.dustyRose,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -416,7 +415,7 @@ class _PosProductSearchDialogState extends State<PosProductSearchDialog> {
                       TextButton(
                         onPressed: () => Navigator.pop(context),
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.red,
+                          foregroundColor: AppColors.dustyRose,
                         ),
                         child: const Text('Cancelar'),
                       ),

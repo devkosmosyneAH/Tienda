@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:tienda/Presentation/Controller/license_provider.dart';
 import 'package:tienda/Presentation/Services/license_service.dart';
 import 'package:tienda/Presentation/View/License/license_status_page.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 class LicenseGate extends StatelessWidget {
   const LicenseGate({
@@ -28,8 +29,8 @@ class LicenseGate extends StatelessWidget {
             status == LicenseStatus.DEMO_POR_VENCER) {
           if (provider.demoShownInAppBar) return child;
           final color = status == LicenseStatus.DEMO_POR_VENCER
-              ? Colors.deepOrange
-              : Colors.teal.shade700;
+              ? AppColors.dustyRose
+              : AppColors.mutedMauve;
           final days = provider.remainingDays;
           return Column(
             children: [
@@ -44,7 +45,7 @@ class LicenseGate extends StatelessWidget {
                       child: Text(
                         'DEMO · quedan $days ${days == 1 ? 'día' : 'días'}',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.cream,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),

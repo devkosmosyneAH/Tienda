@@ -232,11 +232,11 @@ InputDecoration filterFieldDecoration({
   return InputDecoration(
     labelText: label,
     hintText: hint,
-    hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+    hintStyle: TextStyle(color: AppColors.mediumGray, fontSize: 15),
     prefixIcon: prefixIcon,
     filled: true,
-    fillColor: Colors.white,
-    hoverColor: Colors.white,
+    fillColor: AppColors.cream,
+    hoverColor: AppColors.cream,
     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
@@ -276,7 +276,7 @@ Widget formSection({required String title, required List<Widget> children}) {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: Colors.grey.shade500,
+          color: AppColors.mediumGray,
           letterSpacing: 1.2,
         ),
       ),
@@ -293,7 +293,7 @@ Widget imagePlaceholder() {
       child: Icon(
         Icons.inventory_2_outlined,
         size: 40,
-        color: Colors.grey.shade300,
+        color: AppColors.mediumGray,
       ),
     ),
   );
@@ -309,7 +309,7 @@ showProgressNotification(BuildContext context, String message) {
     SnackBar(
       behavior: SnackBarBehavior.floating,
       duration: const Duration(days: 365),
-      backgroundColor: Colors.black87,
+      backgroundColor: AppColors.plumGray87,
       content: Row(
         children: [
           SizedBox(
@@ -317,12 +317,15 @@ showProgressNotification(BuildContext context, String message) {
             height: 18,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.cream),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(message, style: const TextStyle(color: Colors.white)),
+            child: Text(
+              message,
+              style: const TextStyle(color: AppColors.cream),
+            ),
           ),
         ],
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 class HoverCard extends StatefulWidget {
   const HoverCard({required this.child, required this.onTap, super.key});
@@ -25,11 +26,13 @@ class _HoverCardState extends State<HoverCard> {
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cream,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: _hovered ? 0.10 : 0.05),
+                color: AppColors.plumGray.withValues(
+                  alpha: _hovered ? 0.10 : 0.05,
+                ),
                 blurRadius: _hovered ? 20 : 10,
                 offset: Offset(0, _hovered ? 8 : 4),
               ),

@@ -105,7 +105,7 @@ Future<void> showEditProductDialog(
                       children: [
                         const Icon(
                           Icons.edit_outlined,
-                          color: Colors.white70,
+                          color: AppColors.paleMauve70,
                           size: 20,
                         ),
                         const SizedBox(width: 10),
@@ -116,7 +116,7 @@ Future<void> showEditProductDialog(
                               const Text(
                                 'Editar producto',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.cream,
                                   fontSize: 17,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -126,7 +126,7 @@ Future<void> showEditProductDialog(
                                   'ID: ${item['uid']}',
                                   style: const TextStyle(
                                     fontSize: 11,
-                                    color: Colors.white54,
+                                    color: AppColors.paleMauve54,
                                   ),
                                 ),
                             ],
@@ -134,7 +134,10 @@ Future<void> showEditProductDialog(
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(ctx),
-                          icon: const Icon(Icons.close, color: Colors.white70),
+                          icon: const Icon(
+                            Icons.close,
+                            color: AppColors.paleMauve70,
+                          ),
                         ),
                       ],
                     ),
@@ -212,7 +215,7 @@ Future<void> showEditProductDialog(
                               ],
                             ),
                             const SizedBox(height: 24),
-                            Divider(color: Colors.grey.shade100),
+                            Divider(color: AppColors.mediumGray),
                             const SizedBox(height: 24),
                             formSection(
                               title: 'Precios e impuestos',
@@ -282,7 +285,7 @@ Future<void> showEditProductDialog(
                               ],
                             ),
                             const SizedBox(height: 24),
-                            Divider(color: Colors.grey.shade100),
+                            Divider(color: AppColors.mediumGray),
                             const SizedBox(height: 24),
                             formSection(
                               title: 'Local e inventario',
@@ -331,7 +334,7 @@ Future<void> showEditProductDialog(
                               ],
                             ),
                             const SizedBox(height: 24),
-                            Divider(color: Colors.grey.shade100),
+                            Divider(color: AppColors.mediumGray),
                             const SizedBox(height: 24),
                             formSection(
                               title: 'Imágenes del producto',
@@ -358,7 +361,7 @@ Future<void> showEditProductDialog(
                                                     height: 84,
                                                     decoration: BoxDecoration(
                                                       color:
-                                                          Colors.grey.shade100,
+                                                          AppColors.mediumGray,
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                             10,
@@ -367,7 +370,8 @@ Future<void> showEditProductDialog(
                                                     child: const Icon(
                                                       Icons
                                                           .broken_image_outlined,
-                                                      color: Colors.grey,
+                                                      color:
+                                                          AppColors.mediumGray,
                                                     ),
                                                   ),
                                             ),
@@ -417,13 +421,13 @@ Future<void> showEditProductDialog(
                                                 width: 20,
                                                 height: 20,
                                                 decoration: BoxDecoration(
-                                                  color: Colors.red.shade600,
+                                                  color: AppColors.dustyRose,
                                                   shape: BoxShape.circle,
                                                 ),
                                                 child: const Icon(
                                                   Icons.close,
                                                   size: 12,
-                                                  color: Colors.white,
+                                                  color: AppColors.cream,
                                                 ),
                                               ),
                                             ),
@@ -488,7 +492,7 @@ Future<void> showEditProductDialog(
                                         decoration: BoxDecoration(
                                           color: AppColors.lightWhite,
                                           border: Border.all(
-                                            color: Colors.grey.shade300,
+                                            color: AppColors.mediumGray,
                                           ),
                                           borderRadius: BorderRadius.circular(
                                             10,
@@ -523,7 +527,7 @@ Future<void> showEditProductDialog(
                                                   Icon(
                                                     Icons
                                                         .add_photo_alternate_outlined,
-                                                    color: Colors.grey.shade400,
+                                                    color: AppColors.mediumGray,
                                                     size: 24,
                                                   ),
                                                   const SizedBox(height: 4),
@@ -532,7 +536,7 @@ Future<void> showEditProductDialog(
                                                     style: TextStyle(
                                                       fontSize: 10,
                                                       color:
-                                                          Colors.grey.shade400,
+                                                          AppColors.mediumGray,
                                                     ),
                                                   ),
                                                 ],
@@ -553,9 +557,9 @@ Future<void> showEditProductDialog(
                   Container(
                     padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: AppColors.mediumGray,
                       border: Border(
-                        top: BorderSide(color: Colors.grey.shade200),
+                        top: BorderSide(color: AppColors.mediumGray),
                       ),
                       borderRadius: const BorderRadius.vertical(
                         bottom: Radius.circular(20),
@@ -567,7 +571,7 @@ Future<void> showEditProductDialog(
                           children: [
                             TextButton.icon(
                               style: TextButton.styleFrom(
-                                foregroundColor: Colors.red.shade600,
+                                foregroundColor: AppColors.dustyRose,
                               ),
                               onPressed: isUploadingEditImages || isSavingEdit
                                   ? null
@@ -599,7 +603,7 @@ Future<void> showEditProductDialog(
                                             FilledButton(
                                               style: FilledButton.styleFrom(
                                                 backgroundColor:
-                                                    Colors.red.shade600,
+                                                    AppColors.dustyRose,
                                               ),
                                               onPressed: () =>
                                                   Navigator.pop(c, true),
@@ -625,7 +629,7 @@ Future<void> showEditProductDialog(
                                               'Producto eliminado',
                                             ),
                                             backgroundColor:
-                                                Colors.red.shade700,
+                                                AppColors.dustyRose,
                                             behavior: SnackBarBehavior.floating,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
@@ -777,7 +781,7 @@ Future<void> showEditProductDialog(
                                   height: 16,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Colors.white,
+                                    color: AppColors.cream,
                                   ),
                                 )
                               : const Icon(Icons.check, size: 16),

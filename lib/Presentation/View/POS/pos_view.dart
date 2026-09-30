@@ -162,7 +162,7 @@ class _PosScaffoldState extends State<_PosScaffold>
       messenger.showSnackBar(
         SnackBar(
           content: Text('Venta #$saleId registrada correctamente'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.plumGray,
         ),
       );
     } catch (e) {
@@ -170,7 +170,7 @@ class _PosScaffoldState extends State<_PosScaffold>
       messenger.showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.dustyRose,
         ),
       );
     }
@@ -202,18 +202,18 @@ class _PosScaffoldState extends State<_PosScaffold>
                   'Sistema de Ventas',
                   style: TextStyle(
                     fontSize: 22,
-                    color: AppColors.whiteOverlay,
+                    color: AppColors.blackOverlay,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                iconTheme: const IconThemeData(color: AppColors.lightWhite),
-                backgroundColor: AppColors.blackOverlay,
+                iconTheme: const IconThemeData(color: AppColors.blackOverlay),
+                backgroundColor: AppColors.lightWhite,
                 elevation: 4,
                 centerTitle: true,
                 leading: IconButton(
                   icon: const Icon(
                     Icons.arrow_back,
-                    color: AppColors.whiteOverlay,
+                    color: AppColors.blackOverlay,
                     size: 30,
                   ),
                   onPressed: () => Navigator.pop(context),
@@ -226,7 +226,7 @@ class _PosScaffoldState extends State<_PosScaffold>
                     onPressed: _agregarVenta,
                     icon: const Icon(
                       Icons.add,
-                      color: AppColors.whiteOverlay,
+                      color: AppColors.blackOverlay,
                       size: 28,
                     ),
                   ),
@@ -234,11 +234,11 @@ class _PosScaffoldState extends State<_PosScaffold>
                 bottom: TabBar(
                   controller: _tabController,
                   isScrollable: true,
-                  labelColor: AppColors.lightWhite,
-                  unselectedLabelColor: AppColors.lightWhite.withValues(
+                  labelColor: AppColors.blackOverlay,
+                  unselectedLabelColor: AppColors.blackOverlay.withValues(
                     alpha: 0.6,
                   ),
-                  indicatorColor: AppColors.lightWhite,
+                  indicatorColor: AppColors.blackOverlay,
                   tabs: [
                     for (var index = 0; index < _saleCount; index++)
                       _buildSaleTab(index),
@@ -309,14 +309,14 @@ class _PosScaffoldState extends State<_PosScaffold>
           if (posCtrl.stores.isNotEmpty)
             Material(
               elevation: 4,
-              shadowColor: Colors.black26,
+              shadowColor: AppColors.plumGray26,
               borderRadius: BorderRadius.circular(25),
               child: DropdownButtonFormField<int>(
                 value: posCtrl.selectedStoreId,
                 decoration: InputDecoration(
                   labelText: 'Local',
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppColors.cream,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(25),
                     borderSide: BorderSide.none,
@@ -382,8 +382,8 @@ class _PosScaffoldState extends State<_PosScaffold>
                   height: 50,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade600,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.dustyRose,
+                      foregroundColor: AppColors.cream,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -407,8 +407,8 @@ class _PosScaffoldState extends State<_PosScaffold>
                   height: 50,
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2D5A27),
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.plumGray,
+                      foregroundColor: AppColors.cream,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),

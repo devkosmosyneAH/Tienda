@@ -23,7 +23,7 @@ class EmptyState extends StatelessWidget {
               child: Icon(
                 Icons.inventory_2_outlined,
                 size: 44,
-                color: Colors.grey.shade300,
+                color: AppColors.mediumGray,
               ),
             ),
             const SizedBox(height: 24),
@@ -32,13 +32,13 @@ class EmptyState extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1a1a2e),
+                color: AppColors.plumGray,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Crea tu primer producto para comenzar.',
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+              style: TextStyle(fontSize: 14, color: AppColors.mediumGray),
             ),
             const SizedBox(height: 28),
             FilledButton.icon(

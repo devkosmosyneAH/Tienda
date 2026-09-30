@@ -315,7 +315,7 @@ class _AdminDBPageState extends State<AdminDBPage>
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.06),
+                      color: AppColors.plumGray.withOpacity(0.06),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: SelectableText(
@@ -491,7 +491,7 @@ class _AdminDBPageState extends State<AdminDBPage>
           SnackBar(
             content: Text(
               successMessage ?? '📋 Copiado al portapapeles',
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.cream),
             ),
             backgroundColor: AppColors.darkGreen,
             duration: const Duration(seconds: 2),
@@ -508,7 +508,7 @@ class _AdminDBPageState extends State<AdminDBPage>
           SnackBar(
             content: Text(
               '⛔ Error al copiar: $e',
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.cream),
             ),
             backgroundColor: AppColors.primaryRed,
             duration: const Duration(seconds: 2),
@@ -900,7 +900,7 @@ class _AdminDBPageState extends State<AdminDBPage>
               label: const Text('Iniciar sesión con Google'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4285F4),
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.cream,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -918,7 +918,7 @@ class _AdminDBPageState extends State<AdminDBPage>
                     label: const Text('Iniciar Backup'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.darkGreen,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppColors.cream,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -997,7 +997,7 @@ class _AdminDBPageState extends State<AdminDBPage>
               label: const Text('Abrir carpeta en Google Drive'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4285F4),
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.cream,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -1106,10 +1106,7 @@ class _AdminDBPageState extends State<AdminDBPage>
         final xFiles = exportedFiles
             .map((name) => XFile('${exportDir.path}/$name'))
             .toList();
-        await Share.shareXFiles(
-          xFiles,
-          text: 'Exportación JSON de tienda',
-        );
+        await Share.shareXFiles(xFiles, text: 'Exportación JSON de tienda');
       } else {
         ProcessResult result;
         if (Platform.isMacOS) {
@@ -1454,7 +1451,7 @@ class _AdminDBPageState extends State<AdminDBPage>
                       label: const Text('SELECCIONAR ARCHIVO'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.darkGreen,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.cream,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -1556,12 +1553,12 @@ class _AdminDBPageState extends State<AdminDBPage>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
+                          color: AppColors.paleMauve.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
                           Icons.data_object,
-                          color: Colors.orange,
+                          color: AppColors.paleMauve,
                           size: 24,
                         ),
                       ),
@@ -1594,8 +1591,8 @@ class _AdminDBPageState extends State<AdminDBPage>
                       icon: const Icon(Icons.download_for_offline),
                       label: const Text('EXPORTAR A JSON'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.paleMauve,
+                        foregroundColor: AppColors.cream,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -1801,7 +1798,7 @@ class _AdminDBPageState extends State<AdminDBPage>
                   label: const Text('Cargar hasta 100 registros'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.cream,
                   ),
                 ),
                 OutlinedButton.icon(
@@ -2037,7 +2034,7 @@ class _AdminDBPageState extends State<AdminDBPage>
 
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.cream,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
@@ -2077,7 +2074,7 @@ class _AdminDBPageState extends State<AdminDBPage>
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.blackOverlay,
-                            foregroundColor: Colors.white,
+                            foregroundColor: AppColors.cream,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -2268,10 +2265,10 @@ class _AdminDBPageState extends State<AdminDBPage>
     return Scaffold(
       backgroundColor: AppColors.lightPastel,
       appBar: AppBar(
-        backgroundColor: AppColors.blackOverlay,
+        backgroundColor: AppColors.lightWhite,
         title: const Text(
           '🛠 Panel de Administración de DB',
-          style: TextStyle(color: AppColors.lightPastel),
+          style: TextStyle(color: AppColors.blackOverlay),
         ),
         centerTitle: true,
         actions: [
@@ -2279,22 +2276,22 @@ class _AdminDBPageState extends State<AdminDBPage>
             icon: const Icon(
               Icons.download,
               size: 26,
-              color: AppColors.lightPastel,
+              color: AppColors.blackOverlay,
             ),
             onPressed: _exportDB,
             tooltip: 'Exportar base de datos',
           ),
         ],
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.lightPastel),
+          icon: const Icon(Icons.arrow_back, color: AppColors.blackOverlay),
           onPressed: () => Navigator.pushNamed(context, '/dashboard'),
         ),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.lightPastel,
+          indicatorColor: AppColors.blackOverlay,
           indicatorWeight: 3,
-          labelColor: AppColors.lightPastel,
-          unselectedLabelColor: AppColors.lightPastel.withOpacity(0.6),
+          labelColor: AppColors.blackOverlay,
+          unselectedLabelColor: AppColors.blackOverlay.withOpacity(0.6),
           labelStyle: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,

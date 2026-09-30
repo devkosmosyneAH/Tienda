@@ -70,7 +70,7 @@ class _CategoryManagementViewState extends State<CategoryManagementView> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.dustyRose),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Eliminar'),
           ),
@@ -106,11 +106,11 @@ class _CategoryManagementViewState extends State<CategoryManagementView> {
           ),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.blackOverlay,
+              color: AppColors.lightWhite,
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppColors.blackOverlay, AppColors.blackOverlay],
+                colors: [AppColors.lightWhite, AppColors.lightWhite],
               ),
               boxShadow: const [
                 BoxShadow(
@@ -127,14 +127,14 @@ class _CategoryManagementViewState extends State<CategoryManagementView> {
               title: const Text(
                 'Categorías',
                 style: TextStyle(
-                  color: AppColors.whiteOverlay,
+                  color: AppColors.blackOverlay,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               leading: IconButton(
                 icon: const Icon(
                   Icons.arrow_back,
-                  color: AppColors.whiteOverlay,
+                  color: AppColors.blackOverlay,
                   size: 30,
                 ),
                 onPressed: () => Navigator.pop(context),
@@ -145,7 +145,7 @@ class _CategoryManagementViewState extends State<CategoryManagementView> {
                   onPressed: _isLoading ? null : _loadData,
                   icon: const Icon(
                     Icons.refresh,
-                    color: AppColors.whiteOverlay,
+                    color: AppColors.blackOverlay,
                     size: 30,
                   ),
                 ),
@@ -233,7 +233,7 @@ class _CategoryManagementViewState extends State<CategoryManagementView> {
                             onPressed: () => _deleteCategory(category),
                             icon: const Icon(
                               Icons.delete_outline,
-                              color: Colors.red,
+                              color: AppColors.dustyRose,
                             ),
                           ),
                         ],

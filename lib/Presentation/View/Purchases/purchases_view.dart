@@ -133,17 +133,17 @@ class _PurchasesViewState extends State<PurchasesView>
           child: AppBar(
             title: const Text(
               'Compras · Abastecimiento',
-              style: TextStyle(fontSize: 16, color: AppColors.whiteOverlay),
+              style: TextStyle(fontSize: 16, color: AppColors.blackOverlay),
             ),
-            iconTheme: const IconThemeData(color: AppColors.lightWhite),
-            backgroundColor: AppColors.blackOverlay,
+            iconTheme: const IconThemeData(color: AppColors.blackOverlay),
+            backgroundColor: AppColors.whiteOverlay,
             elevation: 4,
             centerTitle: true,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
               icon: const Icon(
                 Icons.arrow_back,
-                color: AppColors.whiteOverlay,
+                color: AppColors.blackOverlay,
                 size: 30,
               ),
               onPressed: () => Navigator.pop(context),
@@ -154,7 +154,7 @@ class _PurchasesViewState extends State<PurchasesView>
                 onPressed: _agregarCompra,
                 icon: const Icon(
                   Icons.add,
-                  color: AppColors.whiteOverlay,
+                  color: AppColors.blackOverlay,
                   size: 28,
                 ),
               ),
@@ -162,9 +162,9 @@ class _PurchasesViewState extends State<PurchasesView>
             bottom: TabBar(
               controller: _tabController,
               isScrollable: true,
-              labelColor: AppColors.whiteOverlay,
+              labelColor: AppColors.blackOverlay,
               unselectedLabelColor: AppColors.mediumGray,
-              indicatorColor: AppColors.whiteOverlay,
+              indicatorColor: AppColors.blackOverlay,
               tabs: [
                 for (var index = 0; index < _saleCount; index++)
                   _buildSaleTab(index),

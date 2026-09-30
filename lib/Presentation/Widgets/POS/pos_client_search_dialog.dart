@@ -81,7 +81,7 @@ class _PosClientSearchDialogState extends State<PosClientSearchDialog> {
                     icon: const Icon(Icons.arrow_drop_down),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: AppColors.plumGray87,
                       fontSize: 14,
                     ),
                     items: _searchByOptions
@@ -108,7 +108,7 @@ class _PosClientSearchDialogState extends State<PosClientSearchDialog> {
                 prefixIcon: const Icon(
                   Icons.search,
                   size: 18,
-                  color: Colors.black38,
+                  color: AppColors.plumGray38,
                 ),
                 useFilterStyle: true,
                 onChanged: (v) => setState(() => _query = v),
@@ -138,14 +138,14 @@ class _PosClientSearchDialogState extends State<PosClientSearchDialog> {
                       decoration: BoxDecoration(
                         color: AppColors.whiteOverlay,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade200),
+                        border: Border.all(color: AppColors.mediumGray),
                       ),
                       child: Row(
                         children: [
                           const Icon(
                             Icons.person_outline,
                             size: 18,
-                            color: Colors.black54,
+                            color: AppColors.plumGray54,
                           ),
                           const SizedBox(width: 10),
                           const Expanded(
@@ -156,7 +156,7 @@ class _PosClientSearchDialogState extends State<PosClientSearchDialog> {
                           ),
                           Icon(
                             Icons.check,
-                            color: Colors.green.shade600,
+                            color: AppColors.plumGray,
                             size: 20,
                           ),
                         ],
@@ -178,9 +178,9 @@ class _PosClientSearchDialogState extends State<PosClientSearchDialog> {
                           vertical: 14,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
+                          color: AppColors.mediumGray,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.grey.shade200),
+                          border: Border.all(color: AppColors.mediumGray),
                         ),
                         child: Row(
                           children: [
@@ -200,7 +200,7 @@ class _PosClientSearchDialogState extends State<PosClientSearchDialog> {
                                       'Cédula: $cedula',
                                       style: const TextStyle(
                                         fontSize: 12,
-                                        color: Colors.black54,
+                                        color: AppColors.plumGray54,
                                       ),
                                     ),
                                 ],
@@ -208,7 +208,7 @@ class _PosClientSearchDialogState extends State<PosClientSearchDialog> {
                             ),
                             Icon(
                               Icons.check,
-                              color: Colors.green.shade600,
+                              color: AppColors.plumGray,
                               size: 20,
                             ),
                           ],
@@ -222,7 +222,7 @@ class _PosClientSearchDialogState extends State<PosClientSearchDialog> {
                       child: Center(
                         child: Text(
                           'No se encontraron clientes',
-                          style: TextStyle(color: Colors.black45),
+                          style: TextStyle(color: AppColors.plumGray45),
                         ),
                       ),
                     ),
@@ -237,7 +237,7 @@ class _PosClientSearchDialogState extends State<PosClientSearchDialog> {
                 child: Material(
                   color: AppColors.primaryRed,
                   elevation: 4,
-                  shadowColor: Colors.black26,
+                  shadowColor: AppColors.plumGray26,
                   borderRadius: BorderRadius.circular(25),
                   clipBehavior: Clip.antiAlias,
                   child: TextButton(

@@ -2,6 +2,7 @@ import 'package:tienda/Presentation/Context/pos_sale_provider.dart';
 import 'package:tienda/Presentation/Controller/pos_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 // ─────────────────────────────────────────────────────────────────
 //  Widget: Pagos Recibidos (multi-pago)
@@ -10,10 +11,7 @@ import 'package:provider/provider.dart';
 class PosPagosRecibidosSection extends StatelessWidget {
   final double total;
 
-  const PosPagosRecibidosSection({
-    super.key,
-    required this.total,
-  });
+  const PosPagosRecibidosSection({super.key, required this.total});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +22,7 @@ class PosPagosRecibidosSection extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      color: Colors.white,
+      color: AppColors.cream,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -39,16 +37,14 @@ class PosPagosRecibidosSection extends StatelessWidget {
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                 ),
                 TextButton.icon(
-                  onPressed: () => context
-                      .read<PosSaleProvider>()
-                      .addPayment(
-                        context.read<PosController>().paymentMethods,
-                        total,
-                      ),
+                  onPressed: () => context.read<PosSaleProvider>().addPayment(
+                    context.read<PosController>().paymentMethods,
+                    total,
+                  ),
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Agregar pago'),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.blueAccent,
+                    foregroundColor: AppColors.mutedMauve,
                     padding: EdgeInsets.zero,
                   ),
                 ),
@@ -59,7 +55,7 @@ class PosPagosRecibidosSection extends StatelessWidget {
                 padding: EdgeInsets.only(top: 4),
                 child: Text(
                   'Sin pagos registrados',
-                  style: TextStyle(color: Colors.black38, fontSize: 13),
+                  style: TextStyle(color: AppColors.plumGray38, fontSize: 13),
                 ),
               )
             else ...[
@@ -71,7 +67,7 @@ class PosPagosRecibidosSection extends StatelessWidget {
                       const Icon(
                         Icons.payments_outlined,
                         size: 18,
-                        color: Colors.black54,
+                        color: AppColors.plumGray54,
                       ),
                       const SizedBox(width: 8),
                       Expanded(child: Text(payments[i].methodName)),
@@ -96,12 +92,12 @@ class PosPagosRecibidosSection extends StatelessWidget {
                     children: [
                       const Text(
                         'Cambio: ',
-                        style: TextStyle(color: Colors.green),
+                        style: TextStyle(color: AppColors.plumGray),
                       ),
                       Text(
                         '\$${change.toStringAsFixed(2)}',
                         style: const TextStyle(
-                          color: Colors.green,
+                          color: AppColors.plumGray,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

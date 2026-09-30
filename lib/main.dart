@@ -38,6 +38,32 @@ import 'package:tienda/Presentation/Widgets/license_gate.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+ThemeData _buildAppTheme() => ThemeData(
+  colorScheme: const ColorScheme.light(
+    primary: AppColors.plumGray,
+    onPrimary: AppColors.cream,
+    secondary: AppColors.mutedMauve,
+    onSecondary: AppColors.plumGray,
+    tertiary: AppColors.dustyRose,
+    onTertiary: AppColors.cream,
+    error: AppColors.dustyRose,
+    onError: AppColors.cream,
+    surface: AppColors.cream,
+    onSurface: AppColors.plumGray,
+    surfaceContainerHighest: AppColors.mutedCream,
+    outline: AppColors.paleMauve,
+  ),
+  primaryColor: AppColors.primaryLogo,
+  scaffoldBackgroundColor: AppColors.paleCream,
+  appBarTheme: const AppBarTheme(
+    backgroundColor: AppColors.cream,
+    foregroundColor: AppColors.plumGray,
+    iconTheme: IconThemeData(color: AppColors.plumGray),
+    actionsIconTheme: IconThemeData(color: AppColors.plumGray),
+  ),
+  useMaterial3: true,
+);
+
 // Removida la variable global no utilizada que puede causar problemas
 // late MyDatabase driftDatabase; // ❌ COMENTADA PARA EVITAR SIGSEGV
 
@@ -198,10 +224,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Tienda',
-        theme: ThemeData(
-          primaryColor: AppColors.primaryLogo,
-          useMaterial3: true,
-        ),
+        theme: _buildAppTheme(),
         initialRoute: initialRoute,
         onGenerateRoute: (settings) {
           final builder = AppRoutes.routes[settings.name];
@@ -244,10 +267,7 @@ class WebCatalogApp extends StatelessWidget {
       ],
       child: MaterialApp.router(
         title: 'Tienda',
-        theme: ThemeData(
-          primaryColor: AppColors.primaryLogo,
-          useMaterial3: true,
-        ),
+        theme: _buildAppTheme(),
         debugShowCheckedModeBanner: false,
         routerConfig: router,
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 /// Miniatura seleccionable, independiente del estado del visor.
 class GalleryThumbnail extends StatelessWidget {
@@ -40,15 +41,15 @@ class GalleryThumbnail extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: radius,
                   border: Border.all(
-                    color:
-                        isSelected ? const Color(0xFF4DA3FF) : Colors.white24,
+                    color: isSelected
+                        ? AppColors.mutedMauve
+                        : AppColors.paleMauve24,
                     width: isSelected ? 3 : 1,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color:
-                                const Color(0xFF4DA3FF).withValues(alpha: 0.36),
+                            color: AppColors.paleMauve36,
                             blurRadius: 11,
                             offset: const Offset(0, 3),
                           ),
@@ -59,9 +60,11 @@ class GalleryThumbnail extends StatelessWidget {
                   imageUrl,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const ColoredBox(
-                    color: Color(0xFF242424),
-                    child: Icon(Icons.broken_image_outlined,
-                        color: Colors.white54),
+                    color: AppColors.plumGray,
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: AppColors.paleMauve54,
+                    ),
                   ),
                 ),
               ),

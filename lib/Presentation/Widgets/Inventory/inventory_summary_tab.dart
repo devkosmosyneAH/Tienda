@@ -10,10 +10,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
 class InventorySummaryTab extends StatelessWidget {
-  const InventorySummaryTab({
-    super.key,
-    required this.provider,
-  });
+  const InventorySummaryTab({super.key, required this.provider});
 
   final InventoryProvider provider;
 
@@ -21,8 +18,12 @@ class InventorySummaryTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = provider.inventoryItems;
     final outOfStock = items.where((i) => i.quantity == 0).length;
-    final toOrder = items.where((i) => i.quantity > 0 && i.quantity <= 2).length;
-    final stable = items.where((i) => i.quantity > 2 && i.quantity <= 10).length;
+    final toOrder = items
+        .where((i) => i.quantity > 0 && i.quantity <= 2)
+        .length;
+    final stable = items
+        .where((i) => i.quantity > 2 && i.quantity <= 10)
+        .length;
     final excess = items.where((i) => i.quantity > 10).length;
     final avgStock = items.isEmpty
         ? 0.0
@@ -36,50 +37,50 @@ class InventorySummaryTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.blackOverlay,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.secondaryLogo,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.grid_view_rounded,
-                  color: AppColors.whiteOverlay,
-                  size: 26,
-                ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.blackOverlay,
+                borderRadius: BorderRadius.circular(14),
               ),
-              const SizedBox(width: 14),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    'Dashboard de Inventario',
-                    style: TextStyle(
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondaryLogo,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.grid_view_rounded,
                       color: AppColors.whiteOverlay,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      size: 26,
                     ),
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Análisis completo de tu inventario',
-                    style: TextStyle(
-                      color: AppColors.greyOverlay,
-                      fontSize: 12,
-                    ),
+                  const SizedBox(width: 14),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Dashboard de Inventario',
+                        style: TextStyle(
+                          color: AppColors.whiteOverlay,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Análisis completo de tu inventario',
+                        style: TextStyle(
+                          color: AppColors.greyOverlay,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        )
+            )
             .animate()
             .fadeIn(duration: 400.ms)
             .slideY(
@@ -90,13 +91,13 @@ class InventorySummaryTab extends StatelessWidget {
             ),
         const SizedBox(height: 16),
         InventoryStatusCards(
-          totalProducts: provider.summary?.totalProducts ?? 0,
-          outOfStock: outOfStock,
-          toOrder: toOrder,
-          stable: stable,
-          excess: excess,
-          itemsCount: items.length,
-        )
+              totalProducts: provider.summary?.totalProducts ?? 0,
+              outOfStock: outOfStock,
+              toOrder: toOrder,
+              stable: stable,
+              excess: excess,
+              itemsCount: items.length,
+            )
             .animate()
             .fadeIn(delay: 100.ms, duration: 350.ms)
             .slideX(
@@ -110,7 +111,7 @@ class InventorySummaryTab extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFFEEEEF2),
+            color: AppColors.paleCream,
             borderRadius: BorderRadius.circular(14),
           ),
           child: InventoryQuickStats(
@@ -141,20 +142,20 @@ class InventorySummaryTab extends StatelessWidget {
             ),
         const SizedBox(height: 16),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: InventoryDonutChart(
-                outOfStock: outOfStock,
-                toOrder: toOrder,
-                stable: stable,
-                excess: excess,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(child: InventoryBarChart(items: items)),
-          ],
-        )
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: InventoryDonutChart(
+                    outOfStock: outOfStock,
+                    toOrder: toOrder,
+                    stable: stable,
+                    excess: excess,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(child: InventoryBarChart(items: items)),
+              ],
+            )
             .animate()
             .fadeIn(delay: 300.ms, duration: 400.ms)
             .slideY(

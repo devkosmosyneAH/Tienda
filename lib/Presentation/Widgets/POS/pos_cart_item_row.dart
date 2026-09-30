@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 // ─────────────────────────────────────────────────────────────────
 //  Widget: Fila de un ítem en el carrito
@@ -34,7 +35,10 @@ class PosCartItemRow extends StatelessWidget {
                 ),
                 Text(
                   '\$${price.toStringAsFixed(2)} c/u',
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.plumGray54,
+                  ),
                 ),
               ],
             ),

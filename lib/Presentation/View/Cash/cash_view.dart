@@ -59,11 +59,11 @@ class _CashViewState extends State<CashView>
           ),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.blackOverlay,
+              color: AppColors.lightWhite,
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppColors.blackOverlay, AppColors.blackOverlay],
+                colors: [AppColors.lightWhite, AppColors.lightWhite],
               ),
               boxShadow: const [
                 BoxShadow(
@@ -80,14 +80,14 @@ class _CashViewState extends State<CashView>
               leading: IconButton(
                 icon: const Icon(
                   Icons.arrow_back,
-                  color: AppColors.whiteOverlay,
+                  color: AppColors.blackOverlay,
                   size: 30,
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
               title: const Text(
                 'Gestión de Caja',
-                style: TextStyle(color: AppColors.whiteOverlay),
+                style: TextStyle(color: AppColors.blackOverlay),
               ),
               actions: [
                 Consumer<CashController>(
@@ -112,11 +112,11 @@ class _CashViewState extends State<CashView>
               ],
               bottom: TabBar(
                 controller: _tabController,
-                labelColor: AppColors.whiteOverlay,
-                unselectedLabelColor: AppColors.whiteOverlay.withValues(
+                labelColor: AppColors.blackOverlay,
+                unselectedLabelColor: AppColors.blackOverlay.withValues(
                   alpha: 0.5,
                 ),
-                indicatorColor: AppColors.whiteOverlay,
+                indicatorColor: AppColors.blackOverlay,
                 tabs: const [
                   Tab(text: 'Caja'),
                   Tab(text: 'Historial'),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 class LogoImage extends StatefulWidget {
   const LogoImage({super.key});
@@ -45,12 +46,12 @@ class _LogoImageState extends State<LogoImage>
             boxShadow: [
               BoxShadow(
                 offset: Offset(-10, 10),
-                color: Color.fromARGB(80, 0, 0, 0),
+                color: AppColors.plumGray31,
                 blurRadius: 10,
               ),
               BoxShadow(
                 offset: Offset(10, -10),
-                color: Color.fromARGB(150, 255, 255, 255),
+                color: AppColors.cream59,
                 blurRadius: 10,
               ),
             ],
@@ -67,7 +68,11 @@ class _LogoImageState extends State<LogoImage>
                   fit: BoxFit.cover,
                   height: 180,
                   errorBuilder: (context, networkError, networkStackTrace) {
-                    return const Icon(Icons.error, size: 50, color: Colors.red);
+                    return const Icon(
+                      Icons.error,
+                      size: 50,
+                      color: AppColors.dustyRose,
+                    );
                   },
                 );
               },

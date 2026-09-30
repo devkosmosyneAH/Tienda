@@ -3,6 +3,7 @@ import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 // ─────────────────────────────────────────────────────────────────
 //  Tab: Historial de Ventas
@@ -68,20 +69,20 @@ class _PosSalesHistoryTabState extends State<PosSalesHistoryTab> {
                   const SizedBox(width: 12),
                   Text(
                     '${controller.totalSalesCount} ventas',
-                    style: const TextStyle(color: Colors.black54),
+                    style: const TextStyle(color: AppColors.plumGray54),
                   ),
                   const SizedBox(width: 12),
                   Text(
                     'Total: \$${filteredTotal.toStringAsFixed(2)}',
                     style: TextStyle(
-                      color: Colors.green.shade800,
+                      color: AppColors.plumGray,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const Spacer(),
                   FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.black87,
+                      backgroundColor: AppColors.plumGray87,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -181,7 +182,9 @@ class _PosSalesHistoryTabState extends State<PosSalesHistoryTab> {
                       controller.historyCustomerId != null)
                     TextButton.icon(
                       onPressed: controller.clearHistoryFilters,
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.dustyRose,
+                      ),
                       icon: const Icon(Icons.close, size: 16),
                       label: const Text('Limpiar'),
                     ),
@@ -269,7 +272,7 @@ class _PosSalesHistoryTabState extends State<PosSalesHistoryTab> {
                         TextButton.icon(
                           onPressed: controller.clearHistoryFilters,
                           style: TextButton.styleFrom(
-                            foregroundColor: Colors.red,
+                            foregroundColor: AppColors.dustyRose,
                           ),
                           icon: const Icon(Icons.close, size: 16),
                           label: const Text(
@@ -282,7 +285,7 @@ class _PosSalesHistoryTabState extends State<PosSalesHistoryTab> {
                         'Mostrando: ${controller.salesHistory.length} de ${controller.totalSalesCount} ventas',
                         style: const TextStyle(
                           fontSize: 13,
-                          color: Colors.black54,
+                          color: AppColors.plumGray54,
                         ),
                       ),
                     ],
@@ -301,14 +304,14 @@ class _PosSalesHistoryTabState extends State<PosSalesHistoryTab> {
                           Icon(
                             Icons.receipt_long_outlined,
                             size: 64,
-                            color: Colors.black26,
+                            color: AppColors.plumGray26,
                           ),
                           SizedBox(height: 12),
                           Text(
                             'No hay ventas registradas',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.black45,
+                              color: AppColors.plumGray45,
                             ),
                           ),
                         ],
@@ -398,15 +401,15 @@ class _FilterDropdown<T> extends StatelessWidget {
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Colors.black54,
+            color: AppColors.plumGray54,
           ),
         ),
         const SizedBox(height: 4),
         Container(
           decoration: BoxDecoration(
-            color: onChanged == null ? Colors.grey.shade100 : Colors.white,
+            color: onChanged == null ? AppColors.mediumGray : AppColors.cream,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: AppColors.mediumGray),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           child: DropdownButtonHideUnderline(
@@ -419,7 +422,9 @@ class _FilterDropdown<T> extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: onChanged == null ? Colors.grey : Colors.black87,
+                color: onChanged == null
+                    ? AppColors.mediumGray
+                    : AppColors.plumGray87,
               ),
             ),
           ),
@@ -466,7 +471,7 @@ class PosSaleHistoryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: AppColors.mediumGray),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -481,7 +486,7 @@ class PosSaleHistoryCard extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: const BoxDecoration(
-                  color: Colors.black87,
+                  color: AppColors.plumGray87,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -489,7 +494,7 @@ class PosSaleHistoryCard extends StatelessWidget {
                     'NV\n#${saleId.toString()}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.cream,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       height: 1.3,
@@ -516,7 +521,7 @@ class PosSaleHistoryCard extends StatelessWidget {
                         const Icon(
                           Icons.person_outline,
                           size: 14,
-                          color: Colors.black45,
+                          color: AppColors.plumGray45,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -524,7 +529,7 @@ class PosSaleHistoryCard extends StatelessWidget {
                             'Cliente: ${clientName.toUpperCase()}',
                             style: const TextStyle(
                               fontSize: 13,
-                              color: Colors.black54,
+                              color: AppColors.plumGray54,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -537,14 +542,14 @@ class PosSaleHistoryCard extends StatelessWidget {
                         const Icon(
                           Icons.calendar_today_outlined,
                           size: 14,
-                          color: Colors.black45,
+                          color: AppColors.plumGray45,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           'Fecha: $dateStr',
                           style: const TextStyle(
                             fontSize: 13,
-                            color: Colors.black54,
+                            color: AppColors.plumGray54,
                           ),
                         ),
                       ],
@@ -556,14 +561,14 @@ class PosSaleHistoryCard extends StatelessWidget {
                           const Icon(
                             Icons.payment_outlined,
                             size: 14,
-                            color: Colors.black45,
+                            color: AppColors.plumGray45,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             paymentName!,
                             style: const TextStyle(
                               fontSize: 12,
-                              color: Colors.black45,
+                              color: AppColors.plumGray45,
                             ),
                           ),
                         ],
@@ -576,16 +581,16 @@ class PosSaleHistoryCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green.shade50,
+                        color: AppColors.plumGray,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.green.shade200),
+                        border: Border.all(color: AppColors.plumGray),
                       ),
                       child: Text(
                         'Total: \$${total.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: Colors.green.shade700,
+                          color: AppColors.plumGray,
                         ),
                       ),
                     ),
@@ -593,7 +598,7 @@ class PosSaleHistoryCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.more_vert, color: Colors.black45),
+                icon: const Icon(Icons.more_vert, color: AppColors.plumGray45),
                 onPressed: onTap,
                 tooltip: 'Ver detalle',
               ),
@@ -640,21 +645,21 @@ class PosSaleDetailDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.fromLTRB(20, 18, 12, 18),
               decoration: const BoxDecoration(
-                color: Colors.black87,
+                color: AppColors.plumGray87,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               ),
               child: Row(
                 children: [
                   const Icon(
                     Icons.receipt_long_outlined,
-                    color: Colors.white,
+                    color: AppColors.cream,
                     size: 22,
                   ),
                   const SizedBox(width: 10),
                   Text(
                     'Nota de Venta #001-001-${saleId.toString().padLeft(9, '0')}',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.cream,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
@@ -662,7 +667,7 @@ class PosSaleDetailDialog extends StatelessWidget {
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.white70),
+                    icon: const Icon(Icons.close, color: AppColors.paleMauve70),
                   ),
                 ],
               ),
@@ -674,7 +679,7 @@ class PosSaleDetailDialog extends StatelessWidget {
                 child: Center(
                   child: Text(
                     'No hay productos en esta venta.',
-                    style: TextStyle(color: Colors.black45),
+                    style: TextStyle(color: AppColors.plumGray45),
                   ),
                 ),
               )
@@ -699,7 +704,7 @@ class PosSaleDetailDialog extends StatelessWidget {
                             width: 30,
                             height: 30,
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: AppColors.mediumGray,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Center(
@@ -728,7 +733,7 @@ class PosSaleDetailDialog extends StatelessWidget {
                                   'Precio unitario: \$${price.toStringAsFixed(2)}',
                                   style: const TextStyle(
                                     fontSize: 12,
-                                    color: Colors.black45,
+                                    color: AppColors.plumGray45,
                                   ),
                                 ),
                               ],
@@ -752,7 +757,7 @@ class PosSaleDetailDialog extends StatelessWidget {
               margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.black87,
+                color: AppColors.plumGray87,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -761,7 +766,7 @@ class PosSaleDetailDialog extends StatelessWidget {
                   const Text(
                     'TOTAL',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.cream,
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
@@ -769,7 +774,7 @@ class PosSaleDetailDialog extends StatelessWidget {
                   Text(
                     '\$${grandTotal.toStringAsFixed(2)}',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.cream,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
@@ -784,7 +789,9 @@ class PosSaleDetailDialog extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(foregroundColor: Colors.black54),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.plumGray54,
+                  ),
                   child: const Text('Cerrar'),
                 ),
               ),

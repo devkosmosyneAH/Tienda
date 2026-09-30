@@ -39,10 +39,10 @@ class InventoryQuickStats extends StatelessWidget {
             Expanded(
               child: InventoryQuickStatCard(
                 icon: Icons.attach_money,
-                iconColor: Colors.green,
+                iconColor: AppColors.plumGray,
                 value: fmt.format(totalInvested),
                 label: 'Valor Total',
-                dotColor: Colors.green,
+                dotColor: AppColors.plumGray,
               ),
             ),
             const SizedBox(width: 10),
@@ -73,10 +73,10 @@ class InventoryQuickStats extends StatelessWidget {
             Expanded(
               child: InventoryQuickStatCard(
                 icon: Icons.star_outline,
-                iconColor: Colors.orange,
+                iconColor: AppColors.paleMauve,
                 value: criticalStock.toString(),
                 label: 'Stock Crítico',
-                dotColor: Colors.orange,
+                dotColor: AppColors.paleMauve,
               ),
             ),
           ],
@@ -132,7 +132,7 @@ class InventoryQuickStatCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: Colors.black54),
+            style: const TextStyle(fontSize: 11, color: AppColors.plumGray54),
           ),
         ],
       ),

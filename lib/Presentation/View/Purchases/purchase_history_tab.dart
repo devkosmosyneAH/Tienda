@@ -236,21 +236,21 @@ class PurchaseHistoryTab extends StatelessWidget {
             ),
             _PurchaseActionTile(
               icon: Icons.add_shopping_cart_outlined,
-              color: Colors.green,
+              color: AppColors.plumGray,
               title: 'Continuar compra',
               subtitle: 'Crear nueva compra basada en esta',
               onTap: () => Navigator.pop(context, 'continue'),
             ),
             _PurchaseActionTile(
               icon: Icons.edit_outlined,
-              color: Colors.orange,
+              color: AppColors.paleMauve,
               title: 'Editar compra',
               subtitle: 'Modificar compra pendiente',
               onTap: () => Navigator.pop(context, 'edit'),
             ),
             _PurchaseActionTile(
               icon: Icons.credit_card_outlined,
-              color: Colors.blue,
+              color: AppColors.mutedMauve,
               title: 'Marcar como pagado',
               subtitle: 'Actualizar estado de pago',
               onTap: () => Navigator.pop(context, 'paid'),
@@ -298,7 +298,7 @@ class _PurchaseHistoryCard extends StatelessWidget {
       color: AppColors.whiteOverlay,
       margin: const EdgeInsets.only(bottom: 14),
       elevation: 2,
-      shadowColor: Colors.black26,
+      shadowColor: AppColors.plumGray26,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -314,12 +314,12 @@ class _PurchaseHistoryCard extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: const BoxDecoration(
-                      color: Color(0xffffa000),
+                      color: AppColors.dustyRose,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.receipt_long_outlined,
-                      color: Colors.white,
+                      color: AppColors.cream,
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -366,7 +366,7 @@ class _PurchaseHistoryCard extends StatelessWidget {
                       Text(
                         '\$${total.toStringAsFixed(2)}',
                         style: const TextStyle(
-                          color: Color(0xff2e7d32),
+                          color: AppColors.mutedMauve,
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
                         ),
@@ -385,7 +385,7 @@ class _PurchaseHistoryCard extends StatelessWidget {
                     icon: const Icon(Icons.edit_outlined, size: 17),
                     label: const Text('Editar'),
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.orange.shade800,
+                      foregroundColor: AppColors.paleMauve,
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                     ),
                   ),
@@ -424,7 +424,7 @@ class _PurchaseActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: color ?? Colors.black87, size: 24),
+      leading: Icon(icon, color: color ?? AppColors.plumGray87, size: 24),
       title: Text(title),
       subtitle: Text(subtitle),
       onTap: onTap,
@@ -460,11 +460,13 @@ class _HistoryPeriodSelector extends StatelessWidget {
           label: Text(period.$2),
           selected: isSelected,
           onSelected: (_) => onSelected(period.$1),
-          selectedColor: Colors.black,
+          selectedColor: AppColors.plumGray,
           backgroundColor: Colors.transparent,
-          side: BorderSide(color: isSelected ? Colors.black : Colors.black26),
+          side: BorderSide(
+            color: isSelected ? AppColors.plumGray : AppColors.plumGray26,
+          ),
           labelStyle: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
+            color: isSelected ? AppColors.cream : AppColors.plumGray87,
             fontWeight: FontWeight.w600,
             fontSize: 12,
           ),
@@ -486,33 +488,33 @@ class _PurchaseHistoryStats extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .55),
-        border: Border.all(color: Colors.black12),
+        color: AppColors.cream.withValues(alpha: .55),
+        border: Border.all(color: AppColors.plumGray12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
           _PurchaseStat(
             icon: Icons.shopping_cart_outlined,
-            color: Colors.blue,
+            color: AppColors.mutedMauve,
             label: 'Total',
             value: '${controller.historyTotalCount}',
           ),
           _PurchaseStat(
             icon: Icons.check_circle,
-            color: Colors.green,
+            color: AppColors.plumGray,
             label: 'Pagadas',
             value: '${controller.historyPaidCount}',
           ),
           _PurchaseStat(
             icon: Icons.more_horiz,
-            color: Colors.orange,
+            color: AppColors.paleMauve,
             label: 'Pendientes',
             value: '${controller.historyPendingCount}',
           ),
           _PurchaseStat(
             icon: Icons.attach_money,
-            color: Colors.purple,
+            color: AppColors.plumGray,
             label: 'Monto Total',
             value: '\$${controller.historyTotalAmount.toStringAsFixed(2)}',
           ),
@@ -546,7 +548,7 @@ class _PurchaseStat extends StatelessWidget {
             label,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.black54,
+              color: AppColors.plumGray54,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -577,16 +579,16 @@ class _PurchaseStatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isPending ? Colors.orange.shade50 : Colors.green.shade50,
+        color: isPending ? AppColors.paleMauve : AppColors.plumGray,
         border: Border.all(
-          color: isPending ? Colors.orange.shade700 : Colors.green.shade700,
+          color: isPending ? AppColors.paleMauve : AppColors.plumGray,
         ),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         isPending ? 'Pendiente' : 'Pagada',
         style: TextStyle(
-          color: isPending ? Colors.orange.shade800 : Colors.green.shade800,
+          color: isPending ? AppColors.paleMauve : AppColors.plumGray,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
@@ -605,13 +607,13 @@ class _PurchaseMetaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 15, color: Colors.black54),
+        Icon(icon, size: 15, color: AppColors.plumGray54),
         const SizedBox(width: 5),
         Expanded(
           child: Text(
             label,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 13, color: Colors.black54),
+            style: const TextStyle(fontSize: 13, color: AppColors.plumGray54),
           ),
         ),
       ],
@@ -668,7 +670,7 @@ class _PurchaseHistoryEmptyState extends StatelessWidget {
               onPressed: () => DefaultTabController.of(context).animateTo(0),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.blackOverlay,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.cream,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 22,
                   vertical: 14,

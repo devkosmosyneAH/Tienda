@@ -80,8 +80,8 @@ class _LicenseStatusPageState extends State<LicenseStatusPage> {
   Color _statusColor(LicenseStatus status) => switch (status) {
     LicenseStatus.DEMO_ACTIVA ||
     LicenseStatus.LICENCIA_ACTIVA => AppColors.blackOverlay,
-    LicenseStatus.DEMO_POR_VENCER => Colors.deepOrange,
-    _ => Colors.red.shade700,
+    LicenseStatus.DEMO_POR_VENCER => AppColors.dustyRose,
+    _ => AppColors.dustyRose,
   };
 
   @override
@@ -110,19 +110,19 @@ class _LicenseStatusPageState extends State<LicenseStatusPage> {
                     bottomRight: Radius.circular(20),
                   ),
                   gradient: LinearGradient(
-                    colors: [AppColors.primaryLogo, AppColors.primaryLogo],
+                    colors: [AppColors.lightWhite, AppColors.lightWhite],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
                   boxShadow: [
                     BoxShadow(
                       offset: Offset(-10, 10),
-                      color: Color.fromARGB(80, 0, 0, 0),
+                      color: AppColors.plumGray31,
                       blurRadius: 10,
                     ),
                     BoxShadow(
                       offset: Offset(-10, -10),
-                      color: Color.fromARGB(150, 255, 255, 255),
+                      color: AppColors.cream59,
                       blurRadius: 10,
                     ),
                   ],
@@ -133,14 +133,14 @@ class _LicenseStatusPageState extends State<LicenseStatusPage> {
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(
                       Icons.arrow_back,
-                      color: Color(0xfff4f4f4),
+                      color: AppColors.blackOverlay,
                     ),
                   ),
                   title: const Text(
                     'Estado de licencia',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Color(0xfff4f4f4),
+                      color: AppColors.blackOverlay,
                     ),
                   ),
                   actions: [
@@ -155,13 +155,13 @@ class _LicenseStatusPageState extends State<LicenseStatusPage> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.16),
+                              color: AppColors.cream.withValues(alpha: 0.16),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
                               'DEMO · quedan ${provider.remainingDays} ${provider.remainingDays == 1 ? 'día' : 'días'}',
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.cream,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -198,7 +198,7 @@ class _LicenseStatusPageState extends State<LicenseStatusPage> {
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF202925),
+                    color: AppColors.plumGray,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -262,7 +262,7 @@ class _LicenseStatusPageState extends State<LicenseStatusPage> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: _feedbackIsError
-                          ? Colors.red.shade700
+                          ? AppColors.dustyRose
                           : AppColors.blackOverlay,
                       fontWeight: FontWeight.w600,
                     ),

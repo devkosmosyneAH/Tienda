@@ -71,14 +71,18 @@ class InventoryNavTab extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: isSelected ? AppColors.whiteOverlay : Colors.white54,
+                color: isSelected
+                    ? AppColors.blackOverlay
+                    : AppColors.paleMauve54,
                 size: 20,
               ),
               const SizedBox(height: 2),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? AppColors.whiteOverlay : Colors.white54,
+                  color: isSelected
+                      ? AppColors.blackOverlay
+                      : AppColors.paleMauve54,
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),

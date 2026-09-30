@@ -27,7 +27,8 @@ class _InventoryLowStockTabState extends State<InventoryLowStockTab> {
 
   @override
   Widget build(BuildContext context) {
-    final allSorted = [...widget.items]..sort((a, b) => a.quantity.compareTo(b.quantity));
+    final allSorted = [...widget.items]
+      ..sort((a, b) => a.quantity.compareTo(b.quantity));
     List<InventoryItem> filtered = allSorted;
 
     switch (activeFilter) {
@@ -35,10 +36,14 @@ class _InventoryLowStockTabState extends State<InventoryLowStockTab> {
         filtered = allSorted.where((i) => i.quantity == 0).toList();
         break;
       case 2:
-        filtered = allSorted.where((i) => i.quantity >= 1 && i.quantity <= 2).toList();
+        filtered = allSorted
+            .where((i) => i.quantity >= 1 && i.quantity <= 2)
+            .toList();
         break;
       case 3:
-        filtered = allSorted.where((i) => i.quantity >= 3 && i.quantity <= 5).toList();
+        filtered = allSorted
+            .where((i) => i.quantity >= 3 && i.quantity <= 5)
+            .toList();
         break;
       case 4:
         filtered = allSorted.where((i) => i.quantity > 10).toList()
@@ -51,102 +56,102 @@ class _InventoryLowStockTabState extends State<InventoryLowStockTab> {
     return Column(
       children: [
         Container(
-          margin: const EdgeInsets.fromLTRB(18, 8, 18, 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.blackOverlay,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 8,
-                offset: Offset(0, 4),
+              margin: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.blackOverlay,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.plumGray26,
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.filter_list_rounded,
-                  size: 30,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Filtros de Stock Bajo',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.cream.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
+                    child: const Icon(
+                      Icons.filter_list_rounded,
+                      size: 30,
+                      color: AppColors.cream,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 9,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryRed,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Text(
-                            '${filtered.length}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
+                        const Text(
+                          'Filtros de Stock Bajo',
+                          style: TextStyle(
+                            color: AppColors.cream,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'de ${allSorted.length} productos',
-                          style: const TextStyle(
-                            color: Colors.white54,
-                            fontSize: 13,
-                          ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryRed,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Text(
+                                '${filtered.length}',
+                                style: const TextStyle(
+                                  color: AppColors.cream,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'de ${allSorted.length} productos',
+                              style: const TextStyle(
+                                color: AppColors.paleMauve54,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: AppColors.primaryRed,
-                    width: 1.5,
                   ),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.warning_amber_rounded,
-                  color: AppColors.primaryRed,
-                  size: 22,
-                ),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: AppColors.primaryRed,
+                        width: 1.5,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppColors.primaryRed,
+                      size: 22,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        )
+            )
             .animate()
             .fadeIn(duration: 350.ms)
             .slideY(
@@ -181,7 +186,7 @@ class _InventoryLowStockTabState extends State<InventoryLowStockTab> {
                   label: 'Pedir (≤Mín)',
                   icon: Icons.warning_amber_rounded,
                   active: activeFilter == 2,
-                  color: Colors.orange,
+                  color: AppColors.paleMauve,
                   onTap: () => setState(() => activeFilter = 2),
                 ),
                 const SizedBox(width: 8),
@@ -222,13 +227,15 @@ class _InventoryLowStockTabState extends State<InventoryLowStockTab> {
                     final isZero = item.quantity == 0;
                     final isLow = !isZero && item.quantity <= 5;
                     return InventoryStockRow(
-                      item: item,
-                      isZero: isZero,
-                      isLow: isLow,
-                      accentColor: activeFilter == 3 ? AppColors.darkGreen : null,
-                      onTap: () => widget.onOpenDetail(item),
-                      onPurchase: widget.onBuyProduct,
-                    )
+                          item: item,
+                          isZero: isZero,
+                          isLow: isLow,
+                          accentColor: activeFilter == 3
+                              ? AppColors.darkGreen
+                              : null,
+                          onTap: () => widget.onOpenDetail(item),
+                          onPurchase: widget.onBuyProduct,
+                        )
                         .animate()
                         .fadeIn(
                           delay: Duration(milliseconds: 40 * (i % 20)),

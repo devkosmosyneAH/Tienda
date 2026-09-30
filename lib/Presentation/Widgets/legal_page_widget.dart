@@ -33,10 +33,10 @@ class LegalPageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return SelectionArea(
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cream,
         appBar: AppBar(
-          backgroundColor: AppColors.primaryLogo,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.lightWhite,
+          foregroundColor: AppColors.blackOverlay,
           leading: const BackButton(),
           title: Row(
             children: [
@@ -99,7 +99,7 @@ class LegalPageWidget extends StatelessWidget {
               child: const Text(
                 '© 2026 Bazar & Tienda Nicole · Todos los derechos reservados',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white54, fontSize: 11),
+                style: TextStyle(color: AppColors.paleMauve54, fontSize: 11),
               ),
             ),
           ],

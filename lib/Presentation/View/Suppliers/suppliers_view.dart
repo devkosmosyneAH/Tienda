@@ -38,10 +38,11 @@ class _SuppliersViewState extends State<SuppliersView> {
       appBar: AppBar(
         title: const Text(
           'Proveedores',
-          style: TextStyle(color: AppColors.threeColor),
+          style: TextStyle(color: AppColors.blackOverlay),
         ),
-        backgroundColor: AppColors.primaryLogo,
-        iconTheme: const IconThemeData(color: AppColors.threeColor),
+        backgroundColor: AppColors.lightWhite,
+        foregroundColor: AppColors.blackOverlay,
+        iconTheme: const IconThemeData(color: AppColors.blackOverlay),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
@@ -51,10 +52,16 @@ class _SuppliersViewState extends State<SuppliersView> {
               onChanged: (v) =>
                   context.read<SuppliersController>().updateSearch(v),
               hint: 'Buscar proveedor...',
-              prefixIcon: const Icon(Icons.search, color: Colors.white54),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: AppColors.blackOverlay,
+              ),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear, color: Colors.white54),
+                      icon: const Icon(
+                        Icons.clear,
+                        color: AppColors.blackOverlay,
+                      ),
                       onPressed: () {
                         _searchCtrl.clear();
                         context.read<SuppliersController>().updateSearch('');
@@ -76,7 +83,10 @@ class _SuppliersViewState extends State<SuppliersView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(ctrl.error!, style: const TextStyle(color: Colors.red)),
+                  Text(
+                    ctrl.error!,
+                    style: const TextStyle(color: AppColors.dustyRose),
+                  ),
                   const SizedBox(height: 12),
                   ElevatedButton(
                     onPressed: ctrl.loadSuppliers,
@@ -94,14 +104,14 @@ class _SuppliersViewState extends State<SuppliersView> {
                   Icon(
                     Icons.business_outlined,
                     size: 64,
-                    color: Colors.grey[400],
+                    color: AppColors.softCream,
                   ),
                   const SizedBox(height: 12),
                   Text(
                     ctrl.search.isNotEmpty
                         ? 'Sin resultados para "${ctrl.search}"'
                         : 'No hay proveedores registrados',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(color: AppColors.softCream),
                   ),
                 ],
               ),
@@ -177,13 +187,21 @@ class _SupplierCard extends StatelessWidget {
         subtitle: Row(
           children: [
             if (supplier.phone?.isNotEmpty == true) ...[
-              const Icon(Icons.phone_outlined, size: 13, color: Colors.grey),
+              const Icon(
+                Icons.phone_outlined,
+                size: 13,
+                color: AppColors.mediumGray,
+              ),
               const SizedBox(width: 4),
               Text(supplier.phone!, style: const TextStyle(fontSize: 12)),
               const SizedBox(width: 10),
             ],
             if (supplier.email?.isNotEmpty == true) ...[
-              const Icon(Icons.email_outlined, size: 13, color: Colors.grey),
+              const Icon(
+                Icons.email_outlined,
+                size: 13,
+                color: AppColors.mediumGray,
+              ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
@@ -234,8 +252,11 @@ class _SupplierCard extends StatelessWidget {
             const PopupMenuItem(
               value: 'delete',
               child: ListTile(
-                leading: Icon(Icons.delete_outline, color: Colors.red),
-                title: Text('Eliminar', style: TextStyle(color: Colors.red)),
+                leading: Icon(Icons.delete_outline, color: AppColors.dustyRose),
+                title: Text(
+                  'Eliminar',
+                  style: TextStyle(color: AppColors.dustyRose),
+                ),
                 contentPadding: EdgeInsets.zero,
                 dense: true,
               ),
@@ -252,13 +273,16 @@ class _SupplierCard extends StatelessWidget {
                   const Icon(
                     Icons.notes_outlined,
                     size: 16,
-                    color: Colors.grey,
+                    color: AppColors.mediumGray,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       supplier.notes!,
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                      style: const TextStyle(
+                        color: AppColors.mediumGray,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -347,19 +371,24 @@ class _SupplierCard extends StatelessWidget {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.dustyRose,
+            ),
             onPressed: () async {
               Navigator.pop(ctx);
               final err = await ctrl.deleteSupplier(supplier);
               if (err != null && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(err), backgroundColor: Colors.red),
+                  SnackBar(
+                    content: Text(err),
+                    backgroundColor: AppColors.dustyRose,
+                  ),
                 );
               }
             },
             child: const Text(
               'Eliminar',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.cream),
             ),
           ),
         ],
@@ -476,7 +505,7 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppColors.cream,
                   ),
                 )
               : Text(_isEditing ? 'Guardar' : 'Crear'),
@@ -508,9 +537,9 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
     setState(() => _saving = false);
 
     if (err != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: AppColors.dustyRose),
+      );
     } else {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(

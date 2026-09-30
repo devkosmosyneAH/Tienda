@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tienda/Presentation/Utils/Colors.dart';
 
 class InventoryEmptyState extends StatelessWidget {
   const InventoryEmptyState({
@@ -16,18 +17,11 @@ class InventoryEmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: Colors.green,
-            size: 48,
-          ),
+          Icon(icon, color: AppColors.plumGray, size: 48),
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
           ),
         ],
       ),

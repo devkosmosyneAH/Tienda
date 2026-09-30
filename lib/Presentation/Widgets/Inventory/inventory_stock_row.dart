@@ -22,12 +22,13 @@ class InventoryStockRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = accentColor ?? (isZero ? AppColors.primaryRed : Colors.orange);
+    final effectiveColor =
+        accentColor ?? (isZero ? AppColors.primaryRed : AppColors.paleMauve);
     final Color iconBg = isZero
         ? AppColors.lightRed
         : effectiveColor == AppColors.darkGreen
         ? AppColors.darkGreen.withValues(alpha: 0.2)
-        : const Color(0xFFFFEDD5);
+        : AppColors.paleCream;
     final Color iconColor = isZero ? AppColors.primaryRed : effectiveColor;
     final progress = (item.quantity / 5).clamp(0.0, 1.0);
     final code = item.sku.isNotEmpty
@@ -43,7 +44,7 @@ class InventoryStockRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [
             BoxShadow(
-              color: Colors.black12,
+              color: AppColors.plumGray12,
               blurRadius: 3,
               offset: Offset(0, 1),
             ),
@@ -57,7 +58,10 @@ class InventoryStockRow extends StatelessWidget {
               margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: iconBg,
-                border: Border.all(color: AppColors.blackOverlay.withValues(alpha: 0.1), width: 1.5),
+                border: Border.all(
+                  color: AppColors.blackOverlay.withValues(alpha: 0.1),
+                  width: 1.5,
+                ),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Column(
@@ -102,7 +106,7 @@ class InventoryStockRow extends StatelessWidget {
                       'Código: $code',
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Colors.black45,
+                        color: AppColors.plumGray45,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -120,7 +124,7 @@ class InventoryStockRow extends StatelessWidget {
                       child: LinearProgressIndicator(
                         minHeight: 6,
                         value: progress,
-                        backgroundColor: Colors.black12,
+                        backgroundColor: AppColors.plumGray12,
                         valueColor: AlwaysStoppedAnimation<Color>(iconColor),
                       ),
                     ),
@@ -144,7 +148,7 @@ class InventoryStockRow extends StatelessWidget {
                     ),
                     child: const Icon(
                       Icons.shopping_cart_outlined,
-                      color: Colors.white,
+                      color: AppColors.cream,
                       size: 18,
                     ),
                   ),

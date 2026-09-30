@@ -12,7 +12,7 @@ git update-ref -d HEAD
 git status
 
 Contraseña:
-admin@devcosmosyne.com
+admin@bazarnicole.com
 
 password
-12345678
+admin123

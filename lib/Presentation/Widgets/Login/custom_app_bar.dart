@@ -52,19 +52,19 @@ class _CustomLoginAppBarState extends State<CustomLoginAppBar> {
               bottomRight: Radius.circular(20),
             ),
             gradient: LinearGradient(
-              colors: [AppColors.primaryLogo, AppColors.primaryLogo],
+              colors: [AppColors.lightWhite, AppColors.lightWhite],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
             boxShadow: [
               BoxShadow(
                 offset: Offset(-10, 10),
-                color: Color.fromARGB(80, 0, 0, 0),
+                color: AppColors.plumGray31,
                 blurRadius: 10,
               ),
               BoxShadow(
                 offset: Offset(-10, -10),
-                color: Color.fromARGB(150, 255, 255, 255),
+                color: AppColors.cream59,
                 blurRadius: 10,
               ),
             ],
@@ -74,7 +74,7 @@ class _CustomLoginAppBarState extends State<CustomLoginAppBar> {
               'Inicio de Sesión',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Color(0xfff4f4f4),
+                color: AppColors.blackOverlay,
               ),
             ),
             actions: [
@@ -86,8 +86,8 @@ class _CustomLoginAppBarState extends State<CustomLoginAppBar> {
                       onPressed: () =>
                           Navigator.pushNamed(context, AppRoutes.license),
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.teal.shade700,
+                        foregroundColor: AppColors.cream,
+                        backgroundColor: AppColors.mutedMauve,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         visualDensity: VisualDensity.compact,
                       ),

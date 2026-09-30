@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class InventoryProductDetailSheet extends StatelessWidget {
-  const InventoryProductDetailSheet({
-    super.key,
-    required this.item,
-  });
+  const InventoryProductDetailSheet({super.key, required this.item});
 
   final InventoryItem item;
 
@@ -19,7 +16,7 @@ class InventoryProductDetailSheet extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cream,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
@@ -33,7 +30,7 @@ class InventoryProductDetailSheet extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: Colors.black12,
+                color: AppColors.plumGray12,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -58,13 +55,13 @@ class InventoryProductDetailSheet extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: isZero ? AppColors.primaryRed : Colors.orange,
+                    color: isZero ? AppColors.primaryRed : AppColors.paleMauve,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     isZero ? 'SIN STOCK' : 'STOCK BAJO',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.cream,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -86,7 +83,7 @@ class InventoryProductDetailSheet extends StatelessWidget {
               children: [
                 const Text(
                   'Descripción',
-                  style: TextStyle(fontSize: 12, color: Colors.black45),
+                  style: TextStyle(fontSize: 12, color: AppColors.plumGray45),
                 ),
                 const SizedBox(height: 4),
                 Text(item.name, style: const TextStyle(fontSize: 14)),
@@ -96,7 +93,7 @@ class InventoryProductDetailSheet extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             'Código: ${item.sku.isNotEmpty ? item.sku : 'Prod${item.productId.toString().padLeft(9, '0')}'}',
-            style: const TextStyle(fontSize: 13, color: Colors.black54),
+            style: const TextStyle(fontSize: 13, color: AppColors.plumGray54),
           ),
           const SizedBox(height: 16),
           Row(
@@ -107,7 +104,10 @@ class InventoryProductDetailSheet extends StatelessWidget {
                   children: [
                     const Text(
                       'Almacén',
-                      style: TextStyle(fontSize: 12, color: Colors.black45),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.plumGray45,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -118,7 +118,7 @@ class InventoryProductDetailSheet extends StatelessWidget {
                         color: isZero
                             ? AppColors.primaryRed
                             : isLow
-                            ? Colors.orange
+                            ? AppColors.paleMauve
                             : AppColors.darkGray,
                       ),
                     ),
@@ -131,7 +131,10 @@ class InventoryProductDetailSheet extends StatelessWidget {
                   children: [
                     const Text(
                       'Precio Compra',
-                      style: TextStyle(fontSize: 12, color: Colors.black45),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.plumGray45,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -139,7 +142,7 @@ class InventoryProductDetailSheet extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        color: AppColors.plumGray,
                       ),
                     ),
                   ],
@@ -161,7 +164,7 @@ class InventoryProductDetailSheet extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
               child: const Text(
                 'Cerrar',
-                style: TextStyle(fontSize: 16, color: Colors.white),
+                style: TextStyle(fontSize: 16, color: AppColors.cream),
               ),
             ),
           ),

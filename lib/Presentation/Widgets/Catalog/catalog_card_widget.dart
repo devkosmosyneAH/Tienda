@@ -32,7 +32,7 @@ class _CatalogCategoryCardState extends State<CatalogCategoryCard>
   bool get _isBazar => widget.storeName.toLowerCase() == 'bazar';
 
   Color get _accentColor =>
-      _isBazar ? AppColors.blackOverlay : const Color(0xFF2E7D32);
+      _isBazar ? AppColors.blackOverlay : AppColors.mutedMauve;
 
   @override
   void initState() {
@@ -150,7 +150,7 @@ class _CatalogCategoryCardState extends State<CatalogCategoryCard>
                                   label: const Text('Ver detalle'),
                                   style: FilledButton.styleFrom(
                                     backgroundColor: _accentColor,
-                                    foregroundColor: Colors.white,
+                                    foregroundColor: AppColors.cream,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(14),
                                     ),
@@ -263,10 +263,7 @@ class _CardImage extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.45),
-                    Colors.transparent,
-                  ],
+                  colors: [AppColors.plumGray45, Colors.transparent],
                 ),
               ),
             ),
@@ -294,7 +291,7 @@ class _CardImage extends StatelessWidget {
     child: const Center(
       child: Icon(
         Icons.image_not_supported_outlined,
-        color: Colors.white70,
+        color: AppColors.paleMauve70,
         size: 40,
       ),
     ),
@@ -310,7 +307,7 @@ class _ImageCount extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.55),
+        color: AppColors.plumGray55,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
@@ -321,13 +318,13 @@ class _ImageCount extends StatelessWidget {
             const Icon(
               Icons.collections_outlined,
               size: 12,
-              color: Colors.white,
+              color: AppColors.cream,
             ),
             const SizedBox(width: 3),
             Text(
               '$count',
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.cream,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),

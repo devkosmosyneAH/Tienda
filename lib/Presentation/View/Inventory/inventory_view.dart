@@ -70,7 +70,11 @@ class _InventoryViewState extends State<InventoryView> {
       if (match.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se encontró el producto ${item.name} para comprar.')),
+          SnackBar(
+            content: Text(
+              'No se encontró el producto ${item.name} para comprar.',
+            ),
+          ),
         );
         return;
       }
@@ -80,15 +84,13 @@ class _InventoryViewState extends State<InventoryView> {
       if (!mounted) return;
       await Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => const PurchasesView(),
-        ),
+        MaterialPageRoute(builder: (_) => const PurchasesView()),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo abrir la compra: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo abrir la compra: $e')));
     }
   }
 
@@ -118,7 +120,7 @@ class _InventoryViewState extends State<InventoryView> {
                 padding: const EdgeInsets.all(24),
                 child: Text(
                   provider.errorMessage!,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: AppColors.dustyRose),
                 ),
               ),
             );

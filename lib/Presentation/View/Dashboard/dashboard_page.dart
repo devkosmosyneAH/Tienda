@@ -126,10 +126,10 @@ class _DashboardPageState extends State<DashboardPage> {
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(25)),
         child: Container(
           decoration: const BoxDecoration(
-            color: AppColors.blackOverlay,
+            color: AppColors.lightWhite,
             boxShadow: [
               BoxShadow(
-                color: Colors.black26,
+                color: AppColors.plumGray26,
                 blurRadius: 5,
                 offset: Offset(0, 3),
               ),
@@ -140,14 +140,14 @@ class _DashboardPageState extends State<DashboardPage> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
-            iconTheme: const IconThemeData(color: AppColors.whiteOverlay),
+            iconTheme: const IconThemeData(color: AppColors.blackOverlay),
             title: Column(
               children: [
                 const Text(
                   'Panel de Control',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.whiteOverlay,
+                    color: AppColors.blackOverlay,
                     fontSize: 18,
                   ),
                 ),
@@ -157,7 +157,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w300,
-                      color: AppColors.whiteOverlay,
+                      color: AppColors.blackOverlay,
                     ),
                   ),
               ],
@@ -174,11 +174,11 @@ class _DashboardPageState extends State<DashboardPage> {
                         onPressed: () =>
                             Navigator.pushNamed(context, AppRoutes.license),
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppColors.cream,
                           backgroundColor:
                               licenseStatus == LicenseStatus.DEMO_POR_VENCER
-                              ? Colors.deepOrange
-                              : Colors.teal.shade700,
+                              ? AppColors.dustyRose
+                              : AppColors.mutedMauve,
                           padding: EdgeInsets.symmetric(
                             horizontal: isMobile ? 7 : 12,
                           ),
@@ -202,7 +202,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 margin: const EdgeInsets.only(right: 16),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black26,
+                  color: AppColors.plumGray26,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: CashStoresStatus(
@@ -230,12 +230,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 label: Text(
                   _currentUser?['role'] ?? 'user',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.cream,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                backgroundColor: Colors.black26,
+                backgroundColor: AppColors.plumGray26,
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
               ),
@@ -268,10 +268,10 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
+            leading: const Icon(Icons.logout, color: AppColors.dustyRose),
             title: const Text(
               'Cerrar sesión',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: AppColors.dustyRose),
             ),
             onTap: () async {
               await _authService.logout();

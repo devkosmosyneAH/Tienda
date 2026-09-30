@@ -24,7 +24,11 @@ class InventoryAttentionSection extends StatelessWidget {
         color: AppColors.whiteOverlay,
         borderRadius: BorderRadius.circular(14),
         boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(
+            color: AppColors.plumGray12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -68,12 +72,12 @@ class InventoryAttentionSection extends StatelessWidget {
           if (needAttention.isEmpty)
             const Text(
               'Todos los productos tienen stock suficiente.',
-              style: TextStyle(fontSize: 12, color: Colors.black54),
+              style: TextStyle(fontSize: 12, color: AppColors.plumGray54),
             )
           else
-            ...needAttention.take(10).map(
-              (item) => InventoryAttentionRow(item: item, fmt: fmt),
-            ),
+            ...needAttention
+                .take(10)
+                .map((item) => InventoryAttentionRow(item: item, fmt: fmt)),
         ],
       ),
     );
@@ -129,13 +133,19 @@ class InventoryAttentionRow extends StatelessWidget {
                 ),
                 Text(
                   item.sku,
-                  style: const TextStyle(fontSize: 10, color: Colors.black45),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.plumGray45,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   'Stock: ${item.quantity} | Compra: \$${fmt.format(item.costPrice)}',
-                  style: const TextStyle(fontSize: 10, color: Colors.black54),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.plumGray54,
+                  ),
                 ),
               ],
             ),
@@ -146,13 +156,15 @@ class InventoryAttentionRow extends StatelessWidget {
             height: 32,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: item.quantity == 0 ? AppColors.primaryRed : Colors.orange,
+              color: item.quantity == 0
+                  ? AppColors.primaryRed
+                  : AppColors.paleMauve,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               '${item.quantity}',
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.cream,
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
               ),

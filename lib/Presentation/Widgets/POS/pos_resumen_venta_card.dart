@@ -60,7 +60,7 @@ class _PosResumenVentaCardState extends State<PosResumenVentaCard>
             constraints: const BoxConstraints(maxWidth: 460),
             child: Card(
               elevation: 0,
-              color: Colors.white,
+              color: AppColors.cream,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -152,7 +152,7 @@ class _PosResumenVentaCardState extends State<PosResumenVentaCard>
                               '\$${total.toStringAsFixed(2)}',
                               key: ValueKey(total),
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.cream,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
                               ),
@@ -203,8 +203,8 @@ class _PosResumenVentaCardState extends State<PosResumenVentaCard>
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
                               color: change > 0
-                                  ? Colors.green.shade600
-                                  : Colors.black54,
+                                  ? AppColors.plumGray
+                                  : AppColors.plumGray54,
                             ),
                           ),
                         ),

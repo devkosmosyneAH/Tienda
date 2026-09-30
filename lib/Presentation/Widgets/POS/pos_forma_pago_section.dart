@@ -155,7 +155,7 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                   icon: const Icon(Icons.currency_exchange, size: 18),
                   label: const Text('Editar Tasas'),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.green.shade800,
+                    foregroundColor: AppColors.plumGray,
                     textStyle: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -223,14 +223,14 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                         label: Text(option.label),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: selected
-                              ? Colors.white
-                              : Colors.black87,
+                              ? AppColors.cream
+                              : AppColors.plumGray87,
                           backgroundColor: selected
-                              ? Colors.green.shade800
-                              : Colors.white,
+                              ? AppColors.plumGray
+                              : AppColors.cream,
                           side: BorderSide(
                             color: selected
-                                ? Colors.green.shade800
+                                ? AppColors.plumGray
                                 : Colors.deepPurple.shade100,
                           ),
                           padding: const EdgeInsets.symmetric(
@@ -265,13 +265,13 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                           onPressed: () =>
                               setState(() => _electronicType = type),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.black87,
+                            foregroundColor: AppColors.plumGray87,
                             backgroundColor: selected
-                                ? Colors.green.shade50
-                                : Colors.white,
+                                ? AppColors.plumGray
+                                : AppColors.cream,
                             side: BorderSide(
                               color: selected
-                                  ? Colors.green.shade800
+                                  ? AppColors.plumGray
                                   : Colors.deepPurple.shade100,
                               width: selected ? 1.5 : 1,
                             ),
@@ -314,13 +314,13 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                     return OutlinedButton(
                       onPressed: () => setState(() => _depositType = type),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.black87,
+                        foregroundColor: AppColors.plumGray87,
                         backgroundColor: selected
-                            ? Colors.green.shade50
-                            : Colors.white,
+                            ? AppColors.plumGray
+                            : AppColors.cream,
                         side: BorderSide(
                           color: selected
-                              ? Colors.green.shade800
+                              ? AppColors.plumGray
                               : Colors.deepPurple.shade100,
                           width: selected ? 1.5 : 1,
                         ),
@@ -358,13 +358,13 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                     return OutlinedButton(
                       onPressed: () => setState(() => _cardType = type),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.black87,
+                        foregroundColor: AppColors.plumGray87,
                         backgroundColor: selected
-                            ? Colors.green.shade50
-                            : Colors.white,
+                            ? AppColors.plumGray
+                            : AppColors.cream,
                         side: BorderSide(
                           color: selected
-                              ? Colors.green.shade800
+                              ? AppColors.plumGray
                               : Colors.deepPurple.shade100,
                           width: selected ? 1.5 : 1,
                         ),
@@ -408,13 +408,13 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                         return OutlinedButton(
                           onPressed: () => setState(() => _otherType = type),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.black87,
+                            foregroundColor: AppColors.plumGray87,
                             backgroundColor: selected
-                                ? Colors.green.shade50
-                                : Colors.white,
+                                ? AppColors.plumGray
+                                : AppColors.cream,
                             side: BorderSide(
                               color: selected
-                                  ? Colors.green.shade800
+                                  ? AppColors.plumGray
                                   : Colors.deepPurple.shade100,
                               width: selected ? 1.5 : 1,
                             ),
@@ -448,8 +448,8 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  border: Border.all(color: Colors.orange.shade300),
+                  color: AppColors.paleMauve,
+                  border: Border.all(color: AppColors.paleMauve),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -477,14 +477,14 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                           label: Text('$days días'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: selected
-                                ? Colors.white
-                                : Colors.black87,
+                                ? AppColors.cream
+                                : AppColors.plumGray87,
                             backgroundColor: selected
-                                ? Colors.green.shade700
-                                : Colors.white,
+                                ? AppColors.plumGray
+                                : AppColors.cream,
                             side: BorderSide(
                               color: selected
-                                  ? Colors.green.shade700
+                                  ? AppColors.plumGray
                                   : Colors.deepPurple.shade100,
                             ),
                             padding: const EdgeInsets.symmetric(
@@ -506,8 +506,8 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                         vertical: 9,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
-                        border: Border.all(color: Colors.orange.shade300),
+                        color: AppColors.paleMauve,
+                        border: Border.all(color: AppColors.paleMauve),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
@@ -515,13 +515,13 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                           Icon(
                             Icons.calendar_today_outlined,
                             size: 16,
-                            color: Colors.orange.shade800,
+                            color: AppColors.paleMauve,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             'Vence: $dueDateText',
                             style: TextStyle(
-                              color: Colors.orange.shade800,
+                              color: AppColors.paleMauve,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                             ),
@@ -580,8 +580,8 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text('Agregar Pago'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade800,
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.plumGray,
+                    foregroundColor: AppColors.cream,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                     ),
@@ -593,7 +593,7 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                 const Center(
                   child: Text(
                     'Sin pagos registrados',
-                    style: TextStyle(color: Colors.black54),
+                    style: TextStyle(color: AppColors.plumGray54),
                   ),
                 )
               else
@@ -634,7 +634,10 @@ class _Rate extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+      Text(
+        label,
+        style: const TextStyle(fontSize: 11, color: AppColors.mediumGray),
+      ),
       Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
     ],
   );
@@ -661,7 +664,7 @@ class _FieldShell extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
     decoration: BoxDecoration(
-      color: Colors.grey.shade100,
+      color: AppColors.mediumGray,
       borderRadius: BorderRadius.circular(8),
     ),
     child: Column(

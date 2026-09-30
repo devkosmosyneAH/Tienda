@@ -33,7 +33,11 @@ class InventoryInvestmentCard extends StatelessWidget {
         color: AppColors.whiteOverlay,
         borderRadius: BorderRadius.circular(14),
         boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(
+            color: AppColors.plumGray12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -63,7 +67,7 @@ class InventoryInvestmentCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             '$conExistencia productos con existencia > 0',
-            style: const TextStyle(fontSize: 11, color: Colors.black54),
+            style: const TextStyle(fontSize: 11, color: AppColors.plumGray54),
           ),
           const SizedBox(height: 12),
           Row(
@@ -71,11 +75,11 @@ class InventoryInvestmentCard extends StatelessWidget {
               Expanded(
                 child: InventoryInvestmentBox(
                   icon: Icons.shopping_cart_outlined,
-                  iconColor: Colors.orange,
+                  iconColor: AppColors.paleMauve,
                   label: 'Compra total',
                   value: fmt.format(compraTotalAll),
-                  valueColor: Colors.orange,
-                  bgColor: const Color(0xFFFFF3E0),
+                  valueColor: AppColors.paleMauve,
+                  bgColor: AppColors.paleCream,
                 ),
               ),
               const SizedBox(width: 8),
@@ -86,18 +90,19 @@ class InventoryInvestmentCard extends StatelessWidget {
                   label: 'Venta total',
                   value: fmt.format(ventaTotalAll),
                   valueColor: AppColors.primaryBlue,
-                  bgColor: const Color(0xFFE8F0FB),
+                  bgColor: AppColors.softCream,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: InventoryInvestmentBox(
                   icon: Icons.trending_up,
-                  iconColor: Colors.green,
+                  iconColor: AppColors.plumGray,
                   label: 'Diferencia',
-                  value: '${fmt.format(diferencia)} (${pct.toStringAsFixed(1)}%)',
-                  valueColor: Colors.green,
-                  bgColor: const Color(0xFFE8F5E9),
+                  value:
+                      '${fmt.format(diferencia)} (${pct.toStringAsFixed(1)}%)',
+                  valueColor: AppColors.plumGray,
+                  bgColor: AppColors.mutedCream,
                 ),
               ),
             ],
@@ -141,7 +146,7 @@ class InventoryInvestmentBox extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(fontSize: 10, color: Colors.black54),
+            style: const TextStyle(fontSize: 10, color: AppColors.plumGray54),
           ),
           const SizedBox(height: 2),
           Text(

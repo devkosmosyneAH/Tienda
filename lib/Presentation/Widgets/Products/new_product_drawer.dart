@@ -84,7 +84,7 @@ class NewProductDrawer extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.add_box_outlined,
-                  color: Colors.white70,
+                  color: AppColors.paleMauve70,
                   size: 22,
                 ),
                 const SizedBox(width: 10),
@@ -95,14 +95,17 @@ class NewProductDrawer extends StatelessWidget {
                       Text(
                         'Nuevo producto',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.cream,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
                         'Agregar al catálogo compartido',
-                        style: TextStyle(fontSize: 12, color: Colors.white54),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.paleMauve54,
+                        ),
                       ),
                     ],
                   ),
@@ -205,7 +208,7 @@ class NewProductDrawer extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      Divider(color: Colors.grey.shade100),
+                      Divider(color: AppColors.mediumGray),
                       const SizedBox(height: 24),
                       formSection(
                         title: 'Precios e impuestos',
@@ -215,7 +218,10 @@ class NewProductDrawer extends StatelessWidget {
                               Expanded(
                                 child: SharedTextFormField(
                                   controller: priceController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
                                   label: 'Precio de venta',
                                   prefix: '\$',
                                 ),
@@ -224,7 +230,10 @@ class NewProductDrawer extends StatelessWidget {
                               Expanded(
                                 child: SharedTextFormField(
                                   controller: costPriceController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
                                   label: 'Precio de compra',
                                   prefix: '\$',
                                 ),
@@ -237,7 +246,10 @@ class NewProductDrawer extends StatelessWidget {
                               Expanded(
                                 child: SharedTextFormField(
                                   controller: ivaRateController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
                                   label: 'IVA gubernamental',
                                   suffix: '%',
                                 ),
@@ -246,7 +258,10 @@ class NewProductDrawer extends StatelessWidget {
                               Expanded(
                                 child: SharedTextFormField(
                                   controller: profitIvaController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
                                   label: 'IVA ganancia',
                                   suffix: '%',
                                 ),
@@ -256,7 +271,7 @@ class NewProductDrawer extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      Divider(color: Colors.grey.shade100),
+                      Divider(color: AppColors.mediumGray),
                       const SizedBox(height: 24),
                       formSection(
                         title: 'Local e inventario inicial',
@@ -265,10 +280,16 @@ class NewProductDrawer extends StatelessWidget {
                             value: selectedStoreId,
                             decoration: modernInput(label: 'Local principal'),
                             items: [
-                              const DropdownMenuItem<int?>(value: null, child: Text('Sin asignar')),
+                              const DropdownMenuItem<int?>(
+                                value: null,
+                                child: Text('Sin asignar'),
+                              ),
                               ...controller.stores.map((s) {
                                 final id = (s['id'] as num).toInt();
-                                return DropdownMenuItem<int?>(value: id, child: Text(s['name'] as String));
+                                return DropdownMenuItem<int?>(
+                                  value: id,
+                                  child: Text(s['name'] as String),
+                                );
                               }),
                             ],
                             onChanged: onStoreChanged,
@@ -296,7 +317,7 @@ class NewProductDrawer extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      Divider(color: Colors.grey.shade100),
+                      Divider(color: AppColors.mediumGray),
                       const SizedBox(height: 24),
                       formSection(
                         title: 'Imágenes del producto',
@@ -319,10 +340,15 @@ class NewProductDrawer extends StatelessWidget {
                                           width: 84,
                                           height: 84,
                                           decoration: BoxDecoration(
-                                            color: Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(10),
+                                            color: AppColors.mediumGray,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                           ),
-                                          child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
+                                          child: const Icon(
+                                            Icons.broken_image_outlined,
+                                            color: AppColors.mediumGray,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -330,17 +356,22 @@ class NewProductDrawer extends StatelessWidget {
                                       top: 4,
                                       right: 4,
                                       child: GestureDetector(
-                                        onTap: isUploadingImages || isSavingProduct
+                                        onTap:
+                                            isUploadingImages || isSavingProduct
                                             ? null
                                             : () => onRemoveImage(entry.key),
                                         child: Container(
                                           width: 20,
                                           height: 20,
                                           decoration: BoxDecoration(
-                                            color: Colors.red.shade600,
+                                            color: AppColors.dustyRose,
                                             shape: BoxShape.circle,
                                           ),
-                                          child: const Icon(Icons.close, size: 12, color: Colors.white),
+                                          child: const Icon(
+                                            Icons.close,
+                                            size: 12,
+                                            color: AppColors.cream,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -348,31 +379,57 @@ class NewProductDrawer extends StatelessWidget {
                                 );
                               }),
                               InkWell(
-                                onTap: isUploadingImages || isSavingProduct ? null : onPickImages,
+                                onTap: isUploadingImages || isSavingProduct
+                                    ? null
+                                    : onPickImages,
                                 borderRadius: BorderRadius.circular(10),
                                 child: Container(
                                   width: 84,
                                   height: 84,
                                   decoration: BoxDecoration(
                                     color: AppColors.lightWhite,
-                                    border: Border.all(color: Colors.grey.shade300),
+                                    border: Border.all(
+                                      color: AppColors.mediumGray,
+                                    ),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: isUploadingImages
                                       ? const Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
-                                            SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                                            SizedBox(
+                                              width: 24,
+                                              height: 24,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
                                             SizedBox(height: 6),
-                                            Text('Subiendo', style: TextStyle(fontSize: 10)),
+                                            Text(
+                                              'Subiendo',
+                                              style: TextStyle(fontSize: 10),
+                                            ),
                                           ],
                                         )
                                       : Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
-                                            Icon(Icons.add_photo_alternate_outlined, color: Colors.grey.shade400, size: 24),
+                                            Icon(
+                                              Icons
+                                                  .add_photo_alternate_outlined,
+                                              color: AppColors.mediumGray,
+                                              size: 24,
+                                            ),
                                             const SizedBox(height: 4),
-                                            Text('Añadir', style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
+                                            Text(
+                                              'Añadir',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: AppColors.mediumGray,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                 ),
@@ -397,7 +454,7 @@ class NewProductDrawer extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: AppColors.lightGray,
-              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+              border: Border(top: BorderSide(color: AppColors.mediumGray)),
             ),
             child: SizedBox(
               width: double.infinity,
@@ -405,17 +462,34 @@ class NewProductDrawer extends StatelessWidget {
               child: FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.blackOverlay,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                onPressed: controller.isLoading || isSavingProduct || isUploadingImages ? null : onSaveProduct,
+                onPressed:
+                    controller.isLoading || isSavingProduct || isUploadingImages
+                    ? null
+                    : onSaveProduct,
                 icon: controller.isLoading || isSavingProduct
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.cream,
+                        ),
+                      )
                     : const Icon(Icons.check_circle_outline, size: 18),
                 label: Text(
                   isUploadingImages
                       ? 'Subiendo imágenes...'
-                      : (controller.isLoading || isSavingProduct) ? 'Guardando...' : 'Guardar producto',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      : (controller.isLoading || isSavingProduct)
+                      ? 'Guardando...'
+                      : 'Guardar producto',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

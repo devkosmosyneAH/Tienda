@@ -131,11 +131,11 @@ class CatalogSearchBar extends StatelessWidget {
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cream,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: AppColors.plumGray06,
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -173,11 +173,11 @@ class CategoryFilter extends StatelessWidget {
       child: Container(
         height: 56,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cream,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
+              color: AppColors.plumGray06,
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),
@@ -190,7 +190,7 @@ class CategoryFilter extends StatelessWidget {
           textStyle: theme.textTheme.bodyMedium,
           inputDecorationTheme: InputDecorationTheme(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppColors.cream,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
               borderSide: BorderSide.none,
@@ -495,17 +495,17 @@ class _WebCatalogViewState extends State<WebCatalogView>
     final currentSectionCategories = _currentSectionCategories;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F8),
+      backgroundColor: AppColors.paleCream,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryLogo,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.lightWhite,
+        foregroundColor: AppColors.blackOverlay,
         titleSpacing: 16,
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: AppColors.cream.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(Icons.storefront_outlined, size: 24),
@@ -521,7 +521,10 @@ class _WebCatalogViewState extends State<WebCatalogView>
                   ),
                   Text(
                     'Catálogo de productos',
-                    style: TextStyle(fontSize: 11, color: Colors.white70),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.blackOverlay,
+                    ),
                   ),
                 ],
               ),
@@ -538,7 +541,7 @@ class _WebCatalogViewState extends State<WebCatalogView>
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white70,
+                    color: AppColors.paleMauve70,
                   ),
                 ),
               ),
@@ -550,7 +553,7 @@ class _WebCatalogViewState extends State<WebCatalogView>
                 message: 'Datos en tiempo real desde Google Drive',
                 child: const Icon(
                   Icons.cloud_done_outlined,
-                  color: Colors.white70,
+                  color: AppColors.paleMauve70,
                   size: 20,
                 ),
               ),
@@ -562,12 +565,12 @@ class _WebCatalogViewState extends State<WebCatalogView>
                 onPressed: _loadDriveData,
                 icon: const Icon(
                   Icons.refresh_outlined,
-                  color: Colors.white60,
+                  color: AppColors.paleMauve60,
                   size: 18,
                 ),
                 label: const Text(
                   'Reintentar',
-                  style: TextStyle(color: Colors.white60, fontSize: 11),
+                  style: TextStyle(color: AppColors.paleMauve60, fontSize: 11),
                 ),
               ),
             ),
@@ -578,9 +581,9 @@ class _WebCatalogViewState extends State<WebCatalogView>
                 preferredSize: const Size.fromHeight(52),
                 child: TabBar(
                   controller: _tabController,
-                  indicatorColor: Colors.white,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white60,
+                  indicatorColor: AppColors.cream,
+                  labelColor: AppColors.cream,
+                  unselectedLabelColor: AppColors.paleMauve60,
                   tabs: _sections
                       .map(
                         (s) => Tab(
@@ -709,7 +712,7 @@ class _WebCatalogViewState extends State<WebCatalogView>
                 const Text(
                   '© 2026 Bazar & Tienda Nicole — Todos los derechos reservados',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white54, fontSize: 11),
+                  style: TextStyle(color: AppColors.paleMauve54, fontSize: 11),
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -729,16 +732,19 @@ class _WebCatalogViewState extends State<WebCatalogView>
                       child: const Text(
                         'Términos y Condiciones',
                         style: TextStyle(
-                          color: Colors.white70,
+                          color: AppColors.paleMauve70,
                           fontSize: 11,
                           decoration: TextDecoration.underline,
-                          decorationColor: Colors.white54,
+                          decorationColor: AppColors.paleMauve54,
                         ),
                       ),
                     ),
                     const Text(
                       '·',
-                      style: TextStyle(color: Colors.white38, fontSize: 11),
+                      style: TextStyle(
+                        color: AppColors.paleMauve38,
+                        fontSize: 11,
+                      ),
                     ),
                     TextButton(
                       onPressed: () =>
@@ -754,10 +760,10 @@ class _WebCatalogViewState extends State<WebCatalogView>
                       child: const Text(
                         'Política de Privacidad',
                         style: TextStyle(
-                          color: Colors.white70,
+                          color: AppColors.paleMauve70,
                           fontSize: 11,
                           decoration: TextDecoration.underline,
-                          decorationColor: Colors.white54,
+                          decorationColor: AppColors.paleMauve54,
                         ),
                       ),
                     ),
@@ -783,20 +789,20 @@ class _DriveBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFFFF3CD),
+      color: AppColors.paleCream,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           const Icon(
             Icons.warning_amber_outlined,
-            color: Color(0xFF856404),
+            color: AppColors.plumGray,
             size: 18,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'No se pudieron cargar datos desde Drive. Mostrando catálogo base.',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF856404)),
+              style: TextStyle(fontSize: 11, color: AppColors.plumGray),
             ),
           ),
           TextButton(
@@ -806,7 +812,7 @@ class _DriveBanner extends StatelessWidget {
             ),
             child: const Text(
               'Reintentar',
-              style: TextStyle(fontSize: 11, color: Color(0xFF856404)),
+              style: TextStyle(fontSize: 11, color: AppColors.plumGray),
             ),
           ),
         ],

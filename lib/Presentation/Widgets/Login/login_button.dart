@@ -27,12 +27,13 @@ class _LoginButtonState extends State<LoginButton> {
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(12),
+            ),
             backgroundColor: AppColors.primaryLogo,
           ),
           child: const Text(
             'Iniciar sesión',
-            style: TextStyle(fontSize: 16, color: Color(0xfff4f4f4)),
+            style: TextStyle(fontSize: 16, color: AppColors.cream),
           ),
         ),
       ),

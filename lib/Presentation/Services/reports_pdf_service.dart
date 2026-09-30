@@ -5,6 +5,12 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+const _pdfPaleCream = PdfColor(0.9803922, 0.9686275, 0.9098039);
+const _pdfSoftCream = PdfColor(0.9490196, 0.9372549, 0.8823529);
+const _pdfPaleMauve = PdfColor(0.7843137, 0.7215686, 0.7490196);
+const _pdfMutedMauve = PdfColor(0.6470588, 0.6, 0.6196078);
+const _pdfPlumGray = PdfColor(0.4235294, 0.3803922, 0.4666667);
+
 class ReportsPdfService {
   const ReportsPdfService();
 
@@ -22,7 +28,10 @@ class ReportsPdfService {
   }) async {
     final pdf = pw.Document();
     final generatedDate = generatedAt ?? DateTime.now();
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(
+      symbol: '\$',
+      decimalDigits: 2,
+    );
 
     pdf.addPage(
       pw.MultiPage(
@@ -32,7 +41,7 @@ class ReportsPdfService {
           padding: const pw.EdgeInsets.only(top: 16),
           decoration: const pw.BoxDecoration(
             border: pw.Border(
-              top: pw.BorderSide(color: PdfColors.grey300, width: 0.8),
+              top: pw.BorderSide(color: _pdfPaleMauve, width: 0.8),
             ),
           ),
           child: pw.Row(
@@ -40,31 +49,25 @@ class ReportsPdfService {
             children: [
               pw.Text(
                 'Reporte comercial',
-                style: pw.TextStyle(
-                  fontSize: 8,
-                  color: PdfColors.grey700,
-                ),
+                style: pw.TextStyle(fontSize: 8, color: _pdfPlumGray),
               ),
               pw.Text(
                 'Página ${context.pageNumber} de ${context.pagesCount}',
-                style: pw.TextStyle(
-                  fontSize: 8,
-                  color: PdfColors.grey700,
-                ),
+                style: pw.TextStyle(fontSize: 8, color: _pdfPlumGray),
               ),
             ],
           ),
         ),
         build: (context) {
           final summaryTable = pw.Table(
-            border: pw.TableBorder.all(color: PdfColors.grey300),
+            border: pw.TableBorder.all(color: _pdfPaleMauve),
             columnWidths: const {
               0: pw.FlexColumnWidth(1),
               1: pw.FlexColumnWidth(1),
             },
             children: [
               pw.TableRow(
-                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                decoration: const pw.BoxDecoration(color: _pdfSoftCream),
                 children: [
                   pw.Padding(
                     padding: const pw.EdgeInsets.all(10),
@@ -74,7 +77,7 @@ class ReportsPdfService {
                       style: pw.TextStyle(
                         fontSize: 11,
                         fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black,
+                        color: _pdfPlumGray,
                       ),
                     ),
                   ),
@@ -86,7 +89,7 @@ class ReportsPdfService {
                       style: pw.TextStyle(
                         fontSize: 11,
                         fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black,
+                        color: _pdfPlumGray,
                       ),
                     ),
                   ),
@@ -102,7 +105,7 @@ class ReportsPdfService {
                       style: pw.TextStyle(
                         fontSize: 18,
                         fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black,
+                        color: _pdfPlumGray,
                       ),
                     ),
                   ),
@@ -114,7 +117,7 @@ class ReportsPdfService {
                       style: pw.TextStyle(
                         fontSize: 18,
                         fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black,
+                        color: _pdfPlumGray,
                       ),
                     ),
                   ),
@@ -160,9 +163,9 @@ class ReportsPdfService {
             pw.Container(
               padding: const pw.EdgeInsets.all(18),
               decoration: pw.BoxDecoration(
-                color: PdfColors.grey200,
+                color: _pdfSoftCream,
                 borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
-                border: pw.Border.all(color: PdfColors.grey400, width: 0.8),
+                border: pw.Border.all(color: _pdfMutedMauve, width: 0.8),
               ),
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -172,24 +175,18 @@ class ReportsPdfService {
                     style: pw.TextStyle(
                       fontSize: 24,
                       fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.black,
+                      color: _pdfPlumGray,
                     ),
                   ),
                   pw.SizedBox(height: 4),
                   pw.Text(
                     'Resumen del rendimiento comercial',
-                    style: pw.TextStyle(
-                      fontSize: 11,
-                      color: PdfColors.grey700,
-                    ),
+                    style: pw.TextStyle(fontSize: 11, color: _pdfPlumGray),
                   ),
                   pw.SizedBox(height: 12),
                   pw.Text(
                     'Generado: ${DateFormat('dd/MM/yyyy HH:mm').format(generatedDate)}',
-                    style: pw.TextStyle(
-                      fontSize: 9,
-                      color: PdfColors.grey700,
-                    ),
+                    style: pw.TextStyle(fontSize: 9, color: _pdfPlumGray),
                   ),
                 ],
               ),
@@ -200,12 +197,14 @@ class ReportsPdfService {
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                  color: _pdfPaleCream,
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(8),
+                  ),
                 ),
                 child: pw.Text(
                   'No hay ventas registradas para este período.',
-                  style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                  style: pw.TextStyle(fontSize: 10, color: _pdfPlumGray),
                 ),
               )
             else if (controller.salesByStore.isEmpty)
@@ -213,12 +212,14 @@ class ReportsPdfService {
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                  color: _pdfPaleCream,
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(8),
+                  ),
                 ),
                 child: pw.Text(
                   'No existen datos de ventas por local.',
-                  style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                  style: pw.TextStyle(fontSize: 10, color: _pdfPlumGray),
                 ),
               ),
             pw.Text(
@@ -226,7 +227,7 @@ class ReportsPdfService {
               style: pw.TextStyle(
                 fontSize: 16,
                 fontWeight: pw.FontWeight.bold,
-                color: PdfColors.black,
+                color: _pdfPlumGray,
               ),
             ),
             pw.SizedBox(height: 10),
@@ -237,7 +238,7 @@ class ReportsPdfService {
               style: pw.TextStyle(
                 fontSize: 16,
                 fontWeight: pw.FontWeight.bold,
-                color: PdfColors.black,
+                color: _pdfPlumGray,
               ),
             ),
             pw.SizedBox(height: 10),
@@ -246,12 +247,14 @@ class ReportsPdfService {
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                  color: _pdfPaleCream,
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(8),
+                  ),
                 ),
                 child: pw.Text(
                   'No existen datos de ventas por local.',
-                  style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                  style: pw.TextStyle(fontSize: 10, color: _pdfPlumGray),
                 ),
               )
             else
@@ -259,13 +262,13 @@ class ReportsPdfService {
                 context: context,
                 headerStyle: pw.TextStyle(
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.black,
+                  color: _pdfPlumGray,
                 ),
-                cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.black),
+                cellStyle: pw.TextStyle(fontSize: 9, color: _pdfPlumGray),
                 headers: salesByStoreRows.first,
                 data: salesByStoreRows.sublist(1),
                 border: null,
-                headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                headerDecoration: const pw.BoxDecoration(color: _pdfSoftCream),
                 columnWidths: {
                   0: const pw.FlexColumnWidth(2.5),
                   1: const pw.FlexColumnWidth(1.1),
@@ -278,7 +281,7 @@ class ReportsPdfService {
               style: pw.TextStyle(
                 fontSize: 16,
                 fontWeight: pw.FontWeight.bold,
-                color: PdfColors.black,
+                color: _pdfPlumGray,
               ),
             ),
             pw.SizedBox(height: 10),
@@ -287,12 +290,14 @@ class ReportsPdfService {
                 width: double.infinity,
                 padding: const pw.EdgeInsets.all(12),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                  color: _pdfPaleCream,
+                  borderRadius: const pw.BorderRadius.all(
+                    pw.Radius.circular(8),
+                  ),
                 ),
                 child: pw.Text(
                   'No hay productos vendidos para este período.',
-                  style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                  style: pw.TextStyle(fontSize: 10, color: _pdfPlumGray),
                 ),
               )
             else
@@ -300,13 +305,13 @@ class ReportsPdfService {
                 context: context,
                 headerStyle: pw.TextStyle(
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.black,
+                  color: _pdfPlumGray,
                 ),
-                cellStyle: pw.TextStyle(fontSize: 9, color: PdfColors.black),
+                cellStyle: pw.TextStyle(fontSize: 9, color: _pdfPlumGray),
                 headers: productsRows.first,
                 data: productsRows.sublist(1),
                 border: null,
-                headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                headerDecoration: const pw.BoxDecoration(color: _pdfSoftCream),
                 columnWidths: {
                   0: const pw.FlexColumnWidth(0.6),
                   1: const pw.FlexColumnWidth(2.4),

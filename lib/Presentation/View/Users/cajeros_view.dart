@@ -29,13 +29,13 @@ class _CajerosViewState extends State<CajerosView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.primaryLogo,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.lightWhite,
+        foregroundColor: AppColors.blackOverlay,
         title: const Text(
           'Cajeros',
-          style: TextStyle(color: AppColors.threeColor),
+          style: TextStyle(color: AppColors.blackOverlay),
         ),
-        iconTheme: const IconThemeData(color: AppColors.threeColor),
+        iconTheme: const IconThemeData(color: AppColors.blackOverlay),
       ),
       body: Consumer<UsersController>(
         builder: (context, ctrl, _) {
@@ -58,12 +58,12 @@ class _CajerosViewState extends State<CajerosView> {
                   Icon(
                     Icons.point_of_sale_outlined,
                     size: 64,
-                    color: Colors.grey[400],
+                    color: AppColors.softCream,
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'No hay cajeros registrados',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(color: AppColors.softCream),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
@@ -130,11 +130,11 @@ class _CajeroCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Colors.teal.withValues(alpha: 0.15),
+          backgroundColor: AppColors.mutedMauve.withValues(alpha: 0.15),
           child: Text(
             user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
             style: const TextStyle(
-              color: Colors.teal,
+              color: AppColors.mutedMauve,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -151,15 +151,17 @@ class _CajeroCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: user.isActive
-                    ? Colors.green.withValues(alpha: 0.12)
-                    : Colors.red.withValues(alpha: 0.12),
+                    ? AppColors.plumGray12
+                    : AppColors.dustyRose.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 user.isActive ? 'Activo' : 'Inactivo',
                 style: TextStyle(
                   fontSize: 11,
-                  color: user.isActive ? Colors.green[700] : Colors.red,
+                  color: user.isActive
+                      ? AppColors.plumGray
+                      : AppColors.dustyRose,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -204,9 +206,9 @@ class _CajeroCard extends StatelessWidget {
   }
 
   void _showError(BuildContext context, String msg) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: AppColors.dustyRose),
+    );
   }
 
   void _showPasswordDialog(
@@ -334,9 +336,7 @@ class _CajeroFormDialogState extends State<_CajeroFormDialog> {
                 keyboardType: TextInputType.emailAddress,
                 label: 'Correo *',
                 prefixIcon: const Icon(Icons.email_outlined),
-                helperText: _isEditing
-                    ? 'El correo no se puede cambiar'
-                    : null,
+                helperText: _isEditing ? 'El correo no se puede cambiar' : null,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Campo requerido';
                   if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
@@ -378,7 +378,7 @@ class _CajeroFormDialogState extends State<_CajeroFormDialog> {
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppColors.cream,
                   ),
                 )
               : Text(_isEditing ? 'Guardar' : 'Crear'),
@@ -414,9 +414,9 @@ class _CajeroFormDialogState extends State<_CajeroFormDialog> {
     setState(() => _saving = false);
 
     if (err != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(err), backgroundColor: AppColors.dustyRose),
+      );
     } else {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
