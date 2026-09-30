@@ -2,6 +2,7 @@ import 'package:tienda/Presentation/Services/auth_service.dart';
 import 'package:tienda/Presentation/Controller/cash_controller.dart';
 import 'package:tienda/Presentation/Controller/license_provider.dart';
 import 'package:tienda/Presentation/View/Auth/app_routes.dart';
+import 'package:tienda/Presentation/View/Profile/profile_page.dart';
 import 'package:tienda/Presentation/Services/license_service.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
 import 'package:tienda/Presentation/Widgets/cash_stores_status.dart';
@@ -81,6 +82,35 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
+  Future<bool> _logoutAndReturnToLogin() async {
+    final success = await _authService.logout();
+    if (success && mounted) {
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
+    }
+    return success;
+  }
+
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Deseas cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cerrar sesión'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await _logoutAndReturnToLogin();
+  }
+
   List<Widget> _buildCardsForRole(String role) {
     final allowed = AppRoutes.allowedRoutesByRole[role] ?? [AppRoutes.login];
     final List<Widget> cards = [];
@@ -143,9 +173,9 @@ class _DashboardPageState extends State<DashboardPage> {
             iconTheme: const IconThemeData(color: AppColors.blackOverlay),
             title: Column(
               children: [
-                const Text(
-                  'Panel de Control',
-                  style: TextStyle(
+                Text(
+                  _selectedIndex == 0 ? 'Panel de Control' : 'Perfil',
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColors.blackOverlay,
                     fontSize: 18,
@@ -223,8 +253,11 @@ class _DashboardPageState extends State<DashboardPage> {
         padding: EdgeInsets.zero,
         children: [
           UserAccountsDrawerHeader(
-            accountName: Text(_currentUser?['name'] ?? 'Usuario'),
-            accountEmail: Text(_currentUser?['email'] ?? 'email@correo.com'),
+            accountName: Text(
+              '${_currentUser?['name'] ?? ''} ${_currentUser?['lastname'] ?? ''}'
+                  .trim(),
+            ),
+            accountEmail: Text(_currentUser?['email'] ?? ''),
             otherAccountsPictures: [
               Chip(
                 label: Text(
@@ -254,8 +287,8 @@ class _DashboardPageState extends State<DashboardPage> {
             leading: const Icon(Icons.person),
             title: const Text('Perfil'),
             onTap: () {
-              setState(() => _selectedIndex = 1);
               Navigator.pop(context);
+              setState(() => _selectedIndex = 1);
             },
           ),
           ListTile(
@@ -273,12 +306,7 @@ class _DashboardPageState extends State<DashboardPage> {
               'Cerrar sesión',
               style: TextStyle(color: AppColors.dustyRose),
             ),
-            onTap: () async {
-              await _authService.logout();
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, AppRoutes.login);
-              }
-            },
+            onTap: _confirmLogout,
           ),
         ],
       ),
@@ -328,7 +356,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                 ),
               ),
-              Center(child: Text('Perfil: ${_currentUser?['name'] ?? ''}')),
+              ProfilePage(
+                onProfileUpdated: _loadCurrentUser,
+                onLogout: _logoutAndReturnToLogin,
+              ),
             ],
           ),
         );

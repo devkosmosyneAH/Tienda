@@ -20,17 +20,25 @@ class AuthService {
         // Verificar contraseña y que el usuario esté activo
         if (user['password'] != null && user['password'] != password) {
           await AuditService.log(
-            action: AuditAction.loginFailed, module: 'Auth', page: 'LoginView',
-            metadata: {'email': email}, service: 'AuthService',
-            success: false, error: 'Credenciales invalidas',
+            action: AuditAction.loginFailed,
+            module: 'Auth',
+            page: 'LoginView',
+            metadata: {'email': email},
+            service: 'AuthService',
+            success: false,
+            error: 'Credenciales invalidas',
           );
           return null;
         }
         if ((user['is_active'] as int?) == 0) {
           await AuditService.log(
-            action: AuditAction.loginFailed, module: 'Auth', page: 'LoginView',
-            metadata: {'email': email}, service: 'AuthService',
-            success: false, error: 'Usuario inactivo',
+            action: AuditAction.loginFailed,
+            module: 'Auth',
+            page: 'LoginView',
+            metadata: {'email': email},
+            service: 'AuthService',
+            success: false,
+            error: 'Usuario inactivo',
           );
           return null;
         }
@@ -47,25 +55,37 @@ class AuthService {
         } else {}
 
         await AuditService.log(
-          action: AuditAction.loginSuccess, module: 'Auth', page: 'LoginView',
-          entity: 'user', entityId: userData['uid'],
-          metadata: {'email': email}, service: 'AuthService',
+          action: AuditAction.loginSuccess,
+          module: 'Auth',
+          page: 'LoginView',
+          entity: 'user',
+          entityId: userData['uid'],
+          metadata: {'email': email},
+          service: 'AuthService',
         );
 
         return userData;
       } else {
         await AuditService.log(
-          action: AuditAction.loginFailed, module: 'Auth', page: 'LoginView',
-          metadata: {'email': email}, service: 'AuthService',
-          success: false, error: 'Usuario no encontrado',
+          action: AuditAction.loginFailed,
+          module: 'Auth',
+          page: 'LoginView',
+          metadata: {'email': email},
+          service: 'AuthService',
+          success: false,
+          error: 'Usuario no encontrado',
         );
         return null;
       }
     } catch (e) {
       await AuditService.log(
-        action: AuditAction.loginFailed, module: 'Auth', page: 'LoginView',
-        metadata: {'email': email}, service: 'AuthService',
-        success: false, error: e,
+        action: AuditAction.loginFailed,
+        module: 'Auth',
+        page: 'LoginView',
+        metadata: {'email': email},
+        service: 'AuthService',
+        success: false,
+        error: e,
       );
       return null;
     }
@@ -316,8 +336,11 @@ class AuthService {
       final success = await SessionService.logout();
 
       await AuditService.log(
-        action: AuditAction.logout, module: 'Auth', page: 'AuthView',
-        service: 'AuthService', success: success,
+        action: AuditAction.logout,
+        module: 'Auth',
+        page: 'AuthView',
+        service: 'AuthService',
+        success: success,
         error: success ? null : 'No se pudo cerrar la sesion',
       );
 
@@ -347,4 +370,161 @@ class AuthService {
       return null;
     }
   }
+
+  /// Resolves a stale local session to its current database record by UID or,
+  /// when the UID no longer matches, by the same unique email address.
+  Future<Map<String, dynamic>?> getCurrentUserRecord() async {
+    try {
+      final session = await getCurrentUser();
+      if (session == null) return null;
+
+      final sessionUid = session['uid']?.toString().trim() ?? '';
+      final sessionEmail =
+          session['email']?.toString().trim().toLowerCase() ?? '';
+      Map<String, dynamic>? record;
+
+      if (sessionUid.isNotEmpty) {
+        record = await getUserByUid(sessionUid);
+      }
+      if (record == null && sessionEmail.isNotEmpty) {
+        final rows = await DatabaseService.rawQuery(
+          'SELECT * FROM users WHERE lower(email) = ? LIMIT 1',
+          [sessionEmail],
+        );
+        if (rows.isNotEmpty) record = rows.first;
+      }
+      if (record == null) return null;
+
+      final recordUid = record['uid']?.toString().trim() ?? '';
+      final recordEmail =
+          record['email']?.toString().trim().toLowerCase() ?? '';
+      final sameUid = sessionUid.isNotEmpty && sessionUid == recordUid;
+      final sameEmail = sessionEmail.isNotEmpty && sessionEmail == recordEmail;
+      if (!sameUid && !sameEmail) return null;
+
+      await SessionService.updateUserSession(record);
+      return record;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Updates only the signed-in user's name, surname, and email.
+  Future<String?> updateCurrentUserProfile({
+    required String name,
+    required String lastname,
+    required String email,
+  }) async {
+    try {
+      final current = await getCurrentUserRecord();
+      if (current == null) return 'No se encontró la cuenta actual.';
+      final uid = current['uid']?.toString().trim() ?? '';
+      final cleanName = name.trim();
+      final cleanLastname = lastname.trim();
+      final cleanEmail = email.trim().toLowerCase();
+      if (uid.isEmpty) return 'No hay una sesión activa.';
+      if (cleanName.isEmpty || cleanLastname.isEmpty) {
+        return 'Ingresa tu nombre y apellido.';
+      }
+      if (!_isValidEmail(cleanEmail)) return 'Ingresa un correo válido.';
+      if ((current['is_active'] as num?)?.toInt() == 0) {
+        return 'La cuenta está inactiva.';
+      }
+
+      final duplicateEmail = await DatabaseService.rawQuery(
+        'SELECT uid FROM users WHERE lower(email) = ? AND uid != ? LIMIT 1',
+        [cleanEmail, uid],
+      );
+      if (duplicateEmail.isNotEmpty) {
+        return 'Ya existe una cuenta con ese correo.';
+      }
+
+      final previous = {
+        'name': current['name'],
+        'lastname': current['lastname'],
+        'email': current['email'],
+      };
+      await DatabaseService.rawUpdate(
+        'UPDATE users SET name = ?, lastname = ?, email = ? WHERE uid = ?',
+        [cleanName, cleanLastname, cleanEmail, uid],
+      );
+
+      final updatedSession = Map<String, dynamic>.from(current);
+      updatedSession.addAll({
+        'name': cleanName,
+        'lastname': cleanLastname,
+        'email': cleanEmail,
+      });
+      if (!await SessionService.updateUserSession(updatedSession)) {
+        return 'Los datos se guardaron, pero no se pudo actualizar la sesión.';
+      }
+
+      await AuditService.log(
+        action: AuditAction.updateUser,
+        module: 'Profile',
+        page: 'ProfilePage',
+        entity: 'user',
+        entityId: uid,
+        oldData: previous,
+        newData: {
+          'name': cleanName,
+          'lastname': cleanLastname,
+          'email': cleanEmail,
+        },
+        service: 'AuthService',
+      );
+      return null;
+    } catch (_) {
+      return 'No se pudo actualizar la información del perfil.';
+    }
+  }
+
+  /// Revalidates the current local password before updating the same account.
+  Future<String?> changeCurrentUserPassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final current = await getCurrentUserRecord();
+      final uid = current?['uid']?.toString().trim() ?? '';
+      if (uid.isEmpty) return 'No hay una sesión activa.';
+      if (currentPassword.isEmpty || newPassword.length < 8) {
+        return 'La contraseña nueva debe tener al menos 8 caracteres.';
+      }
+
+      if (current == null) return 'No se encontró la cuenta actual.';
+      if ((current['is_active'] as num?)?.toInt() == 0) {
+        return 'La cuenta está inactiva.';
+      }
+      if (current['password']?.toString() != currentPassword) {
+        return 'La contraseña actual no es correcta.';
+      }
+
+      await DatabaseService.rawUpdate(
+        'UPDATE users SET password = ? WHERE uid = ?',
+        [newPassword, uid],
+      );
+      final updatedSession = Map<String, dynamic>.from(current);
+      updatedSession['password'] = newPassword;
+      if (!await SessionService.updateUserSession(updatedSession)) {
+        return 'La contraseña se cambió, pero no se pudo actualizar la sesión.';
+      }
+
+      await AuditService.log(
+        action: AuditAction.changePassword,
+        module: 'Profile',
+        page: 'ProfilePage',
+        entity: 'user',
+        entityId: uid,
+        newData: {'password_changed': true},
+        service: 'AuthService',
+      );
+      return null;
+    } catch (_) {
+      return 'No se pudo cambiar la contraseña.';
+    }
+  }
+
+  bool _isValidEmail(String email) =>
+      RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email);
 }

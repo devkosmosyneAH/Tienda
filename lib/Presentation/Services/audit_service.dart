@@ -35,13 +35,13 @@ enum AuditAction {
   loginSuccess,
   loginFailed,
   logout,
+  changePassword,
 }
 
 extension AuditActionName on AuditAction {
-  String get value => name.replaceAllMapped(
-        RegExp(r'([A-Z])'),
-        (match) => '_${match.group(1)}',
-      ).toUpperCase();
+  String get value => name
+      .replaceAllMapped(RegExp(r'([A-Z])'), (match) => '_${match.group(1)}')
+      .toUpperCase();
 }
 
 class AuditDataSanitizer {

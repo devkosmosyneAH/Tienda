@@ -1872,8 +1872,9 @@ class DatabaseService {
   }) async {
     final db = await database;
     final cleanName = _cleanName(name);
-    if (cleanName.isEmpty)
+    if (cleanName.isEmpty) {
       throw Exception('El nombre de la categoría es obligatorio.');
+    }
     final slug = _buildCategorySlug(cleanName);
     final id = await db.rawInsert(
       'INSERT INTO categories (name, slug, store_id, image_url) VALUES (?, ?, ?, ?)',
@@ -1891,8 +1892,9 @@ class DatabaseService {
   }) async {
     final db = await database;
     final cleanName = _cleanName(name);
-    if (cleanName.isEmpty)
+    if (cleanName.isEmpty) {
       throw Exception('El nombre de la categoría es obligatorio.');
+    }
     await db.rawUpdate(
       'UPDATE categories SET name = ?, slug = ?, store_id = ?, image_url = ? WHERE id = ?',
       [
