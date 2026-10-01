@@ -30,7 +30,10 @@ function Get-InstallerHostPath {
 
 $script:InstallerHostPath = Get-InstallerHostPath
 
-$script:InstallerScriptRoot = if ($PSScriptRoot) {
+$script:InstallerScriptRoot = if ($script:InstallerHostPath -and [string]::Equals([System.IO.Path]::GetExtension($script:InstallerHostPath), ".exe", [System.StringComparison]::OrdinalIgnoreCase)) {
+    Split-Path -Parent $script:InstallerHostPath
+}
+elseif ($PSScriptRoot) {
     $PSScriptRoot
 }
 elseif ($script:InstallerHostPath) {
@@ -183,6 +186,19 @@ $global:Config = @{
     CreateDesktopShortcut = $true
     CreateStartMenuShortcut = $true
     InstallSucceeded = $false
+}
+
+if ($global:Config.Version -eq "__TIENDA_VERSION__") {
+    $pubspecPath = Resolve-InstallerPath -RelativeCandidates @("..\pubspec.yaml", "pubspec.yaml")
+    if (Test-Path -LiteralPath $pubspecPath -PathType Leaf) {
+        $versionLine = Select-String -Path $pubspecPath -Pattern '^version:\s*(\d+\.\d+\.\d+)' | Select-Object -First 1
+        if ($versionLine) {
+            $global:Config.Version = $versionLine.Matches[0].Groups[1].Value
+        }
+    }
+}
+if ($global:Config.Version -eq "__TIENDA_VERSION__") {
+    throw "No se pudo determinar la version desde pubspec.yaml."
 }
 
 function Write-InstallerLog {
@@ -344,10 +360,32 @@ function Stop-InstalledTienda {
 function Assert-PayloadManifest {
     $manifestPath = Join-Path $global:Config.SourcePath ".tienda-payload-manifest.json"
     if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
-        throw "El payload no contiene .tienda-payload-manifest.json; vuelva a generar el instalador desde la build actual."
+        $hostExtension = if ($script:InstallerHostPath) { [System.IO.Path]::GetExtension($script:InstallerHostPath) } else { "" }
+        if (-not [string]::Equals($hostExtension, ".ps1", [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "El payload no contiene .tienda-payload-manifest.json; vuelva a generar el instalador desde la build actual."
+        }
+
+        $sourceFiles = @(Get-ChildItem -LiteralPath $global:Config.SourcePath -File -Recurse)
+        if (-not $sourceFiles) {
+            throw "No hay archivos de la build local para crear el manifiesto."
+        }
+        $manifestFiles = foreach ($file in $sourceFiles) {
+            [pscustomobject]@{
+                Path = $file.FullName.Substring($global:Config.SourcePath.Length).TrimStart('\\').Replace('\', '/')
+                Sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+                Length = $file.Length
+            }
+        }
+        $manifest = [pscustomobject]@{
+            Version = $global:Config.Version
+            Files = @($manifestFiles)
+        }
+        Write-InstallerLog -Level "WARN" -Message "No embedded manifest; generated hashes from local Release build for direct PS1 execution."
+    }
+    else {
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
     }
 
-    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
     if ($manifest.Version -ne $global:Config.Version) {
         throw "La version del payload ($($manifest.Version)) no coincide con la version del instalador ($($global:Config.Version)); se cancela para evitar instalar una build antigua."
     }
