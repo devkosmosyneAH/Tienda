@@ -1,5 +1,6 @@
 import 'package:tienda/Presentation/Controller/purchases_controller.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
+import 'package:tienda/Presentation/Utils/supplier_ruc_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -173,27 +174,6 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
                         onChanged: controller.selectHistorySupplier,
                       ),
                     ),
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          firstDate: DateTime(2024),
-                          lastDate: DateTime(2100),
-                          initialDate: controller.historyDate ?? DateTime.now(),
-                        );
-                        if (picked != null) {
-                          await controller.setHistoryDate(picked);
-                        }
-                      },
-                      icon: const Icon(Icons.calendar_month_outlined),
-                      label: Text(
-                        controller.historyDate == null
-                            ? 'Filtrar por fecha'
-                            : DateFormat(
-                                'dd/MM/yyyy',
-                              ).format(controller.historyDate!),
-                      ),
-                    ),
                     TextButton.icon(
                       onPressed: () {
                         _searchController.clear();
@@ -256,16 +236,24 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
                   separatorBuilder: (_, __) => const Divider(),
                   itemBuilder: (context, index) {
                     final item = items[index];
-                    final subtotal =
-                        ((item['quantity'] as num?)?.toInt() ?? 0) *
-                        ((item['cost'] as num?)?.toDouble() ?? 0);
+                    final paidQuantity =
+                        (item['paid_quantity'] as num?)?.toInt() ??
+                        (item['quantity'] as num?)?.toInt() ??
+                        0;
+                    final bonusQuantity =
+                        (item['bonus_quantity'] as num?)?.toInt() ?? 0;
+                    final unitCost =
+                        (item['invoice_unit_cost'] as num?)?.toDouble() ?? 0;
+                    final lineTotal =
+                        (item['line_total'] as num?)?.toDouble() ??
+                        paidQuantity * unitCost;
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(item['product_name']?.toString() ?? ''),
                       subtitle: Text(
-                        'Cant: ${item['quantity']} · Costo: \$${((item['cost'] as num?)?.toDouble() ?? 0).toStringAsFixed(2)}',
+                        'Pagadas: $paidQuantity × \$${unitCost.toStringAsFixed(2)}${bonusQuantity > 0 ? ' · Bonificación: $bonusQuantity' : ''} · IVA: \$${((item['vat_amount'] as num?)?.toDouble() ?? 0).toStringAsFixed(2)}',
                       ),
-                      trailing: Text('\$${subtotal.toStringAsFixed(2)}'),
+                      trailing: Text('\$${lineTotal.toStringAsFixed(2)}'),
                     );
                   },
                 ),
@@ -290,6 +278,11 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
     );
     final invoice = purchase['invoice_number']?.toString().trim();
     final supplier = purchase['supplier_name']?.toString() ?? 'Sin proveedor';
+    final isCancelled = purchase['status'] == 'cancelled';
+    final isCredit = purchase['payment_condition'] == 'credito' ||
+      purchase['payment_condition'] == 'crédito';
+    final payableBalance =
+      (purchase['payable_balance'] as num?)?.toDouble() ?? 0;
 
     final action = await showDialog<String>(
       context: context,
@@ -325,27 +318,23 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
               subtitle: 'Consultar información completa',
               onTap: () => Navigator.pop(context, 'details'),
             ),
-            _PurchaseActionTile(
-              icon: Icons.add_shopping_cart_outlined,
-              color: AppColors.plumGray,
-              title: 'Continuar compra',
-              subtitle: 'Crear nueva compra basada en esta',
-              onTap: () => Navigator.pop(context, 'continue'),
-            ),
-            _PurchaseActionTile(
-              icon: Icons.edit_outlined,
-              color: AppColors.paleMauve,
-              title: 'Editar compra',
-              subtitle: 'Modificar compra pendiente',
-              onTap: () => Navigator.pop(context, 'edit'),
-            ),
-            _PurchaseActionTile(
-              icon: Icons.credit_card_outlined,
-              color: AppColors.mutedMauve,
-              title: 'Marcar como pagado',
-              subtitle: 'Actualizar estado de pago',
-              onTap: () => Navigator.pop(context, 'paid'),
-            ),
+            if (!isCancelled)
+              if (isCredit && payableBalance > 0.01)
+                _PurchaseActionTile(
+                  icon: Icons.payments_outlined,
+                  color: AppColors.plumGray,
+                  title: 'Registrar pago',
+                  subtitle: 'Saldo pendiente: \$${payableBalance.toStringAsFixed(2)}',
+                  onTap: () => Navigator.pop(context, 'pay'),
+                ),
+            if (!isCancelled)
+              _PurchaseActionTile(
+                icon: Icons.receipt_long_outlined,
+                color: AppColors.dustyRose,
+                title: 'Anular con nota de crédito',
+                subtitle: 'Revertir inventario, CxP y asiento',
+                onTap: () => Navigator.pop(context, 'cancel'),
+              ),
           ],
         ),
       ),
@@ -356,17 +345,221 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
       await _showPurchaseDetail(context, controller, purchaseId);
       return;
     }
+    if (action == 'cancel') {
+      final creditNote = await _showCreditNoteDialog(context);
+      if (creditNote == null || !context.mounted) return;
+      try {
+        await controller.cancelPurchase(
+          purchaseId: purchaseId,
+          creditNoteNumber: creditNote['number']!,
+          accessKey: creditNote['key']!,
+          issueDate: DateTime.now(),
+          reason: creditNote['reason']!,
+        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Factura anulada con nota de crédito.')),
+          );
+        }
+      } catch (error) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+          );
+        }
+      }
+      return;
+    }
+    if (action == 'pay') {
+      final payment = await _showPayablePaymentDialog(context, controller);
+      if (payment == null || !context.mounted) return;
+      try {
+        await controller.payPurchaseBalance(
+          purchaseId: purchaseId,
+          amount: payment['amount'] as double,
+          paymentMethod: payment['method'] as String,
+          reference: payment['reference'] as String?,
+        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pago registrado correctamente.')),
+          );
+        }
+      } catch (error) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+          );
+        }
+      }
+      return;
+    }
 
     final message = switch (action) {
       'continue' => 'La compra se puede continuar desde Nueva compra.',
-      'edit' => 'La edición de compras estará disponible próximamente.',
-      'paid' => 'El estado de pago se actualizará próximamente.',
+      'edit' => 'Las facturas registradas no se editan; use una nota de crédito.',
+      'paid' => 'Registre el pago desde Cuentas por pagar.',
       _ => null,
     };
     if (message != null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Future<Map<String, String>?> _showCreditNoteDialog(
+    BuildContext context,
+  ) async {
+    final formKey = GlobalKey<FormState>();
+    final numberController = TextEditingController();
+    final keyController = TextEditingController();
+    final reasonController = TextEditingController();
+    try {
+      return await showDialog<Map<String, String>>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Anular factura'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: numberController,
+                  decoration: const InputDecoration(
+                    labelText: 'Número de nota de crédito *',
+                    hintText: '001-001-000000000',
+                  ),
+                  validator: (value) => RegExp(r'^\d{3}-\d{3}-\d{9}$')
+                          .hasMatch(value?.trim() ?? '')
+                      ? null
+                      : 'Formato 001-001-000000000 requerido.',
+                ),
+                TextFormField(
+                  controller: keyController,
+                  decoration: const InputDecoration(
+                    labelText: 'Clave de acceso (49 dígitos) *',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: SupplierRucValidator.validateAccessKey,
+                ),
+                TextFormField(
+                  controller: reasonController,
+                  decoration: const InputDecoration(labelText: 'Motivo *'),
+                  validator: (value) => value?.trim().isNotEmpty == true
+                      ? null
+                      : 'Ingrese el motivo.',
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Volver'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (!formKey.currentState!.validate()) return;
+                Navigator.pop(dialogContext, {
+                  'number': numberController.text.trim(),
+                  'key': keyController.text.trim(),
+                  'reason': reasonController.text.trim(),
+                });
+              },
+              child: const Text('Anular'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      numberController.dispose();
+      keyController.dispose();
+      reasonController.dispose();
+    }
+  }
+
+  Future<Map<String, Object>?> _showPayablePaymentDialog(
+    BuildContext context,
+    PurchasesController controller,
+  ) async {
+    final formKey = GlobalKey<FormState>();
+    final amountController = TextEditingController();
+    final referenceController = TextEditingController();
+    var method = controller.paymentMethods.isEmpty
+        ? 'Transferencia'
+        : controller.paymentMethods.first['name'].toString();
+    try {
+      return await showDialog<Map<String, Object>>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Registrar pago a proveedor'),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: amountController,
+                    decoration: const InputDecoration(labelText: 'Monto *'),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    validator: (value) {
+                      final amount = double.tryParse((value ?? '').replaceAll(',', '.'));
+                      return amount == null || amount <= 0
+                          ? 'Ingrese un monto mayor que cero.'
+                          : null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: method,
+                    decoration: const InputDecoration(labelText: 'Medio de pago'),
+                    items: controller.paymentMethods
+                        .map(
+                          (item) => DropdownMenuItem<String>(
+                            value: item['name'].toString(),
+                            child: Text(item['name'].toString()),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) setDialogState(() => method = value);
+                    },
+                  ),
+                  TextFormField(
+                    controller: referenceController,
+                    decoration: const InputDecoration(labelText: 'Referencia'),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (!formKey.currentState!.validate()) return;
+                  Navigator.pop(dialogContext, {
+                    'amount': double.parse(
+                      amountController.text.replaceAll(',', '.'),
+                    ),
+                    'method': method,
+                    'reference': referenceController.text.trim(),
+                  });
+                },
+                child: const Text('Registrar pago'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } finally {
+      amountController.dispose();
+      referenceController.dispose();
     }
   }
 }
@@ -466,7 +659,11 @@ class _PurchaseHistoryCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      _PurchaseStatusBadge(payment: payment),
+                      _PurchaseStatusBadge(
+                        payment:
+                            purchase['payment_condition']?.toString() ?? payment,
+                        status: purchase['status']?.toString(),
+                      ),
                     ],
                   ),
                 ],
@@ -476,8 +673,8 @@ class _PurchaseHistoryCard extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     onPressed: onActions,
-                    icon: const Icon(Icons.edit_outlined, size: 17),
-                    label: const Text('Editar'),
+                    icon: const Icon(Icons.visibility_outlined, size: 17),
+                    label: const Text('Ver'),
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.paleMauve,
                       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -662,27 +859,31 @@ class _PurchaseStat extends StatelessWidget {
 
 class _PurchaseStatusBadge extends StatelessWidget {
   final String? payment;
+  final String? status;
 
-  const _PurchaseStatusBadge({required this.payment});
+  const _PurchaseStatusBadge({required this.payment, required this.status});
 
   @override
   Widget build(BuildContext context) {
-    final isPending =
-        payment?.toLowerCase().contains('crédito') == true ||
-        payment?.toLowerCase().contains('credito') == true;
+    final isCancelled = status == 'cancelled';
+    final isPending = !isCancelled &&
+      (payment?.toLowerCase().contains('crédito') == true ||
+        payment?.toLowerCase().contains('credito') == true);
+    final label = isCancelled ? 'Anulada' : (isPending ? 'Pendiente' : 'Pagada');
+    final color = isCancelled
+      ? AppColors.dustyRose
+      : (isPending ? AppColors.paleMauve : AppColors.plumGray);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isPending ? AppColors.paleMauve : AppColors.plumGray,
-        border: Border.all(
-          color: isPending ? AppColors.paleMauve : AppColors.plumGray,
-        ),
+        color: color,
+        border: Border.all(color: color),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
-        isPending ? 'Pendiente' : 'Pagada',
+        label,
         style: TextStyle(
-          color: isPending ? AppColors.paleMauve : AppColors.plumGray,
+          color: color,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),

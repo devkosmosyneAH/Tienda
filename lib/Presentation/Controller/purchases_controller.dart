@@ -1,6 +1,7 @@
 import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tienda/Presentation/Services/audit_service.dart';
+import 'package:tienda/Presentation/Model/purchase_calculation.dart';
 
 enum PurchaseHistoryPeriod { all, today, week, month }
 
@@ -38,33 +39,68 @@ class PurchasesController extends ChangeNotifier {
   double governmentVatRate = 15.0;
   double profitVatRate = 15.0;
   double discount = 0;
+  String accessKey = '';
+  DateTime issueDate = DateTime.now();
+  String paymentCondition = 'contado';
+  DateTime? dueDate;
+  String taxSupportCode = '';
+  double? physicalTotal;
+  List<Map<String, dynamic>> withholdings = [];
 
-  double get subtotal => cart.fold<double>(
-    0,
-    (sum, item) => sum + ((item['quantity'] as int) * (item['cost'] as double)),
+  PurchaseTotals get calculatedTotals => PurchaseTotals.calculate(
+    cart.map(
+      (item) => PurchaseLineInput(
+        productId: (item['product_id'] as num).toInt(),
+        quantity: (item['quantity'] as num).toInt(),
+        bonusQuantity: (item['bonus_quantity'] as num?)?.toInt() ?? 0,
+        unitCost: (item['cost'] as num).toDouble(),
+        discount: (item['discount'] as num?)?.toDouble() ?? 0,
+        bonusVatAmount:
+          (item['bonus_vat_amount'] as num?)?.toDouble() ?? 0,
+        vatType: PurchaseVatType.values.firstWhere(
+          (type) => type.name == (item['vat_type']?.toString() ?? 'standard'),
+        ),
+        vatRate: (item['vat_rate'] as num?)?.toDouble() ?? governmentVatRate,
+      ),
+    ),
   );
+
+  double get subtotal =>
+      calculatedTotals.grossSubtotal - calculatedTotals.discount;
 
   double get appliedVatRate => governmentVatRate;
 
-  double get vatTotal => subtotal * appliedVatRate / 100;
+  double get vatTotal => calculatedTotals.vatTotal;
 
-  double get total =>
-      (subtotal + vatTotal - discount).clamp(0, double.infinity);
+  double get total => calculatedTotals.total;
 
-  int get productsWithVat => governmentVatRate > 0 ? cart.length : 0;
+  int get productsWithVat => cart
+      .where((item) => item['vat_type'] == PurchaseVatType.standard.name)
+      .length;
 
   int get historyTotalCount => purchaseHistory.length;
 
   int get historyPaidCount => purchaseHistory.where((purchase) {
-    final payment = purchase['payment_method']?.toString().toLowerCase() ?? '';
-    return !payment.contains('crédito') && !payment.contains('credito');
+    if (purchase['status'] == 'cancelled') return false;
+    final condition =
+        purchase['payment_condition']?.toString().toLowerCase() ?? '';
+    return condition != 'credito' && condition != 'crédito';
   }).length;
 
-  int get historyPendingCount => historyTotalCount - historyPaidCount;
+  int get historyPendingCount => purchaseHistory.where((purchase) {
+    if (purchase['status'] == 'cancelled') return false;
+    final condition =
+        purchase['payment_condition']?.toString().toLowerCase() ?? '';
+    return condition == 'credito' || condition == 'crédito';
+  }).length;
 
   double get historyTotalAmount => purchaseHistory.fold<double>(
     0,
-    (sum, purchase) => sum + ((purchase['total'] as num?)?.toDouble() ?? 0),
+    (sum, purchase) =>
+      sum +
+      (purchase['status'] == 'cancelled'
+        ? 0
+        : ((purchase['total'] as num?)?.toDouble() ?? 0)),
   );
 
   void setConsiderVatProfit(bool value) {
@@ -106,7 +142,7 @@ class PurchasesController extends ChangeNotifier {
   }
 
   String _paymentMethodLabel(String name) {
-    return name.toLowerCase() == 'efectivo' ? 'Contado' : name;
+    return name;
   }
 
   Future<void> initialize() async {
@@ -130,7 +166,7 @@ class PurchasesController extends ChangeNotifier {
       selectedPaymentMethodName = paymentMethods.isNotEmpty
           ? _paymentMethodLabel(paymentMethods.first['name'].toString())
           : 'Contado';
-      invoiceNumber = await DatabaseService.getNextPurchaseInvoiceNumber();
+      invoiceNumber = '';
       if (stores.isNotEmpty) {
         selectedStoreId ??= (stores.first['id'] as num).toInt();
       }
@@ -154,6 +190,75 @@ class PurchasesController extends ChangeNotifier {
 
   void selectSupplier(int? supplierId) {
     selectedSupplierId = supplierId;
+    final matches = suppliers.where(
+      (supplier) => (supplier['id'] as num).toInt() == supplierId,
+    );
+    if (matches.isEmpty) {
+      paymentCondition = 'contado';
+      dueDate = null;
+    } else {
+      final supplier = matches.first;
+      paymentCondition = supplier['payment_condition']?.toString() ?? 'contado';
+      final termDays = (supplier['payment_term_days'] as num?)?.toInt() ?? 0;
+      dueDate = paymentCondition == 'credito'
+          ? issueDate.add(Duration(days: termDays))
+          : null;
+    }
+    notifyListeners();
+  }
+
+  void setInvoiceNumber(String value) {
+    invoiceNumber = value.trim();
+    notifyListeners();
+  }
+
+  void setAccessKey(String value) {
+    accessKey = value.trim();
+    notifyListeners();
+  }
+
+  void setIssueDate(DateTime value) {
+    issueDate = value;
+    if (paymentCondition == 'credito') {
+      final supplier = suppliers.where(
+        (item) => (item['id'] as num).toInt() == selectedSupplierId,
+      );
+      final days = supplier.isEmpty
+          ? 0
+          : (supplier.first['payment_term_days'] as num?)?.toInt() ?? 0;
+      dueDate = value.add(Duration(days: days));
+    }
+    notifyListeners();
+  }
+
+  void setPaymentCondition(String value) {
+    paymentCondition = value.toLowerCase();
+    if (paymentCondition == 'credito') {
+      final supplier = suppliers.where(
+        (item) => (item['id'] as num).toInt() == selectedSupplierId,
+      );
+      final days = supplier.isEmpty
+          ? 0
+          : (supplier.first['payment_term_days'] as num?)?.toInt() ?? 0;
+      dueDate ??= issueDate.add(Duration(days: days));
+    } else {
+      dueDate = null;
+    }
+    notifyListeners();
+  }
+
+  void setDueDate(DateTime? value) {
+    dueDate = value;
+    notifyListeners();
+  }
+
+  void setTaxSupportCode(String value) {
+    taxSupportCode = value.trim();
+    notifyListeners();
+  }
+
+  void setPhysicalTotal(double? value) {
+    physicalTotal = value;
     notifyListeners();
   }
 
@@ -163,6 +268,14 @@ class PurchasesController extends ChangeNotifier {
     String? email,
     String? notes,
     String? ruc,
+    String? identificationType,
+    String? identificationNumber,
+    String? legalName,
+    String? address,
+    String? paymentCondition,
+    int paymentTermDays = 0,
+    String? taxpayerType,
+    bool isWithholdingAgent = false,
   }) async {
     final supplierId = await DatabaseService.createSupplier(
       name: name,
@@ -170,6 +283,14 @@ class PurchasesController extends ChangeNotifier {
       email: email,
       notes: notes,
       ruc: ruc,
+      identificationType: identificationType,
+      identificationNumber: identificationNumber,
+      legalName: legalName,
+      address: address,
+      paymentCondition: paymentCondition ?? 'contado',
+      paymentTermDays: paymentTermDays,
+      taxpayerType: taxpayerType,
+      isWithholdingAgent: isWithholdingAgent,
     );
     await AuditService.log(
       action: AuditAction.createSupplier,
@@ -182,6 +303,11 @@ class PurchasesController extends ChangeNotifier {
         'phone': phone?.trim(),
         'email': email?.trim(),
         'ruc': ruc?.trim(),
+        'identification_type': identificationType ?? 'ruc',
+        'identification_number': identificationNumber ?? ruc?.trim(),
+        'legal_name': legalName?.trim(),
+        'address': address?.trim(),
+        'payment_condition': paymentCondition ?? 'contado',
       },
       controller: 'PurchasesController',
     );
@@ -224,9 +350,16 @@ class PurchasesController extends ChangeNotifier {
         'product_id': productId,
         'name': product['name'],
         'quantity': 1,
+        'bonus_quantity': 0,
+        'bonus_vat_amount': 0.0,
+        'discount': 0.0,
         'cost':
             ((product['cost_price'] ?? product['cost']) as num?)?.toDouble() ??
             0,
+        'vat_type': product['purchase_vat_type']?.toString() ?? 'standard',
+        'vat_rate': ((product['iva_rate'] as num?)?.toDouble() ?? 0) > 0
+            ? (product['iva_rate'] as num).toDouble()
+            : governmentVatRate,
       });
     }
 
@@ -265,6 +398,63 @@ class PurchasesController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateBonusQuantity(int productId, int quantity) {
+    final index = cart.indexWhere((item) => item['product_id'] == productId);
+    if (index < 0) return;
+    cart[index]['bonus_quantity'] = quantity < 0 ? 0 : quantity;
+    notifyListeners();
+  }
+
+  void updateBonusVatAmount(int productId, double amount) {
+    final index = cart.indexWhere((item) => item['product_id'] == productId);
+    if (index < 0) return;
+    cart[index]['bonus_vat_amount'] = amount < 0 ? 0 : amount;
+    notifyListeners();
+  }
+
+  void updateLineDiscount(int productId, double value) {
+    final index = cart.indexWhere((item) => item['product_id'] == productId);
+    if (index < 0) return;
+    cart[index]['discount'] = value < 0 ? 0 : value;
+    notifyListeners();
+  }
+
+  void updateLineVat(int productId, String vatType, {double? rate}) {
+    final index = cart.indexWhere((item) => item['product_id'] == productId);
+    if (index < 0) return;
+    cart[index]['vat_type'] = vatType;
+    cart[index]['vat_rate'] = rate ?? governmentVatRate;
+    notifyListeners();
+  }
+
+  Future<void> createProductFromPurchase({
+    required String name,
+    required String sku,
+    required String category,
+    required String vatType,
+    required double vatRate,
+    required double salePrice,
+  }) async {
+    if (selectedStoreId == null) {
+      throw Exception('Seleccione el local de ingreso.');
+    }
+    final productId = await DatabaseService.createProduct(
+      name: name,
+      sku: sku,
+      categoryName: category,
+      storeId: selectedStoreId,
+      price: salePrice,
+      ivaRate: vatType == PurchaseVatType.standard.name ? vatRate : 0,
+      purchaseVatType: vatType,
+    );
+    DatabaseService.notifyDatabaseChanged();
+    products = await DatabaseService.getProducts(storeId: selectedStoreId);
+    final created = products.firstWhere(
+      (product) => (product['id'] as num).toInt() == productId,
+    );
+    addToCart(created);
+  }
+
   void clearCart() {
     cart.clear();
     notifyListeners();
@@ -280,6 +470,24 @@ class PurchasesController extends ChangeNotifier {
     if (cart.isEmpty) {
       throw Exception('Agrega productos a la compra');
     }
+    final missingFields = <String>[];
+    if (selectedSupplierId == null) missingFields.add('Proveedor');
+    if (!RegExp(r'^\d{3}-\d{3}-\d{9}$').hasMatch(invoiceNumber)) {
+      missingFields.add('Número de factura (001-001-000000000)');
+    }
+    if (accessKey.isEmpty) missingFields.add('Clave de acceso (49 dígitos)');
+    if (paymentCondition == 'credito' && dueDate == null) {
+      missingFields.add('Fecha de vencimiento');
+    }
+    if (taxSupportCode.isEmpty) {
+      missingFields.add('Código de sustento tributario');
+    }
+    if (physicalTotal == null) missingFields.add('Total de factura física');
+    if (missingFields.isNotEmpty) {
+      throw Exception(
+        'Faltan campos obligatorios: ${missingFields.join(', ')}.',
+      );
+    }
 
     final purchaseId = await DatabaseService.registerPurchase(
       storeId: selectedStoreId!,
@@ -290,13 +498,25 @@ class PurchasesController extends ChangeNotifier {
       discount: discount,
       invoiceNumber: invoiceNumber,
       auxiliaryInvoiceNumber: auxiliaryInvoiceNumber,
+      accessKey: accessKey,
+      issueDate: issueDate,
+      paymentCondition: paymentCondition,
+      dueDate: dueDate,
+      taxSupportCode: taxSupportCode,
+      physicalTotal: physicalTotal,
       paymentMethod: selectedPaymentMethodName,
+      withholdings: withholdings,
       items: cart
           .map(
             (item) => {
               'product_id': item['product_id'],
               'quantity': item['quantity'],
+              'bonus_quantity': item['bonus_quantity'],
+              'bonus_vat_amount': item['bonus_vat_amount'],
+              'discount': item['discount'],
               'cost': item['cost'],
+              'vat_type': item['vat_type'],
+              'vat_rate': item['vat_rate'],
             },
           )
           .toList(),
@@ -326,8 +546,15 @@ class PurchasesController extends ChangeNotifier {
 
     cart.clear();
     selectedSupplierId = null;
-    invoiceNumber = await DatabaseService.getNextPurchaseInvoiceNumber();
+    invoiceNumber = '';
     auxiliaryInvoiceNumber = '';
+    accessKey = '';
+    issueDate = DateTime.now();
+    paymentCondition = 'contado';
+    dueDate = null;
+    taxSupportCode = '';
+    physicalTotal = null;
+    withholdings = [];
     DatabaseService.notifyDatabaseChanged();
     suppliers = await DatabaseService.getSuppliers();
     await _loadProducts();
@@ -453,5 +680,62 @@ class PurchasesController extends ChangeNotifier {
 
   Future<List<Map<String, dynamic>>> getPurchaseItems(int purchaseId) {
     return DatabaseService.getPurchaseItems(purchaseId);
+  }
+
+  Future<void> cancelPurchase({
+    required int purchaseId,
+    required String creditNoteNumber,
+    required String accessKey,
+    required DateTime issueDate,
+    required String reason,
+  }) async {
+    await DatabaseService.cancelPurchase(
+      purchaseId: purchaseId,
+      creditNoteNumber: creditNoteNumber,
+      accessKey: accessKey,
+      issueDate: issueDate,
+      reason: reason,
+    );
+    await AuditService.log(
+      action: AuditAction.cancelPurchase,
+      module: 'Purchases',
+      page: 'PurchaseHistory',
+      entity: 'purchase',
+      entityId: purchaseId,
+      newData: {
+        'credit_note_number': creditNoteNumber,
+        'reason': reason,
+      },
+      controller: 'PurchasesController',
+    );
+    await loadPurchaseHistory();
+  }
+
+  Future<void> payPurchaseBalance({
+    required int purchaseId,
+    required double amount,
+    required String paymentMethod,
+    String? reference,
+  }) async {
+    await DatabaseService.payPurchasePayable(
+      purchaseId: purchaseId,
+      amount: amount,
+      paymentMethod: paymentMethod,
+      reference: reference,
+    );
+    await AuditService.log(
+      action: AuditAction.cashExpense,
+      module: 'AccountsPayable',
+      page: 'PurchaseHistory',
+      entity: 'purchase',
+      entityId: purchaseId,
+      newData: {
+        'amount': amount,
+        'payment_method': paymentMethod,
+        'reference': reference,
+      },
+      controller: 'PurchasesController',
+    );
+    await loadPurchaseHistory();
   }
 }

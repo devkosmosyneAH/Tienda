@@ -3,6 +3,7 @@ import 'package:tienda/Presentation/Model/supplier_model.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
 import 'package:tienda/Presentation/Utils/supplier_ruc_validator.dart';
 import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
+import 'package:tienda/Presentation/Widgets/Products/filter_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -185,37 +186,32 @@ class _SupplierCard extends StatelessWidget {
           supplier.name,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Row(
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (supplier.phone?.isNotEmpty == true) ...[
-              const Icon(
-                Icons.phone_outlined,
-                size: 13,
-                color: AppColors.mediumGray,
+            Text(
+              '${(supplier.identificationType ?? 'ruc').toUpperCase()}: ${supplier.identificationNumber ?? supplier.ruc ?? 'Sin identificación'} · ${supplier.paymentCondition}',
+              style: const TextStyle(fontSize: 12),
+            ),
+            if (supplier.address?.isNotEmpty == true)
+              Text(
+                supplier.address!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12),
               ),
-              const SizedBox(width: 4),
-              Text(supplier.phone!, style: const TextStyle(fontSize: 12)),
-              const SizedBox(width: 10),
-            ],
-            if (supplier.email?.isNotEmpty == true) ...[
-              const Icon(
-                Icons.email_outlined,
-                size: 13,
-                color: AppColors.mediumGray,
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  supplier.email!,
-                  style: const TextStyle(fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-            if (supplier.ruc?.isNotEmpty == true) ...[
-              const SizedBox(width: 10),
-              Text('RUC ${supplier.ruc}', style: const TextStyle(fontSize: 12)),
-            ],
+            Wrap(
+              spacing: 12,
+              children: [
+                if (supplier.phone?.isNotEmpty == true)
+                  Text(
+                    'Tel. ${supplier.phone}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                if (supplier.email?.isNotEmpty == true)
+                  Text(supplier.email!, style: const TextStyle(fontSize: 12)),
+              ],
+            ),
           ],
         ),
         trailing: PopupMenuButton<String>(
@@ -415,10 +411,15 @@ class _SupplierFormDialog extends StatefulWidget {
 class _SupplierFormDialogState extends State<_SupplierFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameCtrl;
+  late final TextEditingController _legalNameCtrl;
+  late final TextEditingController _identificationCtrl;
+  late final TextEditingController _addressCtrl;
+  late final TextEditingController _termDaysCtrl;
   late final TextEditingController _phoneCtrl;
   late final TextEditingController _emailCtrl;
   late final TextEditingController _notesCtrl;
-  late final TextEditingController _rucCtrl;
+  String _identificationType = 'ruc';
+  String _paymentCondition = 'contado';
   bool _saving = false;
 
   bool get _isEditing => widget.supplier != null;
@@ -427,19 +428,33 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.supplier?.name ?? '');
+    _legalNameCtrl = TextEditingController(
+      text: widget.supplier?.legalName ?? '',
+    );
+    _identificationType = widget.supplier?.identificationType ?? 'ruc';
+    _identificationCtrl = TextEditingController(
+      text: widget.supplier?.identificationNumber ?? widget.supplier?.ruc ?? '',
+    );
+    _addressCtrl = TextEditingController(text: widget.supplier?.address ?? '');
+    _termDaysCtrl = TextEditingController(
+      text: (widget.supplier?.paymentTermDays ?? 0).toString(),
+    );
+    _paymentCondition = widget.supplier?.paymentCondition ?? 'contado';
     _phoneCtrl = TextEditingController(text: widget.supplier?.phone ?? '');
     _emailCtrl = TextEditingController(text: widget.supplier?.email ?? '');
     _notesCtrl = TextEditingController(text: widget.supplier?.notes ?? '');
-    _rucCtrl = TextEditingController(text: widget.supplier?.ruc ?? '');
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _legalNameCtrl.dispose();
+    _identificationCtrl.dispose();
+    _addressCtrl.dispose();
+    _termDaysCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
     _notesCtrl.dispose();
-    _rucCtrl.dispose();
     super.dispose();
   }
 
@@ -465,12 +480,71 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
               ),
               const SizedBox(height: 12),
               SharedTextFormField(
-                controller: _rucCtrl,
-                keyboardType: TextInputType.number,
-                label: 'RUC',
-                prefixIcon: const Icon(Icons.badge_outlined),
-                validator: SupplierRucValidator.validate,
+                controller: _legalNameCtrl,
+                label: 'Razón social',
+                prefixIcon: const Icon(Icons.business_outlined),
               ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilterDropdown<String>(
+                      label: 'Identificación',
+                      value: _identificationType,
+                      items: const [
+                        DropdownMenuItem(value: 'ruc', child: Text('RUC')),
+                        DropdownMenuItem(
+                          value: 'cedula',
+                          child: Text('Cédula'),
+                        ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => _identificationType = value ?? 'ruc'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2,
+                    child: SharedTextFormField(
+                      controller: _identificationCtrl,
+                      keyboardType: TextInputType.number,
+                      label: 'Número *',
+                      prefixIcon: const Icon(Icons.badge_outlined),
+                      validator: (value) =>
+                          SupplierRucValidator.validateIdentification(
+                            value: value,
+                            type: _identificationType,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SharedTextFormField(
+                controller: _addressCtrl,
+                label: 'Dirección',
+                prefixIcon: const Icon(Icons.location_on_outlined),
+              ),
+              const SizedBox(height: 12),
+              FilterDropdown<String>(
+                label: 'Condición de pago',
+                value: _paymentCondition,
+                items: const [
+                  DropdownMenuItem(value: 'contado', child: Text('Contado')),
+                  DropdownMenuItem(value: 'credito', child: Text('Crédito')),
+                ],
+                onChanged: (value) =>
+                    setState(() => _paymentCondition = value ?? 'contado'),
+              ),
+              if (_paymentCondition == 'credito') ...[
+                const SizedBox(height: 12),
+                SharedTextFormField(
+                  controller: _termDaysCtrl,
+                  keyboardType: TextInputType.number,
+                  label: 'Plazo (días)',
+                  prefixIcon: const Icon(Icons.schedule_outlined),
+                ),
+              ],
               const SizedBox(height: 12),
               SharedTextFormField(
                 controller: _phoneCtrl,
@@ -537,10 +611,18 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
     final supplier = SupplierModel(
       id: widget.supplier?.id,
       name: _nameCtrl.text.trim(),
+      legalName: _legalNameCtrl.text.trim(),
+      identificationType: _identificationType,
+      identificationNumber: _identificationCtrl.text.trim(),
+      address: _addressCtrl.text.trim(),
+      paymentCondition: _paymentCondition,
+      paymentTermDays: int.tryParse(_termDaysCtrl.text.trim()) ?? 0,
       phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
       email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
-      ruc: _rucCtrl.text.trim().isEmpty ? null : _rucCtrl.text.trim(),
+      ruc: _identificationType == 'ruc'
+          ? _identificationCtrl.text.trim()
+          : null,
     );
 
     final String? err;

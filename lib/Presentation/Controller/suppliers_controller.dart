@@ -38,7 +38,17 @@ class SuppliersController extends ChangeNotifier {
 
     try {
       final rows = await DatabaseService.rawQuery(
-        "SELECT id, name, COALESCE(phone, '') as phone, COALESCE(email, '') as email, COALESCE(notes, '') as notes, COALESCE(ruc, '') as ruc FROM suppliers ORDER BY name COLLATE NOCASE",
+        '''SELECT id, name, COALESCE(legal_name, name) AS legal_name,
+                  COALESCE(identification_type, 'ruc') AS identification_type,
+                  COALESCE(identification_number, ruc, '') AS identification_number,
+                  COALESCE(address, '') AS address, COALESCE(phone, '') AS phone,
+                  COALESCE(email, '') AS email, COALESCE(notes, '') AS notes,
+                  COALESCE(ruc, '') AS ruc,
+                  COALESCE(payment_condition, 'contado') AS payment_condition,
+                  COALESCE(payment_term_days, 0) AS payment_term_days,
+                  COALESCE(taxpayer_type, '') AS taxpayer_type,
+                  COALESCE(is_withholding_agent, 0) AS is_withholding_agent
+           FROM suppliers ORDER BY name COLLATE NOCASE''',
         [],
       );
       _suppliers = rows.map(SupplierModel.fromMap).toList();
@@ -68,7 +78,8 @@ class SuppliersController extends ChangeNotifier {
                 s.name.toLowerCase().contains(q) ||
                 (s.phone?.toLowerCase().contains(q) ?? false) ||
                 (s.email?.toLowerCase().contains(q) ?? false) ||
-                (s.ruc?.toLowerCase().contains(q) ?? false),
+                (s.identificationNumber?.toLowerCase().contains(q) ?? false) ||
+                (s.legalName?.toLowerCase().contains(q) ?? false),
           )
           .toList();
     }
@@ -83,6 +94,14 @@ class SuppliersController extends ChangeNotifier {
         email: supplier.email,
         notes: supplier.notes,
         ruc: supplier.ruc,
+        identificationType: supplier.identificationType,
+        identificationNumber: supplier.identificationNumber,
+        legalName: supplier.legalName,
+        address: supplier.address,
+        paymentCondition: supplier.paymentCondition,
+        paymentTermDays: supplier.paymentTermDays,
+        taxpayerType: supplier.taxpayerType,
+        isWithholdingAgent: supplier.isWithholdingAgent,
       );
       await AuditService.log(
         action: AuditAction.createSupplier,
@@ -115,6 +134,14 @@ class SuppliersController extends ChangeNotifier {
         email: supplier.email,
         notes: supplier.notes,
         ruc: supplier.ruc,
+        identificationType: supplier.identificationType,
+        identificationNumber: supplier.identificationNumber,
+        legalName: supplier.legalName,
+        address: supplier.address,
+        paymentCondition: supplier.paymentCondition,
+        paymentTermDays: supplier.paymentTermDays,
+        taxpayerType: supplier.taxpayerType,
+        isWithholdingAgent: supplier.isWithholdingAgent,
       );
       final after = await DatabaseService.rawQuery(
         'SELECT * FROM suppliers WHERE id = ? LIMIT 1',

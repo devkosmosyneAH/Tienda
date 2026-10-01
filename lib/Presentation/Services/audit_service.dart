@@ -17,6 +17,7 @@ enum AuditAction {
   updateSupplier,
   deleteSupplier,
   createPurchase,
+  cancelPurchase,
   createSale,
   cancelSale,
   stockIn,

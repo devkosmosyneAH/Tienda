@@ -3,6 +3,7 @@ import 'package:tienda/Presentation/Utils/Colors.dart';
 import 'package:tienda/Presentation/Utils/supplier_ruc_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../Widgets/Products/filter_dropdown.dart';
 import '../../Widgets/Products/shared_inputs.dart';
@@ -151,6 +152,10 @@ class _PurchaseDetailsPanel extends StatefulWidget {
 class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
   late final TextEditingController _governmentVatController;
   late final TextEditingController _profitVatController;
+  late final TextEditingController _invoiceNumberController;
+  late final TextEditingController _accessKeyController;
+  late final TextEditingController _auxiliaryInvoiceController;
+  late final TextEditingController _taxSupportController;
   bool _considerVatProfit = false;
 
   @override
@@ -158,12 +163,49 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
     super.initState();
     _governmentVatController = TextEditingController(text: '15.0');
     _profitVatController = TextEditingController(text: '15.0');
+    _invoiceNumberController = TextEditingController(
+      text: widget.controller.invoiceNumber,
+    );
+    _accessKeyController = TextEditingController(
+      text: widget.controller.accessKey,
+    );
+    _auxiliaryInvoiceController = TextEditingController(
+      text: widget.controller.auxiliaryInvoiceNumber,
+    );
+    _taxSupportController = TextEditingController(
+      text: widget.controller.taxSupportCode,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _PurchaseDetailsPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncController(_invoiceNumberController, widget.controller.invoiceNumber);
+    _syncController(_accessKeyController, widget.controller.accessKey);
+    _syncController(
+      _auxiliaryInvoiceController,
+      widget.controller.auxiliaryInvoiceNumber,
+    );
+    _syncController(_taxSupportController, widget.controller.taxSupportCode);
+  }
+
+  void _syncController(TextEditingController field, String value) {
+    if (field.text == value) return;
+    field.value = field.value.copyWith(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+      composing: TextRange.empty,
+    );
   }
 
   @override
   void dispose() {
     _governmentVatController.dispose();
     _profitVatController.dispose();
+    _invoiceNumberController.dispose();
+    _accessKeyController.dispose();
+    _auxiliaryInvoiceController.dispose();
+    _taxSupportController.dispose();
     super.dispose();
   }
 
@@ -222,12 +264,28 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
               if (supplier != null) ...[
                 const SizedBox(height: 7),
                 Text(
+                  supplier['legal_name']?.toString().isNotEmpty == true
+                      ? supplier['legal_name'].toString()
+                      : supplier['name'].toString(),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  '${supplier['identification_type']?.toString().toUpperCase() ?? 'RUC'} ${supplier['identification_number'] ?? supplier['ruc'] ?? ''}',
+                  style: TextStyle(color: AppColors.plumGray54, fontSize: 12),
+                ),
+                if (supplier['address']?.toString().isNotEmpty == true)
+                  Text(
+                    supplier['address'].toString(),
+                    style: TextStyle(color: AppColors.plumGray54, fontSize: 12),
+                  ),
+                Text(
                   [
-                    if (supplier['ruc']?.toString().isNotEmpty == true)
-                      'RUC ${supplier['ruc']}',
                     if (supplier['phone']?.toString().isNotEmpty == true)
                       'Tel. ${supplier['phone']}',
-                  ].join('  ·  '),
+                    if (supplier['email']?.toString().isNotEmpty == true)
+                      supplier['email'].toString(),
+                    'Pago ${supplier['payment_condition'] ?? 'contado'}',
+                  ].join(' · '),
                   style: TextStyle(color: AppColors.plumGray54, fontSize: 12),
                 ),
               ],
@@ -244,15 +302,27 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
                 icon: Icons.receipt_long_outlined,
               ),
               const SizedBox(height: 12),
-              _ReadOnlyField(
-                label: 'Número de Factura (Generado automáticamente)',
-                value: widget.controller.invoiceNumber.isEmpty
-                    ? 'Generando...'
-                    : widget.controller.invoiceNumber,
-                icon: Icons.receipt_long_outlined,
+              SharedTextField(
+                controller: _invoiceNumberController,
+                onChanged: widget.controller.setInvoiceNumber,
+                label: 'Número de factura *',
+                hint: '001-001-000000000',
+                prefixIcon: const Icon(Icons.receipt_long_outlined),
+                useFilterStyle: true,
               ),
               const SizedBox(height: 10),
               SharedTextField(
+                controller: _accessKeyController,
+                onChanged: widget.controller.setAccessKey,
+                label: 'Clave de acceso / autorización *',
+                hint: '49 dígitos',
+                keyboardType: TextInputType.number,
+                prefixIcon: const Icon(Icons.key_outlined),
+                useFilterStyle: true,
+              ),
+              const SizedBox(height: 10),
+              SharedTextField(
+                controller: _auxiliaryInvoiceController,
                 onChanged: widget.controller.updateAuxiliaryInvoiceNumber,
                 label: 'Número de Factura Auxiliar (Manual)',
                 hint: 'Número auxiliar',
@@ -262,11 +332,25 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const Expanded(
-                    child: _ReadOnlyField(
-                      label: 'Fecha',
-                      value: 'Hoy',
-                      icon: Icons.calendar_today_outlined,
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                          initialDate: widget.controller.issueDate,
+                        );
+                        if (picked != null) {
+                          widget.controller.setIssueDate(picked);
+                        }
+                      },
+                      icon: const Icon(Icons.calendar_today_outlined),
+                      label: Text(
+                        DateFormat(
+                          'dd/MM/yyyy',
+                        ).format(widget.controller.issueDate),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -278,12 +362,7 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
                           .map(
                             (method) => DropdownMenuItem<int>(
                               value: (method['id'] as num).toInt(),
-                              child: Text(
-                                method['name'].toString().toLowerCase() ==
-                                        'efectivo'
-                                    ? 'Contado'
-                                    : method['name'].toString(),
-                              ),
+                              child: Text(method['name'].toString()),
                             ),
                           )
                           .toList(),
@@ -291,6 +370,51 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 10),
+              FilterDropdown<String>(
+                label: 'Condición de pago *',
+                value: widget.controller.paymentCondition,
+                items: const [
+                  DropdownMenuItem(value: 'contado', child: Text('Contado')),
+                  DropdownMenuItem(value: 'credito', child: Text('Crédito')),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    widget.controller.setPaymentCondition(value);
+                  }
+                },
+              ),
+              if (widget.controller.paymentCondition == 'credito') ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      firstDate: widget.controller.issueDate,
+                      lastDate: DateTime(2100),
+                      initialDate:
+                          widget.controller.dueDate ??
+                          widget.controller.issueDate,
+                    );
+                    if (picked != null) widget.controller.setDueDate(picked);
+                  },
+                  icon: const Icon(Icons.event_outlined),
+                  label: Text(
+                    widget.controller.dueDate == null
+                        ? 'Fecha de vencimiento *'
+                        : 'Vence ${DateFormat('dd/MM/yyyy').format(widget.controller.dueDate!)}',
+                  ),
+                ),
+              ],
+              const SizedBox(height: 10),
+              SharedTextField(
+                controller: _taxSupportController,
+                onChanged: widget.controller.setTaxSupportCode,
+                label: 'Código de sustento tributario *',
+                hint: 'Código ATS',
+                prefixIcon: const Icon(Icons.assignment_outlined),
+                useFilterStyle: true,
               ),
 
               const SizedBox(height: 14),
@@ -425,17 +549,25 @@ class _NewPurchaseSupplierDialogState
     extends State<_NewPurchaseSupplierDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _rucController = TextEditingController();
+  final _legalNameController = TextEditingController();
+  final _identificationController = TextEditingController();
+  final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
+  final _termDaysController = TextEditingController(text: '0');
+  String _identificationType = 'ruc';
+  String _paymentCondition = 'contado';
   bool _saving = false;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _rucController.dispose();
+    _legalNameController.dispose();
+    _identificationController.dispose();
+    _addressController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
+    _termDaysController.dispose();
     super.dispose();
   }
 
@@ -459,12 +591,71 @@ class _NewPurchaseSupplierDialogState
               ),
               const SizedBox(height: 10),
               SharedTextFormField(
-                controller: _rucController,
-                label: 'RUC',
-                keyboardType: TextInputType.number,
-                prefixIcon: const Icon(Icons.badge_outlined),
-                validator: SupplierRucValidator.validate,
+                controller: _legalNameController,
+                label: 'Razón social',
+                prefixIcon: const Icon(Icons.business_outlined),
               ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilterDropdown<String>(
+                      label: 'Identificación',
+                      value: _identificationType,
+                      items: const [
+                        DropdownMenuItem(value: 'ruc', child: Text('RUC')),
+                        DropdownMenuItem(
+                          value: 'cedula',
+                          child: Text('Cédula'),
+                        ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => _identificationType = value ?? 'ruc'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2,
+                    child: SharedTextFormField(
+                      controller: _identificationController,
+                      label: 'Número *',
+                      keyboardType: TextInputType.number,
+                      prefixIcon: const Icon(Icons.badge_outlined),
+                      validator: (value) =>
+                          SupplierRucValidator.validateIdentification(
+                            value: value,
+                            type: _identificationType,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              SharedTextFormField(
+                controller: _addressController,
+                label: 'Dirección',
+                prefixIcon: const Icon(Icons.location_on_outlined),
+              ),
+              const SizedBox(height: 10),
+              FilterDropdown<String>(
+                label: 'Condición de pago',
+                value: _paymentCondition,
+                items: const [
+                  DropdownMenuItem(value: 'contado', child: Text('Contado')),
+                  DropdownMenuItem(value: 'credito', child: Text('Crédito')),
+                ],
+                onChanged: (value) =>
+                    setState(() => _paymentCondition = value ?? 'contado'),
+              ),
+              if (_paymentCondition == 'credito') ...[
+                const SizedBox(height: 10),
+                SharedTextFormField(
+                  controller: _termDaysController,
+                  label: 'Plazo de pago (días)',
+                  keyboardType: TextInputType.number,
+                  prefixIcon: const Icon(Icons.schedule_outlined),
+                ),
+              ],
               const SizedBox(height: 10),
               SharedTextFormField(
                 controller: _phoneController,
@@ -503,7 +694,15 @@ class _NewPurchaseSupplierDialogState
     try {
       await widget.controller.createSupplier(
         name: _nameController.text,
-        ruc: _rucController.text,
+        legalName: _legalNameController.text,
+        identificationType: _identificationType,
+        identificationNumber: _identificationController.text,
+        ruc: _identificationType == 'ruc'
+            ? _identificationController.text
+            : null,
+        address: _addressController.text,
+        paymentCondition: _paymentCondition,
+        paymentTermDays: int.tryParse(_termDaysController.text.trim()) ?? 0,
         phone: _phoneController.text,
         email: _emailController.text,
       );
@@ -588,6 +787,14 @@ class _CatalogPanel extends StatelessWidget {
           children: [
             const _SectionHeader(title: 'Buscar Producto', icon: Icons.search),
             const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => _showNewProductDialog(context),
+                icon: const Icon(Icons.add_box_outlined),
+                label: const Text('Nuevo producto'),
+              ),
+            ),
             Row(
               children: [
                 Expanded(
@@ -756,6 +963,172 @@ class _CatalogPanel extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _showNewProductDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) => _NewPurchaseProductDialog(controller: controller),
+    );
+  }
+}
+
+class _NewPurchaseProductDialog extends StatefulWidget {
+  const _NewPurchaseProductDialog({required this.controller});
+
+  final PurchasesController controller;
+
+  @override
+  State<_NewPurchaseProductDialog> createState() =>
+      _NewPurchaseProductDialogState();
+}
+
+class _NewPurchaseProductDialogState extends State<_NewPurchaseProductDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _skuController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _vatRateController = TextEditingController(text: '15');
+  String? _category;
+  String _vatType = 'standard';
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _skuController.dispose();
+    _priceController.dispose();
+    _vatRateController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = widget.controller.categories;
+    _category ??= categories.isEmpty
+        ? null
+        : categories.first['name']?.toString();
+    return AlertDialog(
+      title: const Text('Nuevo producto'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SharedTextFormField(
+                controller: _nameController,
+                label: 'Nombre *',
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Campo requerido'
+                    : null,
+              ),
+              const SizedBox(height: 10),
+              SharedTextFormField(
+                controller: _skuController,
+                label: 'Código / SKU',
+              ),
+              const SizedBox(height: 10),
+              FilterDropdown<String?>(
+                label: 'Categoría',
+                value: _category,
+                items: categories
+                    .map(
+                      (category) => DropdownMenuItem<String?>(
+                        value: category['name']?.toString(),
+                        child: Text(category['name'].toString()),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) => setState(() => _category = value),
+              ),
+              const SizedBox(height: 10),
+              FilterDropdown<String>(
+                label: 'IVA del producto',
+                value: _vatType,
+                items: const [
+                  DropdownMenuItem(
+                    value: 'standard',
+                    child: Text('Tarifa vigente'),
+                  ),
+                  DropdownMenuItem(value: 'zero', child: Text('0 %')),
+                  DropdownMenuItem(
+                    value: 'notObject',
+                    child: Text('No objeto'),
+                  ),
+                  DropdownMenuItem(value: 'exempt', child: Text('Exento')),
+                ],
+                onChanged: (value) =>
+                    setState(() => _vatType = value ?? 'standard'),
+              ),
+              if (_vatType == 'standard') ...[
+                const SizedBox(height: 10),
+                SharedTextFormField(
+                  controller: _vatRateController,
+                  label: 'Tarifa vigente (%)',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 10),
+              SharedTextFormField(
+                controller: _priceController,
+                label: 'PVP *',
+                prefixIcon: const Icon(Icons.sell_outlined),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (value) {
+                  final price = double.tryParse(
+                    (value ?? '').replaceAll(',', '.'),
+                  );
+                  return price == null || price < 0
+                      ? 'Ingrese un PVP válido'
+                      : null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _saving ? null : _save,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Crear y agregar'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    try {
+      await widget.controller.createProductFromPurchase(
+        name: _nameController.text,
+        sku: _skuController.text,
+        category: _category ?? 'Sin categoría',
+        vatType: _vatType,
+        vatRate:
+            double.tryParse(_vatRateController.text.replaceAll(',', '.')) ?? 15,
+        salePrice: double.parse(_priceController.text.replaceAll(',', '.')),
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
+  }
 }
 
 class _SummaryPanel extends StatelessWidget {
@@ -875,28 +1248,38 @@ class _PurchaseTotals extends StatefulWidget {
 }
 
 class _PurchaseTotalsState extends State<_PurchaseTotals> {
-  late final TextEditingController _discountController;
+  late final TextEditingController _physicalTotalController;
 
   @override
   void initState() {
     super.initState();
-    _discountController = TextEditingController(
-      text: widget.controller.discount == 0
-          ? ''
-          : widget.controller.discount.toStringAsFixed(2),
+    _physicalTotalController = TextEditingController(
+      text: widget.controller.physicalTotal?.toStringAsFixed(2) ?? '',
     );
   }
 
   @override
+  void didUpdateWidget(covariant _PurchaseTotals oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final value = widget.controller.physicalTotal?.toStringAsFixed(2) ?? '';
+    if (_physicalTotalController.text != value) {
+      _physicalTotalController.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value.length),
+      );
+    }
+  }
+
+  @override
   void dispose() {
-    _discountController.dispose();
+    _physicalTotalController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
-    final hasVat = controller.governmentVatRate > 0;
+    final totals = controller.calculatedTotals;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -907,54 +1290,20 @@ class _PurchaseTotalsState extends State<_PurchaseTotals> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 12),
+        for (final entry in totals.subtotalByTax.entries)
+          _TotalLine(
+            label: 'Subtotal ${_taxLabel(entry.key)}:',
+            value: '\$${entry.value.toStringAsFixed(2)}',
+          ),
         _TotalLine(
-          label: 'Subtotal:',
-          value: '\$${controller.subtotal.toStringAsFixed(2)}',
+          label: 'Descuentos:',
+          value: '-\$${totals.discount.toStringAsFixed(2)}',
+        ),
+        _TotalLine(
+          label: 'IVA total:',
+          value: '\$${totals.vatTotal.toStringAsFixed(2)}',
         ),
         const SizedBox(height: 8),
-        _TotalLine(
-          label: hasVat
-              ? 'IVA gubernamental (${controller.governmentVatRate.toStringAsFixed(1)}%):'
-              : 'IVA gubernamental:',
-          value: hasVat
-              ? '\$${controller.vatTotal.toStringAsFixed(2)}'
-              : 'No aplicado',
-          color: hasVat ? AppColors.paleMauve : AppColors.plumGray45,
-          italic: !hasVat,
-        ),
-        if (hasVat) ...[
-          const SizedBox(height: 4),
-          Text(
-            'Productos con IVA: ${controller.productsWithVat}/${controller.cart.length}',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.plumGray54,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-        const SizedBox(height: 14),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Descuento:', style: TextStyle(fontSize: 16)),
-            SizedBox(
-              width: 100,
-              child: SharedTextField(
-                controller: _discountController,
-                prefix: '\$',
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                useFilterStyle: true,
-                onChanged: (value) {
-                  final discount = double.tryParse(value.replaceAll(',', '.'));
-                  if (discount != null) controller.updateDiscount(discount);
-                },
-              ),
-            ),
-          ],
-        ),
         const SizedBox(height: 8),
         const Divider(thickness: 1.2),
         Row(
@@ -974,6 +1323,27 @@ class _PurchaseTotalsState extends State<_PurchaseTotals> {
             ),
           ],
         ),
+        const SizedBox(height: 8),
+        SharedTextField(
+          controller: _physicalTotalController,
+          onChanged: (value) => controller.setPhysicalTotal(
+            value.trim().isEmpty
+                ? null
+                : double.tryParse(value.replaceAll(',', '.')),
+          ),
+          label: 'Total de factura física *',
+          prefix: '\$',
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          useFilterStyle: true,
+        ),
+        if (controller.physicalTotal != null &&
+            totals.differsFromInvoice(controller.physicalTotal!)) ...[
+          const SizedBox(height: 6),
+          Text(
+            'Diferencia: \$${(controller.physicalTotal! - totals.total).toStringAsFixed(2)}. Revise cantidades, descuentos e IVA.',
+            style: const TextStyle(color: AppColors.dustyRose, fontSize: 12),
+          ),
+        ],
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
@@ -985,34 +1355,31 @@ class _PurchaseTotalsState extends State<_PurchaseTotals> {
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             icon: const Icon(Icons.save_outlined),
-            label: const Text('Guardar compra'),
+            label: const Text('Registrar factura'),
           ),
         ),
       ],
     );
   }
+
+  String _taxLabel(String key) {
+    if (key.startsWith('iva_')) return 'IVA ${key.substring(4)}%';
+    return key == 'no_objeto' ? 'No objeto de IVA' : 'Exento';
+  }
 }
 
 class _TotalLine extends StatelessWidget {
-  const _TotalLine({
-    required this.label,
-    required this.value,
-    this.color = AppColors.plumGray87,
-    this.italic = false,
-  });
+  const _TotalLine({required this.label, required this.value});
 
   final String label;
   final String value;
-  final Color color;
-  final bool italic;
 
   @override
   Widget build(BuildContext context) {
-    final style = TextStyle(
-      color: color,
+    const style = TextStyle(
+      color: AppColors.plumGray87,
       fontSize: 16,
       fontWeight: FontWeight.w700,
-      fontStyle: italic ? FontStyle.italic : FontStyle.normal,
     );
 
     return Row(
@@ -1041,124 +1408,228 @@ class _PurchaseCartRow extends StatefulWidget {
 
 class _PurchaseCartRowState extends State<_PurchaseCartRow> {
   late final TextEditingController _costController;
+  late final TextEditingController _bonusController;
+  late final TextEditingController _bonusVatController;
+  late final TextEditingController _discountController;
+  late final TextEditingController _vatRateController;
 
   @override
   void initState() {
     super.initState();
     _costController = TextEditingController(
-      text: (widget.item['cost'] as double).toStringAsFixed(2),
+      text: ((widget.item['cost'] as num?)?.toDouble() ?? 0).toStringAsFixed(2),
+    );
+    _bonusController = TextEditingController(
+      text: ((widget.item['bonus_quantity'] as num?)?.toInt() ?? 0).toString(),
+    );
+    _bonusVatController = TextEditingController(
+      text: ((widget.item['bonus_vat_amount'] as num?)?.toDouble() ?? 0)
+          .toStringAsFixed(2),
+    );
+    _discountController = TextEditingController(
+      text: ((widget.item['discount'] as num?)?.toDouble() ?? 0)
+          .toStringAsFixed(2),
+    );
+    _vatRateController = TextEditingController(
+      text: ((widget.item['vat_rate'] as num?)?.toDouble() ?? 15)
+          .toStringAsFixed(2),
     );
   }
 
   @override
   void dispose() {
     _costController.dispose();
+    _bonusController.dispose();
+    _bonusVatController.dispose();
+    _discountController.dispose();
+    _vatRateController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final productId = widget.item['product_id'] as int;
-    final quantity = widget.item['quantity'] as int;
-    final cost = (widget.item['cost'] as double);
-    final subtotal = cost * quantity;
-    final vat = subtotal * widget.controller.appliedVatRate / 100;
-    final total = subtotal + vat;
+    final quantity = (widget.item['quantity'] as num).toInt();
+    final bonusQuantity = (widget.item['bonus_quantity'] as num?)?.toInt() ?? 0;
+    final vatType = widget.item['vat_type']?.toString() ?? 'standard';
+    final line = widget.controller.calculatedTotals.lines.firstWhere(
+      (entry) => entry.productId == productId,
+    );
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 620;
-        final product = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.item['name']?.toString() ?? '',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Código: ${widget.item['product_id']}',
-              style: const TextStyle(fontSize: 11, color: AppColors.plumGray54),
-            ),
-          ],
-        );
-
-        final quantityControl = _QuantityControl(
-          quantity: quantity,
-          onDecrease: () => widget.controller.decrementQuantity(productId),
-          onIncrease: () => widget.controller.incrementQuantity(productId),
-        );
-
-        final costField = SizedBox(
-          width: compact ? 104 : 128,
-          child: SharedTextField(
-            controller: _costController,
-            prefix: '\$',
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            useFilterStyle: true,
-            onChanged: (value) {
-              final parsed = double.tryParse(value.replaceAll(',', '.'));
-              if (parsed != null) {
-                widget.controller.updateCost(productId, parsed);
-              }
-            },
-          ),
-        );
-
-        final values = Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _ValueBadge(label: 'IVA', value: '\$${vat.toStringAsFixed(2)}'),
-            const SizedBox(width: 8),
-            _ValueBadge(
-              label: 'Total',
-              value: '\$${total.toStringAsFixed(2)}',
-              color: AppColors.mutedCream,
-              textColor: AppColors.plumGray,
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              tooltip: 'Quitar producto',
-              onPressed: () => widget.controller.removeFromCart(productId),
-              icon: const Icon(
-                Icons.delete_outline,
-                color: AppColors.dustyRose,
-              ),
-            ),
-          ],
-        );
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: compact
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    product,
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [quantityControl, costField, values],
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    Expanded(flex: 5, child: product),
-                    const SizedBox(width: 12),
-                    quantityControl,
-                    const SizedBox(width: 18),
-                    costField,
-                    const SizedBox(width: 18),
-                    values,
-                  ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.item['name']?.toString() ?? '',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
-        );
-      },
+              ),
+              IconButton(
+                tooltip: 'Quitar producto',
+                onPressed: () => widget.controller.removeFromCart(productId),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: AppColors.dustyRose,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            'Código: ${widget.item['product_id']}',
+            style: const TextStyle(fontSize: 11, color: AppColors.plumGray54),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _QuantityControl(
+                quantity: quantity,
+                onDecrease: () =>
+                    widget.controller.decrementQuantity(productId),
+                onIncrease: () =>
+                    widget.controller.incrementQuantity(productId),
+              ),
+              SizedBox(
+                width: 94,
+                child: SharedTextField(
+                  controller: _bonusController,
+                  label: 'Bonificación',
+                  keyboardType: TextInputType.number,
+                  useFilterStyle: true,
+                  onChanged: (value) => widget.controller.updateBonusQuantity(
+                    productId,
+                    int.tryParse(value) ?? 0,
+                  ),
+                ),
+              ),
+              if (bonusQuantity > 0)
+                SizedBox(
+                  width: 118,
+                  child: SharedTextField(
+                    controller: _bonusVatController,
+                    label: 'IVA bonificación',
+                    prefix: '\$',
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    useFilterStyle: true,
+                    onChanged: (value) {
+                      final parsed = double.tryParse(value.replaceAll(',', '.'));
+                      if (parsed != null) {
+                        widget.controller.updateBonusVatAmount(productId, parsed);
+                      }
+                    },
+                  ),
+                ),
+              SizedBox(
+                width: 112,
+                child: SharedTextField(
+                  controller: _costController,
+                  label: 'Costo unitario',
+                  prefix: '\$',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  useFilterStyle: true,
+                  onChanged: (value) {
+                    final parsed = double.tryParse(value.replaceAll(',', '.'));
+                    if (parsed != null) {
+                      widget.controller.updateCost(productId, parsed);
+                    }
+                  },
+                ),
+              ),
+              SizedBox(
+                width: 102,
+                child: SharedTextField(
+                  controller: _discountController,
+                  label: 'Descuento',
+                  prefix: '\$',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  useFilterStyle: true,
+                  onChanged: (value) {
+                    final parsed = double.tryParse(value.replaceAll(',', '.'));
+                    if (parsed != null) {
+                      widget.controller.updateLineDiscount(productId, parsed);
+                    }
+                  },
+                ),
+              ),
+              SizedBox(
+                width: 176,
+                child: FilterDropdown<String>(
+                  label: 'IVA de línea',
+                  value: vatType,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'standard',
+                      child: Text('Tarifa vigente'),
+                    ),
+                    DropdownMenuItem(value: 'zero', child: Text('0 %')),
+                    DropdownMenuItem(
+                      value: 'notObject',
+                      child: Text('No objeto'),
+                    ),
+                    DropdownMenuItem(value: 'exempt', child: Text('Exento')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      widget.controller.updateLineVat(productId, value);
+                    }
+                  },
+                ),
+              ),
+              if (vatType == 'standard')
+                SizedBox(
+                  width: 88,
+                  child: SharedTextField(
+                    controller: _vatRateController,
+                    label: 'IVA %',
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    useFilterStyle: true,
+                    onChanged: (value) {
+                      final parsed = double.tryParse(
+                        value.replaceAll(',', '.'),
+                      );
+                      if (parsed != null) {
+                        widget.controller.updateLineVat(
+                          productId,
+                          vatType,
+                          rate: parsed,
+                        );
+                      }
+                    },
+                  ),
+                ),
+              _ValueBadge(
+                label: 'IVA',
+                value: '\$${line.vatAmount.toStringAsFixed(2)}',
+              ),
+              _ValueBadge(
+                label: bonusQuantity > 0
+                    ? 'Total · +$bonusQuantity gratis'
+                    : 'Total',
+                value: '\$${line.total.toStringAsFixed(2)}',
+                color: AppColors.mutedCream,
+                textColor: AppColors.plumGray,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
