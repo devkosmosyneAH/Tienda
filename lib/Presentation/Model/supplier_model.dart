@@ -4,6 +4,7 @@ class SupplierModel {
   final String? phone;
   final String? email;
   final String? notes;
+  final String? ruc;
 
   const SupplierModel({
     this.id,
@@ -11,15 +12,17 @@ class SupplierModel {
     this.phone,
     this.email,
     this.notes,
+    this.ruc,
   });
 
   factory SupplierModel.fromMap(Map<String, dynamic> map) {
     return SupplierModel(
-      id: map['id'] as int?,
+      id: (map['id'] as num?)?.toInt(),
       name: map['name'] as String,
       phone: map['phone'] as String?,
       email: map['email'] as String?,
       notes: map['notes'] as String?,
+      ruc: map['ruc'] as String?,
     );
   }
 
@@ -30,6 +33,7 @@ class SupplierModel {
       if (phone != null) 'phone': phone,
       if (email != null) 'email': email,
       if (notes != null) 'notes': notes,
+      if (ruc != null) 'ruc': ruc,
     };
   }
 
@@ -39,6 +43,7 @@ class SupplierModel {
     String? phone,
     String? email,
     String? notes,
+    String? ruc,
   }) {
     return SupplierModel(
       id: id ?? this.id,
@@ -46,6 +51,7 @@ class SupplierModel {
       phone: phone ?? this.phone,
       email: email ?? this.email,
       notes: notes ?? this.notes,
+      ruc: ruc ?? this.ruc,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:tienda/Presentation/Model/purchase_model.dart';
 import 'package:tienda/Presentation/Services/database_service.dart';
+import 'package:tienda/Presentation/Services/audit_service.dart';
 
 class PurchaseProvider extends ChangeNotifier {
   bool isLoading = false;
@@ -149,8 +150,7 @@ class PurchaseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Crea una compra
-  /// 🔄 NOTA: Requiere implementar el método createPurchase en DatabaseService
+  /// Crea la compra y actualiza inventario usando la transacción común.
   Future<void> createPurchase({
     required int supplierId,
     required String supplierName,
@@ -171,32 +171,45 @@ class PurchaseProvider extends ChangeNotifier {
       isLoading = true;
       notifyListeners();
 
-      // final subtotal = orderItems.fold<double>(
-      //     0, (sum, item) => sum + item.totalCost);
-      // final total = subtotal + tax;
-
-      // Crear la compra
-      // final purchase = Purchase(
-      //   id: 0,
-      //   supplierId: supplierId,
-      //   supplierName: supplierName,
-      //   storeId: storeId,
-      //   items: orderItems,
-      //   subtotal: subtotal,
-      //   tax: tax,
-      //   total: total,
-      //   invoiceNumber: invoiceNumber,
-      //   referenceNumber: referenceNumber,
-      //   notes: notes,
-      //   status: PurchaseStatus.pending,
-      //   orderDate: DateTime.now(),
-      //   expectedDeliveryDate: expectedDeliveryDate,
-      //   createdAt: DateTime.now(),
-      // );
-
-      // odo
-      //Implementar createPurchase en DatabaseService
-      // await DatabaseService.createPurchase(purchase.toMap());
+      if (tax < 0 || !tax.isFinite) {
+        throw Exception('El impuesto no puede ser negativo');
+      }
+      final subtotal = orderItems.fold<double>(
+        0,
+        (sum, item) => sum + item.totalCost,
+      );
+      final vatRate = subtotal == 0 ? 0.0 : tax / subtotal * 100;
+      final purchaseId = await DatabaseService.registerPurchase(
+        storeId: storeId,
+        supplierId: supplierId,
+        supplierName: supplierName,
+        vatRate: vatRate,
+        invoiceNumber: invoiceNumber,
+        auxiliaryInvoiceNumber: referenceNumber,
+        items: orderItems
+            .map(
+              (item) => {
+                'product_id': item.productId,
+                'quantity': item.orderedQuantity,
+                'cost': item.unitCost,
+              },
+            )
+            .toList(),
+      );
+      await AuditService.log(
+        action: AuditAction.createPurchase,
+        module: 'Purchases',
+        page: 'PurchaseProvider',
+        entity: 'purchase',
+        entityId: purchaseId,
+        newData: {
+          'purchase_id': purchaseId,
+          'supplier_id': supplierId,
+          'items': orderItems.map((item) => item.toMap()).toList(),
+        },
+        controller: 'PurchaseProvider',
+      );
+      DatabaseService.notifyDatabaseChanged();
 
       clearOrder();
       await loadPurchases();

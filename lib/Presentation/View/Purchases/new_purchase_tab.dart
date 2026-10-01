@@ -1,5 +1,6 @@
 import 'package:tienda/Presentation/Controller/purchases_controller.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
+import 'package:tienda/Presentation/Utils/supplier_ruc_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -9,15 +10,11 @@ import '../../Widgets/Products/shared_inputs.dart';
 class NewPurchaseTab extends StatelessWidget {
   const NewPurchaseTab({
     required this.searchController,
-    required this.supplierController,
-    required this.supplierPhoneController,
     required this.onSave,
     super.key,
   });
 
   final TextEditingController searchController;
-  final TextEditingController supplierController;
-  final TextEditingController supplierPhoneController;
   final VoidCallback onSave;
 
   @override
@@ -27,11 +24,7 @@ class NewPurchaseTab extends StatelessWidget {
         return LayoutBuilder(
           builder: (context, constraints) {
             final isWide = constraints.maxWidth >= 900;
-            final detailsPanel = _PurchaseDetailsPanel(
-              controller: controller,
-              supplierController: supplierController,
-              supplierPhoneController: supplierPhoneController,
-            );
+            final detailsPanel = _PurchaseDetailsPanel(controller: controller);
             final summaryPanel = _SummaryPanel(
               controller: controller,
               onSave: onSave,
@@ -147,15 +140,9 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _PurchaseDetailsPanel extends StatefulWidget {
-  const _PurchaseDetailsPanel({
-    required this.controller,
-    required this.supplierController,
-    required this.supplierPhoneController,
-  });
+  const _PurchaseDetailsPanel({required this.controller});
 
   final PurchasesController controller;
-  final TextEditingController supplierController;
-  final TextEditingController supplierPhoneController;
 
   @override
   State<_PurchaseDetailsPanel> createState() => _PurchaseDetailsPanelState();
@@ -182,6 +169,13 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedSupplier = widget.controller.suppliers.where(
+      (supplier) =>
+          (supplier['id'] as num).toInt() ==
+          widget.controller.selectedSupplierId,
+    );
+    final supplier = selectedSupplier.isEmpty ? null : selectedSupplier.first;
+
     return Column(
       children: [
         _PurchaseCard(
@@ -193,22 +187,50 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
-              SharedTextField(
-                controller: widget.supplierController,
-                hint: 'Seleccionar proveedor',
-                prefixIcon: const Icon(Icons.business),
-                style: TextStyle(fontSize: 15, color: AppColors.plumGray87),
-                useFilterStyle: true,
+              Row(
+                children: [
+                  Expanded(
+                    child: FilterDropdown<int?>(
+                      label: 'Seleccionar proveedor',
+                      value: widget.controller.selectedSupplierId,
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text('Sin proveedor'),
+                        ),
+                        ...widget.controller.suppliers.map(
+                          (supplier) => DropdownMenuItem<int?>(
+                            value: (supplier['id'] as num).toInt(),
+                            child: Text(
+                              supplier['name'].toString(),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                      onChanged: widget.controller.selectSupplier,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filledTonal(
+                    tooltip: 'Nuevo proveedor',
+                    onPressed: () => _showNewSupplierDialog(context),
+                    icon: const Icon(Icons.add_business_outlined),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              SharedTextField(
-                controller: widget.supplierPhoneController,
-                hint: 'Teléfono del proveedor',
-                prefixIcon: const Icon(Icons.phone_outlined),
-                keyboardType: TextInputType.phone,
-                style: TextStyle(fontSize: 15, color: AppColors.plumGray87),
-                useFilterStyle: true,
-              ),
+              if (supplier != null) ...[
+                const SizedBox(height: 7),
+                Text(
+                  [
+                    if (supplier['ruc']?.toString().isNotEmpty == true)
+                      'RUC ${supplier['ruc']}',
+                    if (supplier['phone']?.toString().isNotEmpty == true)
+                      'Tel. ${supplier['phone']}',
+                  ].join('  ·  '),
+                  style: TextStyle(color: AppColors.plumGray54, fontSize: 12),
+                ),
+              ],
             ],
           ),
         ),
@@ -316,7 +338,7 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
                           setState(() => _considerVatProfit = value);
                           widget.controller.setConsiderVatProfit(value);
                         },
-                        activeColor: AppColors.cream,
+                        activeThumbColor: AppColors.cream,
                         activeTrackColor: AppColors.plumGray,
                         inactiveThumbColor: AppColors.cream,
                         inactiveTrackColor: AppColors.plumGray26,
@@ -379,6 +401,122 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
         ),
       ],
     );
+  }
+
+  Future<void> _showNewSupplierDialog(BuildContext context) async {
+    await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => _NewPurchaseSupplierDialog(controller: widget.controller),
+    );
+  }
+}
+
+class _NewPurchaseSupplierDialog extends StatefulWidget {
+  const _NewPurchaseSupplierDialog({required this.controller});
+
+  final PurchasesController controller;
+
+  @override
+  State<_NewPurchaseSupplierDialog> createState() =>
+      _NewPurchaseSupplierDialogState();
+}
+
+class _NewPurchaseSupplierDialogState
+    extends State<_NewPurchaseSupplierDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _rucController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _rucController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nuevo proveedor'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SharedTextFormField(
+                controller: _nameController,
+                label: 'Nombre *',
+                prefixIcon: const Icon(Icons.business_outlined),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Campo requerido'
+                    : null,
+              ),
+              const SizedBox(height: 10),
+              SharedTextFormField(
+                controller: _rucController,
+                label: 'RUC',
+                keyboardType: TextInputType.number,
+                prefixIcon: const Icon(Icons.badge_outlined),
+                validator: SupplierRucValidator.validate,
+              ),
+              const SizedBox(height: 10),
+              SharedTextFormField(
+                controller: _phoneController,
+                label: 'Teléfono',
+                keyboardType: TextInputType.phone,
+                prefixIcon: const Icon(Icons.phone_outlined),
+              ),
+              const SizedBox(height: 10),
+              SharedTextFormField(
+                controller: _emailController,
+                label: 'Correo',
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: const Icon(Icons.email_outlined),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton.icon(
+          onPressed: _saving ? null : _save,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Crear y seleccionar'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    try {
+      await widget.controller.createSupplier(
+        name: _nameController.text,
+        ruc: _rucController.text,
+        phone: _phoneController.text,
+        email: _emailController.text,
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
   }
 }
 

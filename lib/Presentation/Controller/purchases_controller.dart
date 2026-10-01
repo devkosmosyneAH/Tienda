@@ -10,9 +10,13 @@ class PurchasesController extends ChangeNotifier {
   String? errorMessage;
 
   int? selectedStoreId;
+  int? selectedSupplierId;
   int? historySupplierId;
   String? historyCategory;
   DateTime? historyDate;
+  DateTime? historyFromDate;
+  DateTime? historyToDate;
+  String historySearch = '';
   PurchaseHistoryPeriod historyPeriod = PurchaseHistoryPeriod.all;
   String search = '';
 
@@ -23,6 +27,7 @@ class PurchasesController extends ChangeNotifier {
   List<Map<String, dynamic>> cart = [];
   List<Map<String, dynamic>> purchaseHistory = [];
   List<Map<String, dynamic>> paymentMethods = [];
+  int _historyRequestSequence = 0;
 
   String invoiceNumber = '';
   String auxiliaryInvoiceNumber = '';
@@ -59,8 +64,7 @@ class PurchasesController extends ChangeNotifier {
 
   double get historyTotalAmount => purchaseHistory.fold<double>(
     0,
-    (sum, purchase) =>
-        sum + ((purchase['total'] as num?)?.toDouble() ?? 0),
+    (sum, purchase) => sum + ((purchase['total'] as num?)?.toDouble() ?? 0),
   );
 
   void setConsiderVatProfit(bool value) {
@@ -146,6 +150,48 @@ class PurchasesController extends ChangeNotifier {
     cart.clear();
     await _loadProducts();
     await loadPurchaseHistory();
+  }
+
+  void selectSupplier(int? supplierId) {
+    selectedSupplierId = supplierId;
+    notifyListeners();
+  }
+
+  Future<Map<String, dynamic>> createSupplier({
+    required String name,
+    String? phone,
+    String? email,
+    String? notes,
+    String? ruc,
+  }) async {
+    final supplierId = await DatabaseService.createSupplier(
+      name: name,
+      phone: phone,
+      email: email,
+      notes: notes,
+      ruc: ruc,
+    );
+    await AuditService.log(
+      action: AuditAction.createSupplier,
+      module: 'Suppliers',
+      page: 'PurchasesView',
+      entity: 'supplier',
+      entityId: supplierId,
+      newData: {
+        'name': name.trim(),
+        'phone': phone?.trim(),
+        'email': email?.trim(),
+        'ruc': ruc?.trim(),
+      },
+      controller: 'PurchasesController',
+    );
+    DatabaseService.notifyDatabaseChanged();
+    suppliers = await DatabaseService.getSuppliers();
+    selectedSupplierId = supplierId;
+    notifyListeners();
+    return suppliers.firstWhere(
+      (supplier) => (supplier['id'] as num).toInt() == supplierId,
+    );
   }
 
   Future<void> updateSearch(String value) async {
@@ -237,6 +283,7 @@ class PurchasesController extends ChangeNotifier {
 
     final purchaseId = await DatabaseService.registerPurchase(
       storeId: selectedStoreId!,
+      supplierId: selectedSupplierId,
       supplierName: supplierName,
       supplierPhone: supplierPhone,
       vatRate: appliedVatRate,
@@ -255,15 +302,33 @@ class PurchasesController extends ChangeNotifier {
           .toList(),
     );
 
+    final supplierNameForAudit = suppliers
+        .where(
+          (supplier) => (supplier['id'] as num).toInt() == selectedSupplierId,
+        )
+        .map((supplier) => supplier['name']?.toString())
+        .firstOrNull;
     await AuditService.log(
-      action: AuditAction.createPurchase, module: 'Purchases',
-      page: 'PurchasesView', entity: 'purchase', entityId: purchaseId,
-      newData: {'purchase_id': purchaseId, 'products': cart,
-        'supplier': supplierName, 'payment_method': selectedPaymentMethodName},
+      action: AuditAction.createPurchase,
+      module: 'Purchases',
+      page: 'PurchasesView',
+      entity: 'purchase',
+      entityId: purchaseId,
+      newData: {
+        'purchase_id': purchaseId,
+        'products': cart,
+        'supplier': supplierNameForAudit ?? supplierName,
+        'supplier_id': selectedSupplierId,
+        'payment_method': selectedPaymentMethodName,
+      },
       controller: 'PurchasesController',
     );
 
     cart.clear();
+    selectedSupplierId = null;
+    invoiceNumber = await DatabaseService.getNextPurchaseInvoiceNumber();
+    auxiliaryInvoiceNumber = '';
+    DatabaseService.notifyDatabaseChanged();
     suppliers = await DatabaseService.getSuppliers();
     await _loadProducts();
     await loadPurchaseHistory();
@@ -277,6 +342,9 @@ class PurchasesController extends ChangeNotifier {
 
   Future<void> selectHistoryPeriod(PurchaseHistoryPeriod period) async {
     historyPeriod = period;
+    historyDate = null;
+    historyFromDate = null;
+    historyToDate = null;
     await loadPurchaseHistory();
   }
 
@@ -287,6 +355,27 @@ class PurchasesController extends ChangeNotifier {
 
   Future<void> setHistoryDate(DateTime? value) async {
     historyDate = value;
+    historyPeriod = PurchaseHistoryPeriod.all;
+    historyFromDate = null;
+    historyToDate = null;
+    await loadPurchaseHistory();
+  }
+
+  Future<void> setHistoryDateRange({DateTime? from, DateTime? to}) async {
+    if (from != null && to != null && to.isBefore(from)) {
+      throw ArgumentError(
+        'La fecha final debe ser igual o posterior a la inicial.',
+      );
+    }
+    historyDate = null;
+    historyPeriod = PurchaseHistoryPeriod.all;
+    historyFromDate = from;
+    historyToDate = to;
+    await loadPurchaseHistory();
+  }
+
+  Future<void> updateHistorySearch(String value) async {
+    historySearch = value;
     await loadPurchaseHistory();
   }
 
@@ -294,11 +383,15 @@ class PurchasesController extends ChangeNotifier {
     historySupplierId = null;
     historyCategory = null;
     historyDate = null;
+    historyFromDate = null;
+    historyToDate = null;
+    historySearch = '';
     historyPeriod = PurchaseHistoryPeriod.all;
     await loadPurchaseHistory();
   }
 
   Future<void> loadPurchaseHistory() async {
+    final requestSequence = ++_historyRequestSequence;
     isHistoryLoading = true;
     notifyListeners();
 
@@ -320,20 +413,41 @@ class PurchasesController extends ChangeNotifier {
           fromDate = DateTime(now.year, now.month);
           toDate = DateTime(now.year, now.month + 1);
       }
-      purchaseHistory = await DatabaseService.getPurchaseHistory(
+      if (historyFromDate != null) {
+        fromDate = DateTime(
+          historyFromDate!.year,
+          historyFromDate!.month,
+          historyFromDate!.day,
+        );
+      }
+      if (historyToDate != null) {
+        toDate = DateTime(
+          historyToDate!.year,
+          historyToDate!.month,
+          historyToDate!.day + 1,
+        );
+      }
+      final results = await DatabaseService.getPurchaseHistory(
         storeId: selectedStoreId,
         supplierId: historySupplierId,
         category: historyCategory,
         date: historyDate,
         fromDate: fromDate,
         toDate: toDate,
+        search: historySearch,
       );
+      if (requestSequence != _historyRequestSequence) return;
+      purchaseHistory = results;
       errorMessage = null;
     } catch (e) {
-      errorMessage = 'No se pudo cargar el historial de compras: $e';
+      if (requestSequence == _historyRequestSequence) {
+        errorMessage = 'No se pudo cargar el historial de compras: $e';
+      }
     } finally {
-      isHistoryLoading = false;
-      notifyListeners();
+      if (requestSequence == _historyRequestSequence) {
+        isHistoryLoading = false;
+        notifyListeners();
+      }
     }
   }
 

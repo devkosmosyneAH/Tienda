@@ -15,8 +15,6 @@ class PurchasesView extends StatefulWidget {
 class _PurchasesViewState extends State<PurchasesView>
     with TickerProviderStateMixin {
   final _searchController = TextEditingController();
-  final _supplierController = TextEditingController();
-  final _supplierPhoneController = TextEditingController();
   late TabController _tabController;
   int _saleCount = 1;
 
@@ -33,8 +31,6 @@ class _PurchasesViewState extends State<PurchasesView>
   void dispose() {
     _tabController.dispose();
     _searchController.dispose();
-    _supplierController.dispose();
-    _supplierPhoneController.dispose();
     super.dispose();
   }
 
@@ -43,13 +39,7 @@ class _PurchasesViewState extends State<PurchasesView>
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      final purchaseId = await controller.savePurchase(
-        supplierName: _supplierController.text.trim(),
-        supplierPhone: _supplierPhoneController.text.trim(),
-      );
-
-      _supplierController.clear();
-      _supplierPhoneController.clear();
+      final purchaseId = await controller.savePurchase();
 
       if (!mounted) return;
       messenger.showSnackBar(
@@ -105,7 +95,7 @@ class _PurchasesViewState extends State<PurchasesView>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Compra ${index + 1}'),
+          Text(index == 0 ? 'Nueva compra' : 'Compra ${index + 1}'),
           if (_saleCount > 1)
             IconButton(
               tooltip: 'Cerrar Compra',
@@ -174,7 +164,7 @@ class _PurchasesViewState extends State<PurchasesView>
                     children: [
                       Icon(Icons.history),
                       SizedBox(width: 4),
-                      Text('Historial'),
+                      Text('Historial de compras'),
                     ],
                   ),
                 ),
@@ -189,8 +179,6 @@ class _PurchasesViewState extends State<PurchasesView>
           for (var index = 0; index < _saleCount; index++)
             NewPurchaseTab(
               searchController: _searchController,
-              supplierController: _supplierController,
-              supplierPhoneController: _supplierPhoneController,
               onSave: _savePurchase,
             ),
           const PurchaseHistoryTab(),

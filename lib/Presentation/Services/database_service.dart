@@ -9,6 +9,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'backup_service.dart';
 import 'database_config.dart';
 import 'database_location_service.dart';
+import '../Utils/supplier_ruc_validator.dart';
 
 /// Genera un ID de 20 caracteres aleatorios estilo Firebase (letras y numeros).
 String generateFirebaseId() {
@@ -793,6 +794,18 @@ class DatabaseService {
         FOREIGN KEY (to_store_id) REFERENCES stores(id)
       )
     ''');
+    await _ensureColumn(
+      db,
+      table: 'inventory_movements',
+      column: 'movement_type',
+      definition: "TEXT NOT NULL DEFAULT 'transfer'",
+    );
+    await _ensureColumn(
+      db,
+      table: 'inventory_movements',
+      column: 'reference_id',
+      definition: 'INTEGER',
+    );
 
     // --- Modulo de Caja ---
 
@@ -1010,6 +1023,15 @@ class DatabaseService {
       column: 'payment_method',
       definition: "TEXT NOT NULL DEFAULT 'Contado'",
     );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_purchases_store_date ON purchases(store_id, date)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_purchases_supplier_date ON purchases(supplier_id, date)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_purchases_invoice_number ON purchases(invoice_number)',
+    );
     await _ensureColumn(
       db,
       table: 'products',
@@ -1080,6 +1102,12 @@ class DatabaseService {
       db,
       table: 'suppliers',
       column: 'notes',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'suppliers',
+      column: 'ruc',
       definition: 'TEXT',
     );
 
@@ -1777,15 +1805,69 @@ class DatabaseService {
     DatabaseExecutor db,
     String? supplierName, {
     String? phone,
+    String? ruc,
   }) async {
     final name = _cleanName(supplierName ?? '');
     if (name.isEmpty) return null;
 
     final cleanPhone = phone?.trim();
+    final cleanRuc = ruc?.trim();
+    final rucError = SupplierRucValidator.validate(cleanRuc);
+    if (rucError != null) throw Exception(rucError);
+
+    final existingName = await db.rawQuery(
+      'SELECT id, ruc FROM suppliers WHERE lower(trim(name)) = lower(trim(?)) LIMIT 1',
+      [name],
+    );
+    if (existingName.isNotEmpty) {
+      final existingId = (existingName.first['id'] as num).toInt();
+      final existingRuc = existingName.first['ruc']?.toString().trim();
+      if (cleanRuc?.isNotEmpty == true) {
+        final duplicateRuc = await db.rawQuery(
+          'SELECT id FROM suppliers WHERE trim(ruc) = trim(?) AND id <> ? LIMIT 1',
+          [cleanRuc, existingId],
+        );
+        if (duplicateRuc.isNotEmpty) {
+          throw Exception('El RUC ya está registrado en otro proveedor.');
+        }
+      }
+      if (cleanRuc?.isNotEmpty == true &&
+          existingRuc?.isNotEmpty == true &&
+          existingRuc != cleanRuc) {
+        throw Exception('El proveedor ya existe con otro RUC.');
+      }
+      if (cleanPhone?.isNotEmpty == true) {
+        await db.rawUpdate('UPDATE suppliers SET phone = ? WHERE id = ?', [
+          cleanPhone,
+          existingId,
+        ]);
+      }
+      if (cleanRuc?.isNotEmpty == true && existingRuc?.isNotEmpty != true) {
+        await db.rawUpdate('UPDATE suppliers SET ruc = ? WHERE id = ?', [
+          cleanRuc,
+          existingId,
+        ]);
+      }
+      return existingId;
+    }
+
+    if (cleanRuc?.isNotEmpty == true) {
+      final existingRuc = await db.rawQuery(
+        'SELECT id FROM suppliers WHERE trim(ruc) = trim(?) LIMIT 1',
+        [cleanRuc],
+      );
+      if (existingRuc.isNotEmpty) {
+        return (existingRuc.first['id'] as num).toInt();
+      }
+    }
 
     await db.rawInsert(
-      'INSERT OR IGNORE INTO suppliers (name, phone) VALUES (?, ?)',
-      [name, cleanPhone?.isEmpty == true ? null : cleanPhone],
+      'INSERT OR IGNORE INTO suppliers (name, phone, ruc) VALUES (?, ?, ?)',
+      [
+        name,
+        cleanPhone?.isEmpty == true ? null : cleanPhone,
+        cleanRuc?.isEmpty == true ? null : cleanRuc,
+      ],
     );
 
     if (cleanPhone != null && cleanPhone.isNotEmpty) {
@@ -1801,6 +1883,23 @@ class DatabaseService {
     );
 
     return rows.isEmpty ? null : (rows.first['id'] as num).toInt();
+  }
+
+  static Future<int> _requireSupplier(
+    DatabaseExecutor db,
+    int supplierId,
+  ) async {
+    final rows = await db.rawQuery(
+      'SELECT id FROM suppliers WHERE id = ? LIMIT 1',
+      [supplierId],
+    );
+    if (rows.isEmpty) throw Exception('El proveedor seleccionado ya no existe');
+    return (rows.first['id'] as num).toInt();
+  }
+
+  static String? _nullableTrim(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
 
   static Future<String> _uniqueSku(DatabaseExecutor db, String baseSku) async {
@@ -2486,20 +2585,112 @@ class DatabaseService {
 
     return db.rawQuery(
       '''
-      SELECT id, name, phone
+      SELECT id, name, phone, ruc, email, notes
       FROM suppliers
       WHERE name LIKE ? OR COALESCE(phone, '') LIKE ?
+        OR COALESCE(ruc, '') LIKE ?
       ORDER BY name COLLATE NOCASE
       ''',
-      [filter, filter],
+      [filter, filter, filter],
     );
+  }
+
+  static Future<int> createSupplier({
+    required String name,
+    String? phone,
+    String? email,
+    String? notes,
+    String? ruc,
+  }) async {
+    final cleanName = _cleanName(name);
+    if (cleanName.isEmpty) {
+      throw Exception('El nombre del proveedor es obligatorio');
+    }
+    final cleanRuc = ruc?.trim();
+    final rucError = SupplierRucValidator.validate(cleanRuc);
+    if (rucError != null) throw Exception(rucError);
+
+    return transaction((txn) async {
+      final duplicate = await txn.rawQuery(
+        '''SELECT id FROM suppliers
+           WHERE lower(trim(name)) = lower(trim(?))
+              OR (? IS NOT NULL AND trim(?) <> '' AND trim(ruc) = trim(?))
+           LIMIT 1''',
+        [cleanName, cleanRuc, cleanRuc, cleanRuc],
+      );
+      if (duplicate.isNotEmpty) {
+        throw Exception(
+          cleanRuc?.isNotEmpty == true
+              ? 'Ya existe un proveedor con ese nombre o RUC.'
+              : 'Ya existe un proveedor con ese nombre.',
+        );
+      }
+
+      return txn.rawInsert(
+        '''INSERT INTO suppliers (name, phone, email, notes, ruc)
+           VALUES (?, ?, ?, ?, ?)''',
+        [
+          cleanName,
+          _nullableTrim(phone),
+          _nullableTrim(email),
+          _nullableTrim(notes),
+          cleanRuc?.isEmpty == true ? null : cleanRuc,
+        ],
+      );
+    });
+  }
+
+  static Future<void> updateSupplier({
+    required int id,
+    required String name,
+    String? phone,
+    String? email,
+    String? notes,
+    String? ruc,
+  }) async {
+    final cleanName = _cleanName(name);
+    if (cleanName.isEmpty) {
+      throw Exception('El nombre del proveedor es obligatorio');
+    }
+    final cleanRuc = ruc?.trim();
+    final rucError = SupplierRucValidator.validate(cleanRuc);
+    if (rucError != null) throw Exception(rucError);
+
+    await transaction((txn) async {
+      final duplicate = await txn.rawQuery(
+        '''SELECT id FROM suppliers
+           WHERE id <> ? AND (
+             lower(trim(name)) = lower(trim(?)) OR
+             (? IS NOT NULL AND trim(?) <> '' AND trim(ruc) = trim(?))
+           ) LIMIT 1''',
+        [id, cleanName, cleanRuc, cleanRuc, cleanRuc],
+      );
+      if (duplicate.isNotEmpty) {
+        throw Exception('Ya existe un proveedor con ese nombre o RUC.');
+      }
+      final updated = await txn.rawUpdate(
+        '''UPDATE suppliers SET name = ?, phone = ?, email = ?, notes = ?, ruc = ?
+           WHERE id = ?''',
+        [
+          cleanName,
+          _nullableTrim(phone),
+          _nullableTrim(email),
+          _nullableTrim(notes),
+          cleanRuc?.isEmpty == true ? null : cleanRuc,
+          id,
+        ],
+      );
+      if (updated == 0) throw Exception('El proveedor ya no existe');
+    });
   }
 
   static Future<int> registerPurchase({
     required int storeId,
     required List<Map<String, dynamic>> items,
+    int? supplierId,
     String? supplierName,
     String? supplierPhone,
+    String? supplierRuc,
     double vatRate = 0,
     double discount = 0,
     String? invoiceNumber,
@@ -2508,6 +2699,12 @@ class DatabaseService {
   }) async {
     if (items.isEmpty) {
       throw Exception('La compra debe contener al menos un producto');
+    }
+    if (!vatRate.isFinite || vatRate < 0) {
+      throw Exception('El porcentaje de IVA no es válido');
+    }
+    if (!discount.isFinite || discount < 0) {
+      throw Exception('El descuento no es válido');
     }
 
     return transaction((txn) async {
@@ -2530,17 +2727,20 @@ class DatabaseService {
 
       total = (total - discount).clamp(0, double.infinity);
 
-      final supplierId = await _ensureSupplier(
-        txn,
-        supplierName,
-        phone: supplierPhone,
-      );
+      final resolvedSupplierId = supplierId == null
+          ? await _ensureSupplier(
+              txn,
+              supplierName,
+              phone: supplierPhone,
+              ruc: supplierRuc,
+            )
+          : await _requireSupplier(txn, supplierId);
 
       final purchaseId = await txn.rawInsert(
         'INSERT INTO purchases (store_id, supplier_id, total, date, invoice_number, auxiliary_invoice_number, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [
           storeId,
-          supplierId,
+          resolvedSupplierId,
           total,
           DateTime.now().toIso8601String(),
           invoiceNumber,
@@ -2553,6 +2753,14 @@ class DatabaseService {
         final productId = (item['product_id'] as num).toInt();
         final quantity = (item['quantity'] as num).toInt();
         final cost = (item['cost'] as num).toDouble();
+
+        final product = await txn.rawQuery(
+          'SELECT id FROM products WHERE id = ? LIMIT 1',
+          [productId],
+        );
+        if (product.isEmpty) {
+          throw Exception('El producto $productId ya no existe');
+        }
 
         await txn.rawInsert(
           'INSERT OR IGNORE INTO inventory (product_id, store_id, stock) VALUES (?, ?, 0)',
@@ -2567,6 +2775,24 @@ class DatabaseService {
         await txn.rawUpdate(
           'UPDATE inventory SET stock = stock + ? WHERE product_id = ? AND store_id = ?',
           [quantity, productId, storeId],
+        );
+        await txn.rawUpdate('UPDATE products SET cost_price = ? WHERE id = ?', [
+          cost,
+          productId,
+        ]);
+        await txn.rawInsert(
+          '''INSERT INTO inventory_movements
+             (product_id, from_store_id, to_store_id, quantity, date,
+              movement_type, reference_id)
+             VALUES (?, ?, ?, ?, ?, 'purchase', ?)''',
+          [
+            productId,
+            storeId,
+            storeId,
+            quantity,
+            DateTime.now().toIso8601String(),
+            purchaseId,
+          ],
         );
       }
 
@@ -2694,6 +2920,7 @@ class DatabaseService {
     DateTime? date,
     DateTime? fromDate,
     DateTime? toDate,
+    String search = '',
   }) async {
     final db = await database;
     final conditions = <String>[];
@@ -2732,6 +2959,25 @@ class DatabaseService {
       conditions.add('pu.date < ?');
       args.add(toDate.toIso8601String());
     }
+    final searchTerm = search.trim();
+    if (searchTerm.isNotEmpty) {
+      conditions.add('''(
+        COALESCE(pu.invoice_number, '') LIKE ? OR
+        COALESCE(pu.auxiliary_invoice_number, '') LIKE ? OR
+        COALESCE(sp.name, '') LIKE ? OR COALESCE(sp.ruc, '') LIKE ? OR
+        COALESCE(pu.payment_method, '') LIKE ? OR st.name LIKE ? OR
+        CAST(pu.id AS TEXT) LIKE ? OR
+        EXISTS (
+          SELECT 1 FROM purchase_items pi_search
+          INNER JOIN products p_search ON p_search.id = pi_search.product_id
+          WHERE pi_search.purchase_id = pu.id
+            AND (p_search.name LIKE ? OR p_search.sku LIKE ?)
+        )
+      )''');
+      final pattern = '%$searchTerm%';
+      args.addAll(List<dynamic>.filled(7, pattern));
+      args.addAll([pattern, pattern]);
+    }
 
     final whereClause = conditions.isEmpty
         ? ''
@@ -2739,9 +2985,10 @@ class DatabaseService {
 
     return db.rawQuery('''
             SELECT pu.id, pu.date, pu.total,
-              pu.invoice_number, pu.payment_method,
+              pu.invoice_number, pu.auxiliary_invoice_number, pu.payment_method,
              st.name AS store_name,
-             COALESCE(sp.name, 'Sin proveedor') AS supplier_name
+             COALESCE(sp.name, 'Sin proveedor') AS supplier_name,
+             sp.ruc AS supplier_ruc
       FROM purchases pu
       INNER JOIN stores st ON st.id = pu.store_id
       LEFT JOIN suppliers sp ON sp.id = pu.supplier_id

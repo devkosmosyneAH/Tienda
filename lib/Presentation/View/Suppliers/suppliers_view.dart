@@ -1,6 +1,7 @@
 import 'package:tienda/Presentation/Controller/suppliers_controller.dart';
 import 'package:tienda/Presentation/Model/supplier_model.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
+import 'package:tienda/Presentation/Utils/supplier_ruc_validator.dart';
 import 'package:tienda/Presentation/Widgets/Products/shared_inputs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -211,6 +212,10 @@ class _SupplierCard extends StatelessWidget {
                 ),
               ),
             ],
+            if (supplier.ruc?.isNotEmpty == true) ...[
+              const SizedBox(width: 10),
+              Text('RUC ${supplier.ruc}', style: const TextStyle(fontSize: 12)),
+            ],
           ],
         ),
         trailing: PopupMenuButton<String>(
@@ -413,6 +418,7 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
   late final TextEditingController _phoneCtrl;
   late final TextEditingController _emailCtrl;
   late final TextEditingController _notesCtrl;
+  late final TextEditingController _rucCtrl;
   bool _saving = false;
 
   bool get _isEditing => widget.supplier != null;
@@ -424,6 +430,7 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
     _phoneCtrl = TextEditingController(text: widget.supplier?.phone ?? '');
     _emailCtrl = TextEditingController(text: widget.supplier?.email ?? '');
     _notesCtrl = TextEditingController(text: widget.supplier?.notes ?? '');
+    _rucCtrl = TextEditingController(text: widget.supplier?.ruc ?? '');
   }
 
   @override
@@ -432,6 +439,7 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
     _notesCtrl.dispose();
+    _rucCtrl.dispose();
     super.dispose();
   }
 
@@ -454,6 +462,14 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
                 prefixIcon: const Icon(Icons.business_outlined),
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+              ),
+              const SizedBox(height: 12),
+              SharedTextFormField(
+                controller: _rucCtrl,
+                keyboardType: TextInputType.number,
+                label: 'RUC',
+                prefixIcon: const Icon(Icons.badge_outlined),
+                validator: SupplierRucValidator.validate,
               ),
               const SizedBox(height: 12),
               SharedTextFormField(
@@ -524,6 +540,7 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
       phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
       email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      ruc: _rucCtrl.text.trim().isEmpty ? null : _rucCtrl.text.trim(),
     );
 
     final String? err;

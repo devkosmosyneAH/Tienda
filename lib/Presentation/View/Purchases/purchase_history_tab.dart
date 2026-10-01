@@ -5,8 +5,21 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../Widgets/Products/filter_dropdown.dart';
 
-class PurchaseHistoryTab extends StatelessWidget {
+class PurchaseHistoryTab extends StatefulWidget {
   const PurchaseHistoryTab({super.key});
+
+  @override
+  State<PurchaseHistoryTab> createState() => _PurchaseHistoryTabState();
+}
+
+class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,12 +36,87 @@ class PurchaseHistoryTab extends StatelessWidget {
               const SizedBox(height: 14),
               _PurchaseHistoryStats(controller: controller),
               const SizedBox(height: 14),
+              TextField(
+                controller: _searchController,
+                onChanged: controller.updateHistorySearch,
+                decoration: InputDecoration(
+                  hintText: 'Factura, proveedor, RUC, producto o código',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: AppColors.cream,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
                 child: Wrap(
                   spacing: 12,
                   runSpacing: 12,
                   children: [
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final lastDate =
+                            controller.historyToDate ?? DateTime(2100);
+                        final suggestedDate =
+                            controller.historyFromDate ?? DateTime.now();
+                        final picked = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime(2000),
+                          lastDate: lastDate,
+                          initialDate: suggestedDate.isAfter(lastDate)
+                              ? lastDate
+                              : suggestedDate,
+                        );
+                        if (picked != null) {
+                          await controller.setHistoryDateRange(
+                            from: picked,
+                            to: controller.historyToDate,
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.calendar_today_outlined),
+                      label: Text(
+                        controller.historyFromDate == null
+                            ? 'Desde'
+                            : DateFormat(
+                                'dd/MM/yyyy',
+                              ).format(controller.historyFromDate!),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final firstDate =
+                            controller.historyFromDate ?? DateTime(2000);
+                        final suggestedDate =
+                            controller.historyToDate ?? DateTime.now();
+                        final picked = await showDatePicker(
+                          context: context,
+                          firstDate: firstDate,
+                          lastDate: DateTime(2100),
+                          initialDate: suggestedDate.isBefore(firstDate)
+                              ? firstDate
+                              : suggestedDate,
+                        );
+                        if (picked != null) {
+                          await controller.setHistoryDateRange(
+                            from: controller.historyFromDate,
+                            to: picked,
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.event_outlined),
+                      label: Text(
+                        controller.historyToDate == null
+                            ? 'Hasta'
+                            : DateFormat(
+                                'dd/MM/yyyy',
+                              ).format(controller.historyToDate!),
+                      ),
+                    ),
                     SizedBox(
                       width: 220,
                       child: FilterDropdown<int?>(
@@ -107,7 +195,10 @@ class PurchaseHistoryTab extends StatelessWidget {
                       ),
                     ),
                     TextButton.icon(
-                      onPressed: controller.clearHistoryFilters,
+                      onPressed: () {
+                        _searchController.clear();
+                        controller.clearHistoryFilters();
+                      },
                       icon: const Icon(Icons.filter_alt_off_outlined),
                       label: const Text('Limpiar filtros'),
                     ),
@@ -292,6 +383,9 @@ class _PurchaseHistoryCard extends StatelessWidget {
     final date = DateTime.tryParse(purchase['date']?.toString() ?? '');
     final total = (purchase['total'] as num?)?.toDouble() ?? 0;
     final invoice = purchase['invoice_number']?.toString().trim();
+    final auxiliaryInvoice = purchase['auxiliary_invoice_number']
+        ?.toString()
+        .trim();
     final payment = purchase['payment_method']?.toString().trim();
 
     return Card(
@@ -342,7 +436,7 @@ class _PurchaseHistoryCard extends StatelessWidget {
                         _PurchaseMetaRow(
                           icon: Icons.receipt_outlined,
                           label:
-                              'Factura: ${invoice?.isNotEmpty == true ? invoice : purchaseId}',
+                              'Factura: ${auxiliaryInvoice?.isNotEmpty == true ? '$auxiliaryInvoice · ' : ''}${invoice?.isNotEmpty == true ? invoice : purchaseId}',
                         ),
                         const SizedBox(height: 3),
                         _PurchaseMetaRow(
