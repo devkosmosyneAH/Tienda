@@ -1523,9 +1523,14 @@ class _PurchaseCartRowState extends State<_PurchaseCartRow> {
                     ),
                     useFilterStyle: true,
                     onChanged: (value) {
-                      final parsed = double.tryParse(value.replaceAll(',', '.'));
+                      final parsed = double.tryParse(
+                        value.replaceAll(',', '.'),
+                      );
                       if (parsed != null) {
-                        widget.controller.updateBonusVatAmount(productId, parsed);
+                        widget.controller.updateBonusVatAmount(
+                          productId,
+                          parsed,
+                        );
                       }
                     },
                   ),

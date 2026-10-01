@@ -28,16 +28,23 @@ class PurchaseProvider extends ChangeNotifier {
       final rawPurchases = await DatabaseService.getPurchaseHistory();
 
       purchases = rawPurchases.map((p) {
+        final statusName = p['status']?.toString() ?? 'pending';
         return Purchase(
           id: (p['id'] as num).toInt(),
-          supplierId: 0,
+          supplierId: (p['supplier_id'] as num?)?.toInt() ?? 0,
           supplierName: p['supplier_name'] as String,
-          storeId: 0,
+          storeId: (p['store_id'] as num?)?.toInt() ?? 0,
           items: [],
-          subtotal: 0,
-          tax: 0.0,
+          subtotal: (p['subtotal'] as num?)?.toDouble() ?? 0,
+          tax: (p['tax'] as num?)?.toDouble() ?? 0,
           total: (p['total'] as num).toDouble(),
-          status: PurchaseStatus.pending,
+          amountPaid: (p['amount_paid'] as num?)?.toDouble() ?? 0,
+          invoiceNumber: p['invoice_number']?.toString(),
+          referenceNumber: p['auxiliary_invoice_number']?.toString(),
+          status: PurchaseStatus.values.firstWhere(
+            (status) => status.name == statusName,
+            orElse: () => PurchaseStatus.pending,
+          ),
           orderDate: DateTime.parse(p['date'] as String),
           createdAt: DateTime.parse(p['date'] as String),
         );
@@ -81,6 +88,11 @@ class PurchaseProvider extends ChangeNotifier {
         receivedQuantity: existingItem.receivedQuantity,
         unitCost: unitCost,
         totalCost: (unitCost * (existingItem.orderedQuantity + quantity)),
+        bonusQuantity: existingItem.bonusQuantity,
+        discount: existingItem.discount,
+        vatType: existingItem.vatType,
+        vatRate: existingItem.vatRate,
+        bonusVatAmount: existingItem.bonusVatAmount,
       );
     } else {
       orderItems.add(
@@ -119,6 +131,11 @@ class PurchaseProvider extends ChangeNotifier {
           receivedQuantity: item.receivedQuantity,
           unitCost: item.unitCost,
           totalCost: item.unitCost * newQuantity,
+          bonusQuantity: item.bonusQuantity,
+          discount: item.discount,
+          vatType: item.vatType,
+          vatRate: item.vatRate,
+          bonusVatAmount: item.bonusVatAmount,
         );
         notifyListeners();
       }
@@ -137,6 +154,11 @@ class PurchaseProvider extends ChangeNotifier {
         receivedQuantity: receivedQuantity.clamp(0, item.orderedQuantity),
         unitCost: item.unitCost,
         totalCost: item.totalCost,
+        bonusQuantity: item.bonusQuantity,
+        discount: item.discount,
+        vatType: item.vatType,
+        vatRate: item.vatRate,
+        bonusVatAmount: item.bonusVatAmount,
       );
       notifyListeners();
     }
@@ -155,11 +177,16 @@ class PurchaseProvider extends ChangeNotifier {
     required int supplierId,
     required String supplierName,
     required int storeId,
-    String? invoiceNumber,
+    required String invoiceNumber,
+    required String accessKey,
+    required DateTime issueDate,
+    required String paymentCondition,
+    DateTime? dueDate,
+    required String taxSupportCode,
+    required double physicalTotal,
+    String paymentMethod = 'Efectivo',
     String? referenceNumber,
-    double tax = 0.0,
-    String? notes,
-    DateTime? expectedDeliveryDate,
+    List<Map<String, dynamic>> withholdings = const [],
   }) async {
     if (orderItems.isEmpty) {
       errorMessage = 'La orden está vacía';
@@ -171,27 +198,31 @@ class PurchaseProvider extends ChangeNotifier {
       isLoading = true;
       notifyListeners();
 
-      if (tax < 0 || !tax.isFinite) {
-        throw Exception('El impuesto no puede ser negativo');
-      }
-      final subtotal = orderItems.fold<double>(
-        0,
-        (sum, item) => sum + item.totalCost,
-      );
-      final vatRate = subtotal == 0 ? 0.0 : tax / subtotal * 100;
       final purchaseId = await DatabaseService.registerPurchase(
         storeId: storeId,
         supplierId: supplierId,
         supplierName: supplierName,
-        vatRate: vatRate,
         invoiceNumber: invoiceNumber,
         auxiliaryInvoiceNumber: referenceNumber,
+        accessKey: accessKey,
+        issueDate: issueDate,
+        paymentCondition: paymentCondition,
+        dueDate: dueDate,
+        taxSupportCode: taxSupportCode,
+        physicalTotal: physicalTotal,
+        paymentMethod: paymentMethod,
+        withholdings: withholdings,
         items: orderItems
             .map(
               (item) => {
                 'product_id': item.productId,
                 'quantity': item.orderedQuantity,
-                'cost': item.unitCost,
+                'bonus_quantity': item.bonusQuantity,
+                'bonus_vat_amount': item.bonusVatAmount,
+                'unit_cost': item.unitCost,
+                'discount': item.discount,
+                'vat_type': item.vatType,
+                'vat_rate': item.vatRate,
               },
             )
             .toList(),

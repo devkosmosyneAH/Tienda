@@ -15,6 +15,11 @@ class PurchaseItem {
   final int receivedQuantity;
   final double unitCost;
   final double totalCost;
+  final int bonusQuantity;
+  final double discount;
+  final String vatType;
+  final double vatRate;
+  final double bonusVatAmount;
 
   PurchaseItem({
     required this.productId,
@@ -23,6 +28,11 @@ class PurchaseItem {
     required this.receivedQuantity,
     required this.unitCost,
     required this.totalCost,
+    this.bonusQuantity = 0,
+    this.discount = 0,
+    this.vatType = 'standard',
+    this.vatRate = 15,
+    this.bonusVatAmount = 0,
   });
 
   int get pendingQuantity => orderedQuantity - receivedQuantity;
@@ -36,6 +46,11 @@ class PurchaseItem {
       receivedQuantity: (map['received_quantity'] as num?)?.toInt() ?? 0,
       unitCost: (map['unit_cost'] as num).toDouble(),
       totalCost: (map['total_cost'] as num).toDouble(),
+      bonusQuantity: (map['bonus_quantity'] as num?)?.toInt() ?? 0,
+      discount: (map['discount'] as num?)?.toDouble() ?? 0,
+      vatType: map['vat_type']?.toString() ?? 'standard',
+      vatRate: (map['vat_rate'] as num?)?.toDouble() ?? 15,
+      bonusVatAmount: (map['bonus_vat_amount'] as num?)?.toDouble() ?? 0,
     );
   }
 
@@ -47,6 +62,11 @@ class PurchaseItem {
       'received_quantity': receivedQuantity,
       'unit_cost': unitCost,
       'total_cost': totalCost,
+      'bonus_quantity': bonusQuantity,
+      'discount': discount,
+      'vat_type': vatType,
+      'vat_rate': vatRate,
+      'bonus_vat_amount': bonusVatAmount,
     };
   }
 }
@@ -92,7 +112,8 @@ class Purchase {
     this.updatedAt,
   });
 
-  int get totalItems => items.fold(0, (sum, item) => sum + item.orderedQuantity);
+  int get totalItems =>
+      items.fold(0, (sum, item) => sum + item.orderedQuantity);
   int get receivedItems =>
       items.fold(0, (sum, item) => sum + item.receivedQuantity);
 
@@ -147,7 +168,8 @@ class Purchase {
       supplierId: (map['supplier_id'] as num).toInt(),
       supplierName: map['supplier_name'] as String,
       storeId: (map['store_id'] as num).toInt(),
-      items: (map['items'] as List<dynamic>?)
+      items:
+          (map['items'] as List<dynamic>?)
               ?.map((e) => PurchaseItem.fromMap(e as Map<String, dynamic>))
               .toList() ??
           [],

@@ -21,10 +21,7 @@ void main() {
 
     test('requires identification on the supplier form', () {
       expect(
-        SupplierRucValidator.validateIdentification(
-          value: ' ',
-          type: 'ruc',
-        ),
+        SupplierRucValidator.validateIdentification(value: ' ', type: 'ruc'),
         'La identificación es obligatoria.',
       );
     });

@@ -3149,8 +3149,7 @@ class DatabaseService {
           discount: (item['discount'] as num?)?.toDouble() ?? 0,
           vatType: vatType,
           vatRate: itemVatRate,
-            bonusVatAmount:
-              (item['bonus_vat_amount'] as num?)?.toDouble() ?? 0,
+          bonusVatAmount: (item['bonus_vat_amount'] as num?)?.toDouble() ?? 0,
         ),
       );
     }
@@ -3237,13 +3236,12 @@ class DatabaseService {
           'Proveedor: identificación RUC/cédula inválida o faltante.',
         );
       }
-      final invoiceKeyError =
-          SupplierRucValidator.validateAccessKeyForInvoice(
-            accessKey: accessKey!,
-            invoiceNumber: invoice,
-            issueDate: issueDate,
-            supplierRuc: supplierIdType == 'ruc' ? supplierIdValue : null,
-          );
+      final invoiceKeyError = SupplierRucValidator.validateAccessKeyForInvoice(
+        accessKey: accessKey!,
+        invoiceNumber: invoice,
+        issueDate: issueDate,
+        supplierRuc: supplierIdType == 'ruc' ? supplierIdValue : null,
+      );
       if (invoiceKeyError != null) {
         throw Exception('Clave de acceso: $invoiceKeyError');
       }
@@ -3617,7 +3615,8 @@ class DatabaseService {
 
     await transaction((txn) async {
       final purchases = await txn.rawQuery(
-        '''SELECT store_id, supplier_id, total, status, payment_method, invoice_number
+        '''SELECT store_id, supplier_id, total, status, payment_method,
+            payment_condition, invoice_number
            FROM purchases WHERE id = ? LIMIT 1''',
         [purchaseId],
       );
@@ -3630,8 +3629,9 @@ class DatabaseService {
            FROM suppliers WHERE id = ? LIMIT 1''',
         [purchase['supplier_id']],
       );
-      final supplier =
-          supplierRows.isEmpty ? <String, Object?>{} : supplierRows.first;
+      final supplier = supplierRows.isEmpty
+          ? <String, Object?>{}
+          : supplierRows.first;
       final supplierType = supplier['identification_type']?.toString() ?? 'ruc';
       final supplierNumber =
           supplier['identification_number']?.toString() ??
@@ -3728,8 +3728,8 @@ class DatabaseService {
           'SELECT cost_price FROM products WHERE id = ? LIMIT 1',
           [entry.key],
         );
-        final currentAverageCost =
-            (productCostRows.first['cost_price'] as num).toDouble();
+        final currentAverageCost = (productCostRows.first['cost_price'] as num)
+            .toDouble();
         final inventoryBeforeReversal = remainingQuantity + entry.value;
         final restoredValue =
             inventoryBeforeReversal * currentAverageCost - inventoryValue;
@@ -3738,18 +3738,14 @@ class DatabaseService {
             'No se puede revertir el costo: el valor disponible del inventario no cubre esta factura.',
           );
         }
-        await txn.rawUpdate(
-          'UPDATE products SET cost_price = ? WHERE id = ?',
-          [
-            remainingQuantity == 0
-                ? 0
-                : PurchaseTotals.money(
-                    (restoredValue < 0 ? 0 : restoredValue) /
-                        remainingQuantity,
-                  ),
-            entry.key,
-          ],
-        );
+        await txn.rawUpdate('UPDATE products SET cost_price = ? WHERE id = ?', [
+          remainingQuantity == 0
+              ? 0
+              : PurchaseTotals.money(
+                  (restoredValue < 0 ? 0 : restoredValue) / remainingQuantity,
+                ),
+          entry.key,
+        ]);
       }
 
       final originalEntries = await txn.rawQuery(
@@ -3819,12 +3815,17 @@ class DatabaseService {
             ),
           );
           if ((recordedPayments - amountPaid).abs() > 0.01) {
-            throw Exception('Los pagos registrados no cuadran con el saldo CxP.');
+            throw Exception(
+              'Los pagos registrados no cuadran con el saldo CxP.',
+            );
           }
           for (final payment in payments) {
             final refund = (payment['amount'] as num).toDouble();
             final paymentMethod = payment['payment_method']?.toString() ?? '';
             final cashPayment = _isCashPayment(paymentMethod);
+            final isCredit =
+                purchase['payment_condition'] == 'credito' ||
+                purchase['payment_condition'] == 'crédito';
             final sessions = cashPayment
                 ? await txn.rawQuery(
                     "SELECT id FROM cash_sessions WHERE store_id = ? AND status = 'open' ORDER BY id DESC LIMIT 1",
@@ -3836,31 +3837,33 @@ class DatabaseService {
                 'Para registrar el reembolso en efectivo debe existir una caja abierta.',
               );
             }
-            await _insertAccountingEntry(
-              txn,
-              sourceType: 'purchase_cancel_payment',
-              sourceId: purchaseId,
-              entryDate: issueDate,
-              description: 'Reembolso nota de crédito $creditNoteNumber',
-              debitLines: [
-                {
-                  'account_code': cashPayment ? 'ASSET_CASH' : 'ASSET_BANK',
-                  'account_name': cashPayment
-                      ? 'Caja'
-                      : 'Bancos - $paymentMethod',
-                  'amount': refund,
-                },
-              ],
-              creditLines: [
-                {
-                  'account_code': 'LIABILITY_SUPPLIER_PAYABLE',
-                  'account_name': 'Cuentas por pagar a proveedores',
-                  'amount': refund,
-                },
-              ],
-              createdBy: actor,
-              createdAt: now,
-            );
+            if (isCredit) {
+              await _insertAccountingEntry(
+                txn,
+                sourceType: 'purchase_cancel_payment',
+                sourceId: purchaseId,
+                entryDate: issueDate,
+                description: 'Reembolso nota de crédito $creditNoteNumber',
+                debitLines: [
+                  {
+                    'account_code': cashPayment ? 'ASSET_CASH' : 'ASSET_BANK',
+                    'account_name': cashPayment
+                        ? 'Caja'
+                        : 'Bancos - $paymentMethod',
+                    'amount': refund,
+                  },
+                ],
+                creditLines: [
+                  {
+                    'account_code': 'LIABILITY_SUPPLIER_PAYABLE',
+                    'account_name': 'Cuentas por pagar a proveedores',
+                    'amount': refund,
+                  },
+                ],
+                createdBy: actor,
+                createdAt: now,
+              );
+            }
             if (cashPayment) {
               await txn.rawInsert(
                 '''INSERT INTO cash_movements
@@ -3951,7 +3954,9 @@ class DatabaseService {
            WHERE ap.purchase_id = ? AND ap.status = 'open' LIMIT 1''',
         [purchaseId],
       );
-      if (rows.isEmpty) throw Exception('No existe saldo pendiente para esta compra.');
+      if (rows.isEmpty) {
+        throw Exception('No existe saldo pendiente para esta compra.');
+      }
       final payableId = (rows.first['id'] as num).toInt();
       final balance = (rows.first['balance'] as num).toDouble();
       final storeId = (rows.first['store_id'] as num).toInt();
@@ -3959,12 +3964,21 @@ class DatabaseService {
       if (payment - balance > 0.01) {
         throw Exception('El pago supera el saldo pendiente.');
       }
-      final remaining = PurchaseTotals.money((balance - payment).clamp(0, double.infinity));
+      final remaining = PurchaseTotals.money(
+        (balance - payment).clamp(0, double.infinity),
+      );
       await txn.rawInsert(
         '''INSERT INTO accounts_payable_payments
            (payable_id, amount, payment_method, reference, created_at, created_by)
            VALUES (?, ?, ?, ?, ?, ?)''',
-        [payableId, payment, paymentMethod.trim(), reference?.trim(), now, actor],
+        [
+          payableId,
+          payment,
+          paymentMethod.trim(),
+          reference?.trim(),
+          now,
+          actor,
+        ],
       );
       await txn.rawUpdate(
         '''UPDATE accounts_payable SET amount_paid = amount_paid + ?, balance = ?,
@@ -3983,7 +3997,9 @@ class DatabaseService {
       final creditLines = <Map<String, dynamic>>[
         {
           'account_code': cashPayment ? 'ASSET_CASH' : 'ASSET_BANK',
-          'account_name': cashPayment ? 'Caja' : 'Bancos - ${paymentMethod.trim()}',
+          'account_name': cashPayment
+              ? 'Caja'
+              : 'Bancos - ${paymentMethod.trim()}',
           'amount': payment,
         },
       ];
@@ -4005,20 +4021,36 @@ class DatabaseService {
           [storeId],
         );
         if (sessions.isEmpty) {
-          throw Exception('Para pagar en efectivo debe existir una caja abierta.');
+          throw Exception(
+            'Para pagar en efectivo debe existir una caja abierta.',
+          );
         }
         await txn.rawInsert(
           '''INSERT INTO cash_movements
              (session_id, type, amount, method, description, created_at)
              VALUES (?, 'expense', ?, ?, ?, ?)''',
-          [sessions.first['id'], payment, paymentMethod.trim(), 'Pago compra #$purchaseId', now],
+          [
+            sessions.first['id'],
+            payment,
+            paymentMethod.trim(),
+            'Pago compra #$purchaseId',
+            now,
+          ],
         );
       } else {
         await txn.rawInsert(
           '''INSERT INTO purchase_financial_movements
              (purchase_id, store_id, direction, payment_method, amount, reference, created_at, created_by)
              VALUES (?, ?, 'outflow', ?, ?, ?, ?, ?)''',
-          [purchaseId, storeId, paymentMethod.trim(), payment, reference?.trim(), now, actor],
+          [
+            purchaseId,
+            storeId,
+            paymentMethod.trim(),
+            payment,
+            reference?.trim(),
+            now,
+            actor,
+          ],
         );
       }
     });
@@ -4291,10 +4323,17 @@ class DatabaseService {
         : 'WHERE ${conditions.join(' AND ')}';
 
     return db.rawQuery('''
-            SELECT pu.id, pu.date, pu.total, pu.status, pu.payment_condition,
+            SELECT pu.id, pu.store_id, pu.date, pu.total, pu.status,
+              pu.payment_condition,
               pu.due_date, pu.tax_support_code,
               pu.invoice_number, pu.auxiliary_invoice_number, pu.payment_method,
               pu.supplier_id,
+              COALESCE(ap.invoice_total, pu.total) AS invoice_total,
+              COALESCE(ap.amount_paid, 0) AS amount_paid,
+              COALESCE((SELECT SUM(pi.line_subtotal)
+                        FROM purchase_items pi WHERE pi.purchase_id = pu.id), 0) AS subtotal,
+              COALESCE((SELECT SUM(pi.vat_amount)
+                        FROM purchase_items pi WHERE pi.purchase_id = pu.id), 0) AS tax,
               COALESCE(ap.balance, 0) AS payable_balance,
              st.name AS store_name,
              COALESCE(sp.name, 'Sin proveedor') AS supplier_name,

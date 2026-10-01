@@ -55,8 +55,7 @@ class PurchasesController extends ChangeNotifier {
         bonusQuantity: (item['bonus_quantity'] as num?)?.toInt() ?? 0,
         unitCost: (item['cost'] as num).toDouble(),
         discount: (item['discount'] as num?)?.toDouble() ?? 0,
-        bonusVatAmount:
-          (item['bonus_vat_amount'] as num?)?.toDouble() ?? 0,
+        bonusVatAmount: (item['bonus_vat_amount'] as num?)?.toDouble() ?? 0,
         vatType: PurchaseVatType.values.firstWhere(
           (type) => type.name == (item['vat_type']?.toString() ?? 'standard'),
         ),
@@ -82,25 +81,21 @@ class PurchasesController extends ChangeNotifier {
 
   int get historyPaidCount => purchaseHistory.where((purchase) {
     if (purchase['status'] == 'cancelled') return false;
-    final condition =
-        purchase['payment_condition']?.toString().toLowerCase() ?? '';
-    return condition != 'credito' && condition != 'crédito';
+    return ((purchase['payable_balance'] as num?)?.toDouble() ?? 0) <= 0.01;
   }).length;
 
   int get historyPendingCount => purchaseHistory.where((purchase) {
     if (purchase['status'] == 'cancelled') return false;
-    final condition =
-        purchase['payment_condition']?.toString().toLowerCase() ?? '';
-    return condition == 'credito' || condition == 'crédito';
+    return ((purchase['payable_balance'] as num?)?.toDouble() ?? 0) > 0.01;
   }).length;
 
   double get historyTotalAmount => purchaseHistory.fold<double>(
     0,
     (sum, purchase) =>
-      sum +
-      (purchase['status'] == 'cancelled'
-        ? 0
-        : ((purchase['total'] as num?)?.toDouble() ?? 0)),
+        sum +
+        (purchase['status'] == 'cancelled'
+            ? 0
+            : ((purchase['total'] as num?)?.toDouble() ?? 0)),
   );
 
   void setConsiderVatProfit(bool value) {
@@ -702,10 +697,7 @@ class PurchasesController extends ChangeNotifier {
       page: 'PurchaseHistory',
       entity: 'purchase',
       entityId: purchaseId,
-      newData: {
-        'credit_note_number': creditNoteNumber,
-        'reason': reason,
-      },
+      newData: {'credit_note_number': creditNoteNumber, 'reason': reason},
       controller: 'PurchasesController',
     );
     await loadPurchaseHistory();

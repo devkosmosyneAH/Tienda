@@ -48,13 +48,18 @@ void main() {
     await _registerInvoice();
     await expectLater(
       _registerInvoice(),
-      throwsA(isA<Exception>().having(
-        (error) => error.toString(),
-        'mensaje',
-        contains('ya existe para este proveedor'),
-      )),
+      throwsA(
+        isA<Exception>().having(
+          (error) => error.toString(),
+          'mensaje',
+          contains('ya existe para este proveedor'),
+        ),
+      ),
     );
-    expect(await testDatabase.rawQuery('SELECT id FROM purchases'), hasLength(1));
+    expect(
+      await testDatabase.rawQuery('SELECT id FROM purchases'),
+      hasLength(1),
+    );
   });
 
   test('revierte todo si falla la creación de CxP', () async {
@@ -144,35 +149,38 @@ void main() {
     expect(await _count(testDatabase, 'accounting_entries'), 2);
   });
 
-  test('anula correctamente una compra que ya recibió un abono parcial', () async {
-    final purchaseId = await _registerInvoice();
-    await DatabaseService.payPurchasePayable(
-      purchaseId: purchaseId,
-      amount: 30,
-      paymentMethod: 'Transferencia',
-      reference: 'TRX-123',
-      createdBy: 'test-user',
-    );
+  test(
+    'anula correctamente una compra que ya recibió un abono parcial',
+    () async {
+      final purchaseId = await _registerInvoice();
+      await DatabaseService.payPurchasePayable(
+        purchaseId: purchaseId,
+        amount: 30,
+        paymentMethod: 'Transferencia',
+        reference: 'TRX-123',
+        createdBy: 'test-user',
+      );
 
-    await DatabaseService.cancelPurchase(
-      purchaseId: purchaseId,
-      creditNoteNumber: '001-001-000000010',
-      accessKey: _accessKey(sequence: 10),
-      issueDate: DateTime(2026, 10, 1),
-      reason: 'Devolución posterior a abono',
-      createdBy: 'test-user',
-    );
+      await DatabaseService.cancelPurchase(
+        purchaseId: purchaseId,
+        creditNoteNumber: '001-001-000000010',
+        accessKey: _accessKey(sequence: 10),
+        issueDate: DateTime(2026, 10, 1),
+        reason: 'Devolución posterior a abono',
+        createdBy: 'test-user',
+      );
 
-    final payable = await testDatabase.rawQuery(
-      'SELECT amount_paid, balance, status FROM accounts_payable WHERE purchase_id = ?',
-      [purchaseId],
-    );
-    expect(payable.single['amount_paid'], 0.0);
-    expect(payable.single['balance'], 0.0);
-    expect(payable.single['status'], 'cancelled');
-    expect(await _count(testDatabase, 'accounting_entries'), 4);
-    expect(await _count(testDatabase, 'purchase_financial_movements'), 2);
-  });
+      final payable = await testDatabase.rawQuery(
+        'SELECT amount_paid, balance, status FROM accounts_payable WHERE purchase_id = ?',
+        [purchaseId],
+      );
+      expect(payable.single['amount_paid'], 0.0);
+      expect(payable.single['balance'], 0.0);
+      expect(payable.single['status'], 'cancelled');
+      expect(await _count(testDatabase, 'accounting_entries'), 4);
+      expect(await _count(testDatabase, 'purchase_financial_movements'), 2);
+    },
+  );
 
   test('promedia costo con stock previo y unidades bonificadas', () async {
     await _registerInvoice(

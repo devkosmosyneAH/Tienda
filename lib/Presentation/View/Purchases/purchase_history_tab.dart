@@ -279,10 +279,11 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
     final invoice = purchase['invoice_number']?.toString().trim();
     final supplier = purchase['supplier_name']?.toString() ?? 'Sin proveedor';
     final isCancelled = purchase['status'] == 'cancelled';
-    final isCredit = purchase['payment_condition'] == 'credito' ||
-      purchase['payment_condition'] == 'crédito';
+    final isCredit =
+        purchase['payment_condition'] == 'credito' ||
+        purchase['payment_condition'] == 'crédito';
     final payableBalance =
-      (purchase['payable_balance'] as num?)?.toDouble() ?? 0;
+        (purchase['payable_balance'] as num?)?.toDouble() ?? 0;
 
     final action = await showDialog<String>(
       context: context,
@@ -324,7 +325,8 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
                   icon: Icons.payments_outlined,
                   color: AppColors.plumGray,
                   title: 'Registrar pago',
-                  subtitle: 'Saldo pendiente: \$${payableBalance.toStringAsFixed(2)}',
+                  subtitle:
+                      'Saldo pendiente: \$${payableBalance.toStringAsFixed(2)}',
                   onTap: () => Navigator.pop(context, 'pay'),
                 ),
             if (!isCancelled)
@@ -358,13 +360,17 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
         );
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Factura anulada con nota de crédito.')),
+            const SnackBar(
+              content: Text('Factura anulada con nota de crédito.'),
+            ),
           );
         }
       } catch (error) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+            SnackBar(
+              content: Text(error.toString().replaceFirst('Exception: ', '')),
+            ),
           );
         }
       }
@@ -388,7 +394,9 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
       } catch (error) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+            SnackBar(
+              content: Text(error.toString().replaceFirst('Exception: ', '')),
+            ),
           );
         }
       }
@@ -397,7 +405,8 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
 
     final message = switch (action) {
       'continue' => 'La compra se puede continuar desde Nueva compra.',
-      'edit' => 'Las facturas registradas no se editan; use una nota de crédito.',
+      'edit' =>
+        'Las facturas registradas no se editan; use una nota de crédito.',
       'paid' => 'Registre el pago desde Cuentas por pagar.',
       _ => null,
     };
@@ -431,8 +440,10 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
                     labelText: 'Número de nota de crédito *',
                     hintText: '001-001-000000000',
                   ),
-                  validator: (value) => RegExp(r'^\d{3}-\d{3}-\d{9}$')
-                          .hasMatch(value?.trim() ?? '')
+                  validator: (value) =>
+                      RegExp(
+                        r'^\d{3}-\d{3}-\d{9}$',
+                      ).hasMatch(value?.trim() ?? '')
                       ? null
                       : 'Formato 001-001-000000000 requerido.',
                 ),
@@ -504,9 +515,13 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
                   TextFormField(
                     controller: amountController,
                     decoration: const InputDecoration(labelText: 'Monto *'),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     validator: (value) {
-                      final amount = double.tryParse((value ?? '').replaceAll(',', '.'));
+                      final amount = double.tryParse(
+                        (value ?? '').replaceAll(',', '.'),
+                      );
                       return amount == null || amount <= 0
                           ? 'Ingrese un monto mayor que cero.'
                           : null;
@@ -515,7 +530,9 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: method,
-                    decoration: const InputDecoration(labelText: 'Medio de pago'),
+                    decoration: const InputDecoration(
+                      labelText: 'Medio de pago',
+                    ),
                     items: controller.paymentMethods
                         .map(
                           (item) => DropdownMenuItem<String>(
@@ -641,8 +658,14 @@ class _PurchaseHistoryCard extends StatelessWidget {
                         _PurchaseMetaRow(
                           icon: Icons.payment_outlined,
                           label:
-                              'Pago: ${payment?.isNotEmpty == true ? payment : 'Contado'}',
+                              'Condición: ${purchase['payment_condition'] ?? 'contado'} · Medio: ${payment?.isNotEmpty == true ? payment : 'Efectivo'}',
                         ),
+                        if (purchase['due_date']?.toString().isNotEmpty == true)
+                          _PurchaseMetaRow(
+                            icon: Icons.event_outlined,
+                            label:
+                                'Vence: ${DateFormat('dd/MM/yyyy').format(DateTime.parse(purchase['due_date'].toString()))}',
+                          ),
                       ],
                     ),
                   ),
@@ -660,9 +683,10 @@ class _PurchaseHistoryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       _PurchaseStatusBadge(
-                        payment:
-                            purchase['payment_condition']?.toString() ?? payment,
                         status: purchase['status']?.toString(),
+                        balance:
+                            (purchase['payable_balance'] as num?)?.toDouble() ??
+                            0,
                       ),
                     ],
                   ),
@@ -858,21 +882,21 @@ class _PurchaseStat extends StatelessWidget {
 }
 
 class _PurchaseStatusBadge extends StatelessWidget {
-  final String? payment;
   final String? status;
+  final double balance;
 
-  const _PurchaseStatusBadge({required this.payment, required this.status});
+  const _PurchaseStatusBadge({required this.status, required this.balance});
 
   @override
   Widget build(BuildContext context) {
     final isCancelled = status == 'cancelled';
-    final isPending = !isCancelled &&
-      (payment?.toLowerCase().contains('crédito') == true ||
-        payment?.toLowerCase().contains('credito') == true);
-    final label = isCancelled ? 'Anulada' : (isPending ? 'Pendiente' : 'Pagada');
+    final isPending = !isCancelled && balance > 0.01;
+    final label = isCancelled
+        ? 'Anulada'
+        : (isPending ? 'Pendiente' : 'Pagada');
     final color = isCancelled
-      ? AppColors.dustyRose
-      : (isPending ? AppColors.paleMauve : AppColors.plumGray);
+        ? AppColors.dustyRose
+        : (isPending ? AppColors.paleMauve : AppColors.plumGray);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
