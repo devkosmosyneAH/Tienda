@@ -4,7 +4,7 @@ setlocal
 
 echo ================================================================
 echo COMPILADOR EXE - INSTALADOR PREMIUM MODERN
-echo Tienda v2.0.0
+echo Version de Tienda tomada de pubspec.yaml
 echo ================================================================
 echo.
 

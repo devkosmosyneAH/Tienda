@@ -35,6 +35,15 @@ else {
 $installerScript = Join-Path $repoRoot "installer_output\instalador_premium_modern.ps1"
 $buildSource = Join-Path $repoRoot "build\windows\x64\runner\Release"
 $outputFile = Join-Path $repoRoot "installer_output\Tienda_Instalador_Premium_Modern.exe"
+$pubspecPath = Join-Path $repoRoot "pubspec.yaml"
+$pubspecVersion = Select-String -Path $pubspecPath -Pattern '^version:\s*(\d+\.\d+\.\d+)(?:\+(\d+))?' | Select-Object -First 1
+if (-not $pubspecVersion) {
+    throw "No se pudo leer una version semantica desde pubspec.yaml."
+}
+$appVersion = $pubspecVersion.Matches[0].Groups[1].Value
+$buildNumber = if ($pubspecVersion.Matches[0].Groups[2].Success) { $pubspecVersion.Matches[0].Groups[2].Value } else { "1" }
+$temporaryInstallerScript = Join-Path $env:TEMP ("instalador_premium_modern_{0}.ps1" -f [guid]::NewGuid().ToString("N"))
+$temporaryManifest = Join-Path $env:TEMP ("tienda_payload_manifest_{0}.json" -f [guid]::NewGuid().ToString("N"))
 $iconFile = Resolve-FirstExistingPath -Candidates @(
     (Join-Path $repoRoot "installer_assets\app_icon.ico"),
     (Join-Path $repoRoot "windows\runner\resources\app_icon.ico")
@@ -58,7 +67,7 @@ if ([string]::IsNullOrWhiteSpace($licensePublicKey)) {
 Write-Step "[2/7] Compilando Flutter con la clave pública..."
 Push-Location $repoRoot
 try {
-    & flutter build windows --release "--dart-define=LICENSE_PUBLIC_KEY=$licensePublicKey"
+    & flutter build windows --release "--build-name=$appVersion" "--build-number=$buildNumber" "--dart-define=LICENSE_PUBLIC_KEY=$licensePublicKey"
     if ($LASTEXITCODE -ne 0) {
         throw "Fallo la compilacion de Flutter."
     }
@@ -114,6 +123,28 @@ foreach ($file in $buildFiles) {
     [void]$embeddedResourceNames.Add($file.Name)
 }
 
+$manifestFiles = foreach ($file in $buildFiles) {
+    [pscustomobject]@{
+        Path = $file.FullName.Substring($buildSource.Length).TrimStart('\\').Replace('\', '/')
+        Sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+        Length = $file.Length
+    }
+}
+$payloadManifest = [pscustomobject]@{
+    Version = $appVersion
+    BuildNumber = $buildNumber
+    Files = @($manifestFiles)
+}
+[System.IO.File]::WriteAllText($temporaryManifest, ($payloadManifest | ConvertTo-Json -Depth 5), [System.Text.Encoding]::UTF8)
+$embedFiles[".\\payload\\.tienda-payload-manifest.json"] = $temporaryManifest
+
+$installerSource = [System.IO.File]::ReadAllText($installerScript)
+if (-not $installerSource.Contains('"__TIENDA_VERSION__"')) {
+    throw "No se encontro el marcador de version en el script del instalador."
+}
+$installerSource = $installerSource.Replace('"__TIENDA_VERSION__"', ('"{0}"' -f $appVersion))
+[System.IO.File]::WriteAllText($temporaryInstallerScript, $installerSource, [System.Text.Encoding]::UTF8)
+
 $optionalEmbeds = @(
     @{ Target = ".\\installer_assets\\app_icon.ico"; Candidates = @(
             (Join-Path $repoRoot "installer_assets\app_icon.ico"),
@@ -145,7 +176,7 @@ foreach ($embed in $optionalEmbeds) {
 
 Write-Step "[6/7] Compilando instalador EXE..."
 $compilerParams = @{
-    inputFile = $installerScript
+    inputFile = $temporaryInstallerScript
     outputFile = $outputFile
     x64 = $true
     noConsole = $true
@@ -156,14 +187,19 @@ $compilerParams = @{
     description = "Instalador premium WinForms de Tienda"
     company = "DevKosmosyne"
     product = "Tienda"
-    version = "2.0.0"
+    version = $appVersion
 }
 
 if ($iconFile) {
     $compilerParams.iconFile = $iconFile
 }
 
-Invoke-ps2exe @compilerParams -Verbose
+try {
+    Invoke-ps2exe @compilerParams -Verbose
+}
+finally {
+    Remove-Item -LiteralPath $temporaryInstallerScript, $temporaryManifest -Force -ErrorAction SilentlyContinue
+}
 
 Write-Step "[7/7] Verificando salida..."
 if (-not (Test-Path $outputFile)) {
@@ -176,4 +212,5 @@ Write-Host "EXE generado correctamente:" -ForegroundColor Green
 Write-Host $generatedFile.FullName -ForegroundColor Green
 Write-Host (("Tamano: {0:N2} MB" -f ($generatedFile.Length / 1MB))) -ForegroundColor Green
 Write-Host ""
-Write-Host "Al ejecutarse, el instalador extrae su payload en .\\payload junto al EXE antes de copiar la app a Program Files." -ForegroundColor Yellow
+Write-Host ("Version incluida: {0} (build {1})" -f $appVersion, $buildNumber) -ForegroundColor Yellow
+Write-Host "El instalador valida hashes SHA-256 y reemplaza el arbol de la aplicacion preservando la base de datos en AppData." -ForegroundColor Yellow

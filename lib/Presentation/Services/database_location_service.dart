@@ -36,20 +36,54 @@ class DatabaseLocationService {
   /// Obtener la ruta específica para Windows
   static Future<String> _getWindowsDatabasePath() async {
     try {
-      // Verificar si estamos en un ejecutable o en desarrollo
       if (await _isRunningFromExecutable()) {
-        // Ejecutable: usar directorio junto al .exe
         final executableDir = await _getExecutableDirectory();
-        final dbPath = join(executableDir, 'tienda', _databaseName);
-        return dbPath;
-      } else {
-        // Desarrollo: usar directorio de SQLite estándar
-        final dbPath = join(await getDatabasesPath(), _databaseName);
-        return dbPath;
+        final legacyPath = join(executableDir, 'tienda', _databaseName);
+        final roamingAppData = Platform.environment['APPDATA'];
+        if (roamingAppData == null || roamingAppData.isEmpty) {
+          return legacyPath;
+        }
+
+        final appDataPath = join(roamingAppData, 'Tienda', _databaseName);
+        final appDataFile = File(appDataPath);
+        if (await appDataFile.exists()) {
+          return appDataPath;
+        }
+
+        final legacyFile = File(legacyPath);
+        if (await legacyFile.exists()) {
+          try {
+            await ensureDatabaseDirectoryExists(appDataPath);
+            for (final suffix in ['-wal', '-shm', '-journal']) {
+              final sidecar = File('$legacyPath$suffix');
+              if (await sidecar.exists()) {
+                await sidecar.copy('$appDataPath$suffix');
+              }
+            }
+            await legacyFile.copy(appDataPath);
+            return appDataPath;
+          } catch (_) {
+            for (final suffix in ['', '-wal', '-shm', '-journal']) {
+              final partialFile = File('$appDataPath$suffix');
+              if (await partialFile.exists()) {
+                await partialFile.delete();
+              }
+            }
+            return legacyPath;
+          }
+        }
+
+        await ensureDatabaseDirectoryExists(appDataPath);
+        return appDataPath;
       }
+
+      return join(await getDatabasesPath(), _databaseName);
     } catch (e) {
-      final fallbackPath = join(await getDatabasesPath(), _databaseName);
-      return fallbackPath;
+      if (await _isRunningFromExecutable()) {
+        final executableDir = await _getExecutableDirectory();
+        return join(executableDir, 'tienda', _databaseName);
+      }
+      return join(await getDatabasesPath(), _databaseName);
     }
   }
 
