@@ -188,6 +188,28 @@ $global:Config = @{
     InstallSucceeded = $false
 }
 
+function Write-InstallerLog {
+    param(
+        [string]$Level,
+        [string]$Message
+    )
+
+    if (-not $script:InstallerLogPath) {
+        $logRoot = if ($env:ProgramData) { Join-Path $env:ProgramData "Tienda" } else { Join-Path $env:APPDATA "Tienda" }
+        $script:InstallerLogPath = Join-Path $logRoot "installer.log"
+    }
+
+    try {
+        $logDirectory = Split-Path -Parent $script:InstallerLogPath
+        if (-not (Test-Path -LiteralPath $logDirectory)) {
+            New-Item -Path $logDirectory -ItemType Directory -Force | Out-Null
+        }
+        Add-Content -LiteralPath $script:InstallerLogPath -Value ("[{0}] [{1}] {2}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Level, $Message) -Encoding UTF8
+    }
+    catch {
+    }
+}
+
 if ($global:Config.Version -eq "__TIENDA_VERSION__") {
     $manifestCandidates = @(
         (Join-Path $script:InstallerScriptRoot ".tienda-payload-manifest.json"),
@@ -226,28 +248,6 @@ if ($global:Config.Version -eq "__TIENDA_VERSION__") {
 if ($global:Config.Version -eq "__TIENDA_VERSION__") {
     $global:Config.Version = "0.0.0"
     Write-InstallerLog -Level "WARN" -Message "No se pudo determinar la version desde pubspec.yaml ni desde el manifiesto embebido; usando fallback 0.0.0."
-}
-
-function Write-InstallerLog {
-    param(
-        [string]$Level,
-        [string]$Message
-    )
-
-    if (-not $script:InstallerLogPath) {
-        $logRoot = if ($env:ProgramData) { Join-Path $env:ProgramData "Tienda" } else { Join-Path $env:APPDATA "Tienda" }
-        $script:InstallerLogPath = Join-Path $logRoot "installer.log"
-    }
-
-    try {
-        $logDirectory = Split-Path -Parent $script:InstallerLogPath
-        if (-not (Test-Path -LiteralPath $logDirectory)) {
-            New-Item -Path $logDirectory -ItemType Directory -Force | Out-Null
-        }
-        Add-Content -LiteralPath $script:InstallerLogPath -Value ("[{0}] [{1}] {2}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Level, $Message) -Encoding UTF8
-    }
-    catch {
-    }
 }
 
 function Get-InstalledVersion {
