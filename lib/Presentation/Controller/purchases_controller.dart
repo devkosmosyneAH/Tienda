@@ -46,6 +46,7 @@ class PurchasesController extends ChangeNotifier {
   String taxSupportCode = '';
   double? physicalTotal;
   List<Map<String, dynamic>> withholdings = [];
+  String withholdingAuthorization = '';
 
   PurchaseTotals get calculatedTotals => PurchaseTotals.calculate(
     cart.map(
@@ -254,6 +255,22 @@ class PurchasesController extends ChangeNotifier {
 
   void setPhysicalTotal(double? value) {
     physicalTotal = value;
+    notifyListeners();
+  }
+
+  void addWithholding(Map<String, dynamic> withholding) {
+    withholdings = [...withholdings, Map<String, dynamic>.from(withholding)];
+    notifyListeners();
+  }
+
+  void removeWithholding(int index) {
+    if (index < 0 || index >= withholdings.length) return;
+    withholdings = [...withholdings]..removeAt(index);
+    notifyListeners();
+  }
+
+  void setWithholdingAuthorization(String value) {
+    withholdingAuthorization = value.trim();
     notifyListeners();
   }
 
@@ -501,6 +518,7 @@ class PurchasesController extends ChangeNotifier {
       physicalTotal: physicalTotal,
       paymentMethod: selectedPaymentMethodName,
       withholdings: withholdings,
+      withholdingAuthorization: withholdingAuthorization,
       items: cart
           .map(
             (item) => {
@@ -550,6 +568,7 @@ class PurchasesController extends ChangeNotifier {
     taxSupportCode = '';
     physicalTotal = null;
     withholdings = [];
+    withholdingAuthorization = '';
     DatabaseService.notifyDatabaseChanged();
     suppliers = await DatabaseService.getSuppliers();
     await _loadProducts();

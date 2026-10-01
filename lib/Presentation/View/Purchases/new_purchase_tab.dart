@@ -1,4 +1,5 @@
 import 'package:tienda/Presentation/Controller/purchases_controller.dart';
+import 'package:tienda/Presentation/Model/purchase_calculation.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
 import 'package:tienda/Presentation/Utils/supplier_ruc_validator.dart';
 import 'package:flutter/material.dart';
@@ -156,6 +157,7 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
   late final TextEditingController _accessKeyController;
   late final TextEditingController _auxiliaryInvoiceController;
   late final TextEditingController _taxSupportController;
+  late final TextEditingController _withholdingAuthorizationController;
   bool _considerVatProfit = false;
 
   @override
@@ -175,6 +177,9 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
     _taxSupportController = TextEditingController(
       text: widget.controller.taxSupportCode,
     );
+    _withholdingAuthorizationController = TextEditingController(
+      text: widget.controller.withholdingAuthorization,
+    );
   }
 
   @override
@@ -187,6 +192,10 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
       widget.controller.auxiliaryInvoiceNumber,
     );
     _syncController(_taxSupportController, widget.controller.taxSupportCode);
+    _syncController(
+      _withholdingAuthorizationController,
+      widget.controller.withholdingAuthorization,
+    );
   }
 
   void _syncController(TextEditingController field, String value) {
@@ -206,6 +215,7 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
     _accessKeyController.dispose();
     _auxiliaryInvoiceController.dispose();
     _taxSupportController.dispose();
+    _withholdingAuthorizationController.dispose();
     super.dispose();
   }
 
@@ -416,6 +426,53 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
                 prefixIcon: const Icon(Icons.assignment_outlined),
                 useFilterStyle: true,
               ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _withholdingAuthorizationController,
+                decoration: const InputDecoration(
+                  labelText: 'Autorización de retención (si aplica)',
+                  prefixIcon: Icon(Icons.verified_outlined),
+                ),
+                onChanged: widget.controller.setWithholdingAuthorization,
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: () => _addWithholding(context),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Agregar retención'),
+                ),
+              ),
+              for (
+                var index = 0;
+                index < widget.controller.withholdings.length;
+                index++
+              )
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    '${widget.controller.withholdings[index]['tax_type'] == 'income' ? 'Fuente' : 'IVA'} · Código ${widget.controller.withholdings[index]['code']}',
+                  ),
+                  subtitle: Text(
+                    'Base \$${(widget.controller.withholdings[index]['base'] as num).toStringAsFixed(2)} · ${(widget.controller.withholdings[index]['rate'] as num).toStringAsFixed(2)}%',
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '\$${(widget.controller.withholdings[index]['amount'] as num).toStringAsFixed(2)}',
+                      ),
+                      IconButton(
+                        tooltip: 'Quitar retención',
+                        onPressed: () =>
+                            widget.controller.removeWithholding(index),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                ),
 
               const SizedBox(height: 14),
               _PurchaseCard(
@@ -532,6 +589,113 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
       context: context,
       builder: (_) => _NewPurchaseSupplierDialog(controller: widget.controller),
     );
+  }
+
+  Future<void> _addWithholding(BuildContext context) async {
+    final formKey = GlobalKey<FormState>();
+    final codeController = TextEditingController();
+    final baseController = TextEditingController();
+    final rateController = TextEditingController();
+    var taxType = 'income';
+    try {
+      final result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Retención'),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FilterDropdown<String>(
+                    label: 'Tipo de impuesto',
+                    value: taxType,
+                    items: const [
+                      DropdownMenuItem(value: 'income', child: Text('Fuente')),
+                      DropdownMenuItem(value: 'vat', child: Text('IVA')),
+                    ],
+                    onChanged: (value) =>
+                        setDialogState(() => taxType = value ?? 'income'),
+                  ),
+                  TextFormField(
+                    controller: codeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Código SRI *',
+                    ),
+                    validator: (value) => value?.trim().isNotEmpty == true
+                        ? null
+                        : 'Ingrese el código.',
+                  ),
+                  TextFormField(
+                    controller: baseController,
+                    decoration: const InputDecoration(
+                      labelText: 'Base imponible *',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) {
+                      final base = double.tryParse(
+                        (value ?? '').replaceAll(',', '.'),
+                      );
+                      return base == null || base < 0 ? 'Base inválida.' : null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: rateController,
+                    decoration: const InputDecoration(
+                      labelText: 'Porcentaje *',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) {
+                      final rate = double.tryParse(
+                        (value ?? '').replaceAll(',', '.'),
+                      );
+                      return rate == null || rate < 0 || rate > 100
+                          ? 'Porcentaje inválido.'
+                          : null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (!formKey.currentState!.validate()) return;
+                  final base = double.parse(
+                    baseController.text.replaceAll(',', '.'),
+                  );
+                  final rate = double.parse(
+                    rateController.text.replaceAll(',', '.'),
+                  );
+                  Navigator.pop(dialogContext, {
+                    'tax_type': taxType,
+                    'code': codeController.text.trim(),
+                    'base': base,
+                    'rate': rate,
+                    'amount': PurchaseTotals.money(base * rate / 100),
+                  });
+                },
+                child: const Text('Agregar'),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (result != null) widget.controller.addWithholding(result);
+    } finally {
+      codeController.dispose();
+      baseController.dispose();
+      rateController.dispose();
+    }
   }
 }
 
