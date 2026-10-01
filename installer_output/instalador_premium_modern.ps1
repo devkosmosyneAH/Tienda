@@ -413,8 +413,26 @@ function Assert-PayloadManifest {
         $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
     }
 
-    if ($manifest.Version -ne $global:Config.Version) {
-        throw "La version del payload ($($manifest.Version)) no coincide con la version del instalador ($($global:Config.Version)); se cancela para evitar instalar una build antigua."
+    $payloadVersion = [string]$manifest.Version
+    $installerVersion = [string]$global:Config.Version
+
+    if ([string]::IsNullOrWhiteSpace($installerVersion) -or $installerVersion -eq "__TIENDA_VERSION__" -or $installerVersion -eq "0.0.0") {
+        $global:Config.Version = $payloadVersion
+        Write-InstallerLog -Level "WARN" -Message ("La version del instalador estaba en fallback; se usa la del payload: {0}" -f $payloadVersion)
+    }
+    elseif ($payloadVersion -ne $installerVersion) {
+        try {
+            $payloadSemver = [version](([string]$payloadVersion) -replace '[^0-9.]','')
+            $installerSemver = [version](([string]$installerVersion) -replace '[^0-9.]','')
+            if ($payloadSemver -lt $installerSemver) {
+                throw "La version del payload ($payloadVersion) es anterior a la version del instalador ($installerVersion); se cancela para evitar instalar una build antigua."
+            }
+            $global:Config.Version = $payloadVersion
+            Write-InstallerLog -Level "WARN" -Message ("La version del payload ({0}) difiere de la del instalador ({1}), pero la build es igual o posterior; se acepta la instalacion." -f $payloadVersion, $installerVersion)
+        }
+        catch {
+            throw "La version del payload ($payloadVersion) no coincide con la version del instalador ($installerVersion); se cancela para evitar instalar una build antigua."
+        }
     }
     if (-not $manifest.Files -or $manifest.Files.Count -eq 0) {
         throw "El manifiesto del payload no contiene archivos."
