@@ -3660,15 +3660,23 @@ class DatabaseService {
 
       final storeId = (purchase['store_id'] as num).toInt();
       final rows = await txn.rawQuery(
-        '''SELECT product_id, quantity, cost FROM purchase_items
+        '''SELECT product_id, quantity, cost,
+                  CASE WHEN line_subtotal <> 0 OR cost = 0
+                       THEN line_subtotal ELSE quantity * cost END AS inventory_value
+           FROM purchase_items
            WHERE purchase_id = ? ORDER BY id''',
         [purchaseId],
       );
       final quantities = <int, int>{};
+      final inventoryValues = <int, double>{};
       for (final row in rows) {
         final productId = (row['product_id'] as num).toInt();
         quantities[productId] =
             (quantities[productId] ?? 0) + (row['quantity'] as num).toInt();
+        inventoryValues[productId] = PurchaseTotals.money(
+          (inventoryValues[productId] ?? 0) +
+              (row['inventory_value'] as num).toDouble(),
+        );
       }
       for (final entry in quantities.entries) {
         final stockRows = await txn.rawQuery(
@@ -3690,10 +3698,10 @@ class DatabaseService {
           'UPDATE inventory SET stock = stock - ? WHERE product_id = ? AND store_id = ?',
           [entry.value, entry.key, storeId],
         );
-        final item = rows.firstWhere(
-          (row) => (row['product_id'] as num).toInt() == entry.key,
-        );
-        final unitCost = (item['cost'] as num).toDouble();
+        final inventoryValue = inventoryValues[entry.key] ?? 0;
+        final unitCost = entry.value == 0
+            ? 0.0
+            : PurchaseTotals.money(inventoryValue / entry.value);
         await txn.rawInsert(
           '''INSERT INTO inventory_movements (
                product_id, from_store_id, to_store_id, quantity, date,
@@ -3707,7 +3715,7 @@ class DatabaseService {
             now,
             purchaseId,
             unitCost,
-            PurchaseTotals.money(entry.value * unitCost),
+            inventoryValue,
             actor,
           ],
         );
@@ -3715,12 +3723,33 @@ class DatabaseService {
           'SELECT COALESCE(SUM(stock), 0) AS stock FROM inventory WHERE product_id = ?',
           [entry.key],
         );
-        if ((remaining.first['stock'] as num).toInt() == 0) {
-          await txn.rawUpdate(
-            'UPDATE products SET cost_price = 0 WHERE id = ?',
-            [entry.key],
+        final remainingQuantity = (remaining.first['stock'] as num).toInt();
+        final productCostRows = await txn.rawQuery(
+          'SELECT cost_price FROM products WHERE id = ? LIMIT 1',
+          [entry.key],
+        );
+        final currentAverageCost =
+            (productCostRows.first['cost_price'] as num).toDouble();
+        final inventoryBeforeReversal = remainingQuantity + entry.value;
+        final restoredValue =
+            inventoryBeforeReversal * currentAverageCost - inventoryValue;
+        if (remainingQuantity > 0 && restoredValue < -0.01) {
+          throw Exception(
+            'No se puede revertir el costo: el valor disponible del inventario no cubre esta factura.',
           );
         }
+        await txn.rawUpdate(
+          'UPDATE products SET cost_price = ? WHERE id = ?',
+          [
+            remainingQuantity == 0
+                ? 0
+                : PurchaseTotals.money(
+                    (restoredValue < 0 ? 0 : restoredValue) /
+                        remainingQuantity,
+                  ),
+            entry.key,
+          ],
+        );
       }
 
       final originalEntries = await txn.rawQuery(

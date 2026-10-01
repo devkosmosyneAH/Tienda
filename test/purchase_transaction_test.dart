@@ -101,6 +101,10 @@ void main() {
       'SELECT stock FROM inventory WHERE product_id = 1 AND store_id = 1',
     );
     expect(stock.single['stock'], 4);
+    final cost = await testDatabase.rawQuery(
+      'SELECT cost_price FROM products WHERE id = 1',
+    );
+    expect(cost.single['cost_price'], 5.0);
     final movements = await testDatabase.rawQuery(
       'SELECT movement_type, quantity FROM inventory_movements ORDER BY id',
     );
