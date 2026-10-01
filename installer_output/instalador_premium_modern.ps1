@@ -189,16 +189,43 @@ $global:Config = @{
 }
 
 if ($global:Config.Version -eq "__TIENDA_VERSION__") {
-    $pubspecPath = Resolve-InstallerPath -RelativeCandidates @("..\pubspec.yaml", "pubspec.yaml")
-    if (Test-Path -LiteralPath $pubspecPath -PathType Leaf) {
-        $versionLine = Select-String -Path $pubspecPath -Pattern '^version:\s*(\d+\.\d+\.\d+)' | Select-Object -First 1
-        if ($versionLine) {
-            $global:Config.Version = $versionLine.Matches[0].Groups[1].Value
+    $manifestCandidates = @(
+        (Join-Path $script:InstallerScriptRoot ".tienda-payload-manifest.json"),
+        (Join-Path $script:InstallerScriptRoot "payload\.tienda-payload-manifest.json"),
+        (Join-Path $global:Config.InstallPath ".tienda-payload-manifest.json"),
+        (Join-Path $global:Config.InstallPath "payload\.tienda-payload-manifest.json")
+    )
+
+    foreach ($manifestPath in $manifestCandidates) {
+        if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+            continue
+        }
+
+        try {
+            $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+            if ($manifest -and $manifest.Version) {
+                $global:Config.Version = [string]$manifest.Version
+                break
+            }
+        }
+        catch {
         }
     }
 }
+
 if ($global:Config.Version -eq "__TIENDA_VERSION__") {
-    throw "No se pudo determinar la version desde pubspec.yaml."
+    $pubspecPath = Resolve-InstallerPath -RelativeCandidates @("..\pubspec.yaml", "pubspec.yaml")
+    if (Test-Path -LiteralPath $pubspecPath -PathType Leaf) {
+        $versionMatch = [regex]::Match((Get-Content -LiteralPath $pubspecPath -Raw), '(?m)^\s*version\s*:\s*["'']?(\d+\.\d+\.\d+)(?:\+(\d+))?["'']?')
+        if ($versionMatch.Success) {
+            $global:Config.Version = $versionMatch.Groups[1].Value
+        }
+    }
+}
+
+if ($global:Config.Version -eq "__TIENDA_VERSION__") {
+    $global:Config.Version = "0.0.0"
+    Write-InstallerLog -Level "WARN" -Message "No se pudo determinar la version desde pubspec.yaml ni desde el manifiesto embebido; usando fallback 0.0.0."
 }
 
 function Write-InstallerLog {

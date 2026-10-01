@@ -139,10 +139,12 @@ $payloadManifest = [pscustomobject]@{
 $embedFiles[".\\payload\\.tienda-payload-manifest.json"] = $temporaryManifest
 
 $installerSource = [System.IO.File]::ReadAllText($installerScript)
-if (-not $installerSource.Contains('"__TIENDA_VERSION__"')) {
+$versionMarkerRegex = [regex]'(?i)Version\s*=\s*["'']?__TIENDA_VERSION__\s*["'']?'
+if (-not ($versionMarkerRegex.IsMatch($installerSource) -or $installerSource.Contains('__TIENDA_VERSION__'))) {
     throw "No se encontro el marcador de version en el script del instalador."
 }
-$installerSource = $installerSource.Replace('"__TIENDA_VERSION__"', ('"{0}"' -f $appVersion))
+$installerSource = [regex]::Replace($installerSource, '(?i)Version\s*=\s*["'']?__TIENDA_VERSION__\s*["'']?', ('Version = "{0}"' -f $appVersion))
+$installerSource = $installerSource.Replace('__TIENDA_VERSION__', $appVersion)
 [System.IO.File]::WriteAllText($temporaryInstallerScript, $installerSource, [System.Text.Encoding]::UTF8)
 
 $optionalEmbeds = @(
