@@ -1628,7 +1628,6 @@ class DatabaseService {
         ],
       );
     }
-
   }
 
   static Future<void> _seedPaymentMethods(DatabaseExecutor db) async {
@@ -1661,7 +1660,6 @@ class DatabaseService {
 
     // Una instalación nueva empieza únicamente con el local y las categorías
     // mínimas. Los productos se crean desde el flujo de productos/compras.
-    return;
 
     final stores = await db.rawQuery('SELECT id, name FROM stores ORDER BY id');
     final storeIds = <String, int>{
@@ -2440,11 +2438,12 @@ class DatabaseService {
 
   static Future<int> createStore(String name) async {
     final cleanName = name.trim();
-    if (cleanName.isEmpty) throw Exception('El nombre del local es obligatorio');
-    final id = await rawInsert(
-      'INSERT INTO stores (name) VALUES (?)',
-      [cleanName],
-    );
+    if (cleanName.isEmpty) {
+      throw Exception('El nombre del local es obligatorio');
+    }
+    final id = await rawInsert('INSERT INTO stores (name) VALUES (?)', [
+      cleanName,
+    ]);
     notifyDatabaseChanged();
     return id;
   }
