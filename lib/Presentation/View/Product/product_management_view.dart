@@ -335,14 +335,14 @@ class _ProductManagementViewState extends State<ProductManagementView> {
           0,
           (sum, p) =>
               sum +
-              ((p['stock_bazar'] as num?)?.toInt() ?? 0) +
-              ((p['stock_tienda'] as num?)?.toInt() ?? 0),
+              ((p['stock_store_1'] as num?)?.toInt() ?? 0) +
+              ((p['stock_store_2'] as num?)?.toInt() ?? 0),
         );
         final inventoryValue = controller.products.fold<double>(0, (sum, p) {
           final cost = (p['cost_price'] as num?)?.toDouble() ?? 0;
           final stock =
-              ((p['stock_bazar'] as num?)?.toInt() ?? 0) +
-              ((p['stock_tienda'] as num?)?.toInt() ?? 0);
+              ((p['stock_store_1'] as num?)?.toInt() ?? 0) +
+              ((p['stock_store_2'] as num?)?.toInt() ?? 0);
           return sum + cost * stock;
         });
         final isMobile = MediaQuery.of(context).size.width < 600;

@@ -1,3 +1,7 @@
+param(
+    [switch]$DemoOnly
+)
+
 $ErrorActionPreference = "Stop"
 
 function Resolve-FirstExistingPath {
@@ -34,7 +38,8 @@ else {
 
 $installerScript = Join-Path $repoRoot "installer_output\instalador_premium_modern.ps1"
 $buildSource = Join-Path $repoRoot "build\windows\x64\runner\Release"
-$outputFile = Join-Path $repoRoot "installer_output\Tienda_Instalador_Premium_Modern.exe"
+$outputFileName = if ($DemoOnly) { "Tienda_Instalador_Demo_7_Dias.exe" } else { "Tienda_Instalador_Premium_Modern.exe" }
+$outputFile = Join-Path $repoRoot "installer_output\$outputFileName"
 $pubspecPath = Join-Path $repoRoot "pubspec.yaml"
 $pubspecVersion = Select-String -Path $pubspecPath -Pattern '^version:\s*(\d+\.\d+\.\d+)(?:\+(\d+))?' | Select-Object -First 1
 if (-not $pubspecVersion) {
@@ -51,23 +56,32 @@ $iconFile = Resolve-FirstExistingPath -Candidates @(
 
 Write-Step "[1/7] Configurando clave pública de licencia..."
 $licensePublicKey = $env:LICENSE_PUBLIC_KEY
-if ([string]::IsNullOrWhiteSpace($licensePublicKey)) {
-    $publicKeyPath = Read-Host "Ruta del archivo tienda-public.txt"
-    if ([string]::IsNullOrWhiteSpace($publicKeyPath) -or -not (Test-Path -LiteralPath $publicKeyPath -PathType Leaf)) {
-        throw "No se encontro el archivo de clave publica indicado."
+if ($DemoOnly) {
+    $licensePublicKey = ""
+    Write-Host "Build DEMO: los codigos de activacion no se podran validar." -ForegroundColor Yellow
+} else {
+    if ([string]::IsNullOrWhiteSpace($licensePublicKey)) {
+        $publicKeyPath = Read-Host "Ruta del archivo tienda-public.txt"
+        if ([string]::IsNullOrWhiteSpace($publicKeyPath) -or -not (Test-Path -LiteralPath $publicKeyPath -PathType Leaf)) {
+            throw "No se encontro el archivo de clave publica indicado."
+        }
+
+        $licensePublicKey = [System.IO.File]::ReadAllText($publicKeyPath).Trim()
     }
 
-    $licensePublicKey = [System.IO.File]::ReadAllText($publicKeyPath).Trim()
-}
-
-if ([string]::IsNullOrWhiteSpace($licensePublicKey)) {
-    throw "LICENSE_PUBLIC_KEY esta vacia."
+    if ([string]::IsNullOrWhiteSpace($licensePublicKey)) {
+        throw "LICENSE_PUBLIC_KEY esta vacia."
+    }
 }
 
 Write-Step "[2/7] Compilando Flutter con la clave pública..."
 Push-Location $repoRoot
 try {
-    & flutter build windows --release "--build-name=$appVersion" "--build-number=$buildNumber" "--dart-define=LICENSE_PUBLIC_KEY=$licensePublicKey"
+    $flutterArguments = @("build", "windows", "--release", "--build-name=$appVersion", "--build-number=$buildNumber")
+    if (-not $DemoOnly) {
+        $flutterArguments += "--dart-define=LICENSE_PUBLIC_KEY=$licensePublicKey"
+    }
+    & flutter @flutterArguments
     if ($LASTEXITCODE -ne 0) {
         throw "Fallo la compilacion de Flutter."
     }

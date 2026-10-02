@@ -3,11 +3,9 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'backup_service.dart';
-import 'database_config.dart';
 import 'database_location_service.dart';
 import '../Utils/supplier_ruc_validator.dart';
 import '../Model/purchase_calculation.dart';
@@ -36,7 +34,7 @@ class DatabaseService {
   static bool _platformInitialized = false;
   static final ValueNotifier<int> databaseChanged = ValueNotifier<int>(0);
 
-  static const List<String> _storeNames = ['Bazar', 'Tienda'];
+  static const List<String> _storeNames = ['Negocio'];
 
   // =========================================================
   // CATÁLOGO ORGANIZADO — BazarNicole ERP/POS v2
@@ -405,19 +403,6 @@ class DatabaseService {
       await DatabaseLocationService.ensureDatabaseDirectoryExists(path);
     }
 
-    if (!await DatabaseLocationService.databaseExists(path)) {
-      try {
-        final data = await rootBundle.load(DatabaseConfig.assetDbPath);
-        final bytes = data.buffer.asUint8List(
-          data.offsetInBytes,
-          data.lengthInBytes,
-        );
-        await File(path).writeAsBytes(bytes, flush: true);
-      } catch (e) {
-        throw Exception('No se pudo copiar la base de datos desde assets: $e');
-      }
-    }
-
     debugPrint('Opening database:');
     debugPrint(path);
 
@@ -473,13 +458,14 @@ class DatabaseService {
     final path = await DatabaseLocationService.getDatabasePath();
     await DatabaseLocationService.ensureDatabaseDirectoryExists(path);
 
-    final data = await rootBundle.load(DatabaseConfig.assetDbPath);
-    final bytes = data.buffer.asUint8List(
-      data.offsetInBytes,
-      data.lengthInBytes,
-    );
-
-    await File(path).writeAsBytes(bytes, flush: true);
+    // La restauración de fábrica debe pasar por el esquema y los seeds
+    // actuales; nunca debe copiar una BD de assets que pueda contener datos
+    // históricos o de demostración.
+    await close();
+    for (final suffix in ['', '-wal', '-shm', '-journal']) {
+      final file = File('$path$suffix');
+      if (await file.exists()) await file.delete();
+    }
     await reopen();
   }
 
@@ -1643,21 +1629,6 @@ class DatabaseService {
       );
     }
 
-    // Asegurar que el usuario principal siempre exista
-    await db.rawInsert(
-      '''INSERT OR IGNORE INTO users (uid, email, password, name, lastname, role, is_active, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-      [
-        'user_1754669120053',
-        'anthonycordova330@gmail.com',
-        '12345678',
-        'Anthony',
-        'Cordova',
-        'admin',
-        1,
-        '2025-08-08T11:05:20.058581',
-      ],
-    );
   }
 
   static Future<void> _seedPaymentMethods(DatabaseExecutor db) async {
@@ -1687,6 +1658,10 @@ class DatabaseService {
 
   static Future<void> _seedCatalog(DatabaseExecutor db) async {
     await _ensureCategory(db, 'Sin categoria');
+
+    // Una instalación nueva empieza únicamente con el local y las categorías
+    // mínimas. Los productos se crean desde el flujo de productos/compras.
+    return;
 
     final stores = await db.rawQuery('SELECT id, name FROM stores ORDER BY id');
     final storeIds = <String, int>{
@@ -2338,8 +2313,8 @@ class DatabaseService {
         COALESCE(c.name, 'Sin categoria') AS category,
         COALESCE(st.name, '') AS store_name,
         COALESCE(SUM(i.stock), 0) AS total_stock,
-        COALESCE(MAX(CASE WHEN s.name = 'Bazar' THEN i.stock END), 0) AS stock_bazar,
-        COALESCE(MAX(CASE WHEN s.name = 'Tienda' THEN i.stock END), 0) AS stock_tienda
+        COALESCE(MAX(CASE WHEN i.store_id = (SELECT MIN(id) FROM stores) THEN i.stock END), 0) AS stock_store_1,
+        COALESCE(MAX(CASE WHEN i.store_id = (SELECT MAX(id) FROM stores) THEN i.stock END), 0) AS stock_store_2
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
       LEFT JOIN stores st ON st.id = p.store_id
@@ -2408,7 +2383,7 @@ class DatabaseService {
       throw Exception('El nombre del producto es obligatorio');
     }
 
-    return transaction((txn) async {
+    final productId = await transaction((txn) async {
       final existing = await txn.rawQuery(
         'SELECT id FROM products WHERE lower(name) = ?',
         [cleanName.toLowerCase()],
@@ -2459,6 +2434,19 @@ class DatabaseService {
       }
       return productId;
     });
+    notifyDatabaseChanged();
+    return productId;
+  }
+
+  static Future<int> createStore(String name) async {
+    final cleanName = name.trim();
+    if (cleanName.isEmpty) throw Exception('El nombre del local es obligatorio');
+    final id = await rawInsert(
+      'INSERT INTO stores (name) VALUES (?)',
+      [cleanName],
+    );
+    notifyDatabaseChanged();
+    return id;
   }
 
   static Future<void> updateInventoryStock({
@@ -2732,6 +2720,7 @@ class DatabaseService {
         ],
       );
     });
+    notifyDatabaseChanged();
   }
 
   static Future<void> updateProductImages({
@@ -3094,18 +3083,21 @@ class DatabaseService {
       throw Exception('Detalle: agregue al menos una línea.');
     }
     final invoice = invoiceNumber?.trim() ?? '';
-    if (!RegExp(r'^\d{3}-\d{3}-\d{9}$').hasMatch(invoice)) {
+    if (invoice.isNotEmpty &&
+        !RegExp(r'^\d{3}-\d{3}-\d{9}$').hasMatch(invoice)) {
       throw Exception('Número de factura: use el formato 001-001-000000000.');
     }
-    final keyError = SupplierRucValidator.validateAccessKey(accessKey);
-    if (keyError != null) {
-      throw Exception('Clave de acceso: $keyError');
+    final normalizedAccessKey = (accessKey ?? '').trim();
+    if (normalizedAccessKey.isNotEmpty) {
+      final keyError = SupplierRucValidator.validateAccessKey(
+        normalizedAccessKey,
+      );
+      if (keyError != null) {
+        throw Exception('Clave de acceso: $keyError');
+      }
     }
     if (issueDate == null) {
       throw Exception('Fecha de emisión: campo obligatorio.');
-    }
-    if (taxSupportCode?.trim().isNotEmpty != true) {
-      throw Exception('Código de sustento tributario: campo obligatorio.');
     }
     final condition = paymentCondition?.trim().toLowerCase() ?? '';
     if (condition != 'contado' &&
@@ -3236,14 +3228,17 @@ class DatabaseService {
           'Proveedor: identificación RUC/cédula inválida o faltante.',
         );
       }
-      final invoiceKeyError = SupplierRucValidator.validateAccessKeyForInvoice(
-        accessKey: accessKey!,
-        invoiceNumber: invoice,
-        issueDate: issueDate,
-        supplierRuc: supplierIdType == 'ruc' ? supplierIdValue : null,
-      );
-      if (invoiceKeyError != null) {
-        throw Exception('Clave de acceso: $invoiceKeyError');
+      if (normalizedAccessKey.isNotEmpty) {
+        final invoiceKeyError =
+            SupplierRucValidator.validateAccessKeyForInvoice(
+              accessKey: normalizedAccessKey,
+              invoiceNumber: invoice,
+              issueDate: issueDate,
+              supplierRuc: supplierIdType == 'ruc' ? supplierIdValue : null,
+            );
+        if (invoiceKeyError != null) {
+          throw Exception('Clave de acceso: $invoiceKeyError');
+        }
       }
 
       final duplicate = await txn.rawQuery(
@@ -3276,11 +3271,11 @@ class DatabaseService {
           invoice,
           auxiliaryInvoiceNumber?.trim(),
           paymentMethod.trim(),
-          accessKey.trim(),
+          normalizedAccessKey,
           issueDate.toIso8601String(),
           isCredit ? 'credito' : 'contado',
           dueDate?.toIso8601String(),
-          taxSupportCode!.trim(),
+          taxSupportCode?.trim() ?? '',
           physicalTotal,
           totals.total,
           withholdings

@@ -4,14 +4,12 @@ import 'package:tienda/Presentation/Services/auth_service.dart';
 import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:tienda/Presentation/Services/background_job_service.dart';
 import 'package:tienda/Presentation/Services/database_maintenance_service.dart';
-import 'package:tienda/Presentation/Services/database_config.dart';
 import 'package:tienda/Presentation/Services/database_location_service.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
 import 'package:tienda/Presentation/display/database_initializer_native.dart';
 import 'package:tienda/Presentation/display/window_manager_initializer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tienda/Presentation/Controller/Catalog/catalog_controller.dart';
@@ -35,6 +33,7 @@ import 'package:tienda/Presentation/Services/catalog_sync_service.dart';
 import 'package:tienda/Presentation/Services/license_service.dart';
 import 'package:tienda/Presentation/Services/license_storage.dart';
 import 'package:tienda/Presentation/Widgets/license_gate.dart';
+import 'package:tienda/Presentation/View/Customers/customer_background.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -43,23 +42,23 @@ ThemeData _buildAppTheme() => ThemeData(
     primary: AppColors.plumGray,
     onPrimary: AppColors.cream,
     secondary: AppColors.mutedMauve,
-    onSecondary: AppColors.plumGray,
-    tertiary: AppColors.dustyRose,
+    onSecondary: AppColors.cream,
+    tertiary: Color.fromARGB(255, 186, 237, 189),
     onTertiary: AppColors.cream,
-    error: AppColors.dustyRose,
+    error: Color.fromARGB(255, 195, 95, 95),
     onError: AppColors.cream,
     surface: AppColors.cream,
-    onSurface: AppColors.plumGray,
-    surfaceContainerHighest: AppColors.mutedCream,
-    outline: AppColors.paleMauve,
+    onSurface: Color.fromARGB(255, 126, 200, 253),
+    surfaceContainerHighest: AppColors.softCream,
+    outline: AppColors.deepCream,
   ),
   primaryColor: AppColors.primaryLogo,
-  scaffoldBackgroundColor: AppColors.paleCream,
+  scaffoldBackgroundColor: AppColors.lightGray,
   appBarTheme: const AppBarTheme(
-    backgroundColor: AppColors.cream,
-    foregroundColor: AppColors.plumGray,
-    iconTheme: IconThemeData(color: AppColors.plumGray),
-    actionsIconTheme: IconThemeData(color: AppColors.plumGray),
+    backgroundColor: AppColors.lightWhite,
+    foregroundColor: AppColors.blackOverlay,
+    iconTheme: IconThemeData(color: AppColors.primaryBlue),
+    actionsIconTheme: IconThemeData(color: AppColors.primaryBlue),
   ),
   useMaterial3: true,
 );
@@ -179,20 +178,11 @@ Future<void> _safeFallbackDatabaseInit() async {
       }
     }
 
-    try {
-      final ByteData data = await rootBundle.load(DatabaseConfig.assetDbPath);
-      final List<int> bytes = data.buffer.asUint8List(
-        data.offsetInBytes,
-        data.lengthInBytes,
-      );
-
-      await dbFile.writeAsBytes(bytes, flush: true);
-      debugPrint('Opening database:');
-      debugPrint(dbPath);
-      await DatabaseService.database;
-    } catch (e) {
-      throw Exception('No se pudo inicializar la base de datos');
-    }
+    // La base nueva se crea mediante DatabaseService y su esquema/seed
+    // mínimo; no se restaura ninguna BD precargada desde assets.
+    debugPrint('Creating clean database:');
+    debugPrint(dbPath);
+    await DatabaseService.database;
   } catch (e) {
     // En este punto, la app continuará pero sin base de datos prepoblada
   }
@@ -234,11 +224,17 @@ class MyApp extends StatelessWidget {
             builder: (ctx) => SelectionArea(child: builder(ctx)),
           );
         },
-        builder: (context, child) => LicenseGate(
-          child: child ?? const SizedBox.shrink(),
-          onStatusTap: () {
-            navigatorKey.currentState?.pushNamed(AppRoutes.license);
-          },
+        builder: (context, child) => Stack(
+          fit: StackFit.expand,
+          children: [
+            const CustomerBackground(),
+            LicenseGate(
+              child: child ?? const SizedBox.shrink(),
+              onStatusTap: () {
+                navigatorKey.currentState?.pushNamed(AppRoutes.license);
+              },
+            ),
+          ],
         ),
         debugShowCheckedModeBanner: false,
         navigatorKey: navigatorKey,

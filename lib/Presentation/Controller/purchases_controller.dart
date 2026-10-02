@@ -2,10 +2,29 @@ import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tienda/Presentation/Services/audit_service.dart';
 import 'package:tienda/Presentation/Model/purchase_calculation.dart';
+import 'package:tienda/Presentation/Utils/supplier_ruc_validator.dart';
 
 enum PurchaseHistoryPeriod { all, today, week, month }
 
 class PurchasesController extends ChangeNotifier {
+  static String formatInvoiceNumber(int sequence) {
+    final digits = sequence < 0 ? 0 : sequence;
+    final number = digits.toString().padLeft(9, '0');
+    return '001-001-$number';
+  }
+
+  static String resolveInvoiceNumber(String? value) {
+    final trimmed = (value ?? '').trim();
+    if (trimmed.isEmpty) return formatInvoiceNumber(1);
+    if (RegExp(r'^\d{3}-\d{3}-\d{9}$').hasMatch(trimmed)) {
+      return trimmed;
+    }
+    final digits = trimmed.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return formatInvoiceNumber(1);
+    final asInt = int.tryParse(digits) ?? 1;
+    return formatInvoiceNumber(asInt);
+  }
+
   bool isLoading = false;
   bool isHistoryLoading = false;
   String? errorMessage;
@@ -162,7 +181,10 @@ class PurchasesController extends ChangeNotifier {
       selectedPaymentMethodName = paymentMethods.isNotEmpty
           ? _paymentMethodLabel(paymentMethods.first['name'].toString())
           : 'Contado';
-      invoiceNumber = '';
+      if (invoiceNumber.trim().isEmpty) {
+        final generated = await DatabaseService.getNextPurchaseInvoiceNumber();
+        invoiceNumber = formatInvoiceNumber(int.tryParse(generated) ?? 1);
+      }
       if (stores.isNotEmpty) {
         selectedStoreId ??= (stores.first['id'] as num).toInt();
       }
@@ -180,8 +202,19 @@ class PurchasesController extends ChangeNotifier {
     if (storeId == null) return;
     selectedStoreId = storeId;
     cart.clear();
+    if (invoiceNumber.trim().isEmpty) {
+      final generated = await DatabaseService.getNextPurchaseInvoiceNumber();
+      invoiceNumber = formatInvoiceNumber(int.tryParse(generated) ?? 1);
+    }
     await _loadProducts();
     await loadPurchaseHistory();
+  }
+
+  Future<void> ensureInvoiceNumber() async {
+    if (invoiceNumber.trim().isNotEmpty) return;
+    final generated = await DatabaseService.getNextPurchaseInvoiceNumber();
+    invoiceNumber = formatInvoiceNumber(int.tryParse(generated) ?? 1);
+    notifyListeners();
   }
 
   void selectSupplier(int? supplierId) {
@@ -484,15 +517,21 @@ class PurchasesController extends ChangeNotifier {
     }
     final missingFields = <String>[];
     if (selectedSupplierId == null) missingFields.add('Proveedor');
-    if (!RegExp(r'^\d{3}-\d{3}-\d{9}$').hasMatch(invoiceNumber)) {
+    final normalizedInvoiceNumber = resolveInvoiceNumber(invoiceNumber);
+    if (invoiceNumber.trim().isNotEmpty &&
+        !RegExp(r'^\d{3}-\d{3}-\d{9}$').hasMatch(normalizedInvoiceNumber)) {
       missingFields.add('Número de factura (001-001-000000000)');
     }
-    if (accessKey.isEmpty) missingFields.add('Clave de acceso (49 dígitos)');
+    if (accessKey.trim().isNotEmpty) {
+      final accessKeyValidation = SupplierRucValidator.validateAccessKey(
+        accessKey,
+      );
+      if (accessKeyValidation != null) {
+        missingFields.add('Clave de acceso ($accessKeyValidation)');
+      }
+    }
     if (paymentCondition == 'credito' && dueDate == null) {
       missingFields.add('Fecha de vencimiento');
-    }
-    if (taxSupportCode.isEmpty) {
-      missingFields.add('Código de sustento tributario');
     }
     if (physicalTotal == null) missingFields.add('Total de factura física');
     if (missingFields.isNotEmpty) {
@@ -500,6 +539,11 @@ class PurchasesController extends ChangeNotifier {
         'Faltan campos obligatorios: ${missingFields.join(', ')}.',
       );
     }
+
+    invoiceNumber = normalizedInvoiceNumber;
+
+    final resolvedAccessKey = accessKey.trim();
+    final resolvedTaxSupportCode = taxSupportCode.trim();
 
     final purchaseId = await DatabaseService.registerPurchase(
       storeId: selectedStoreId!,
@@ -510,11 +554,13 @@ class PurchasesController extends ChangeNotifier {
       discount: discount,
       invoiceNumber: invoiceNumber,
       auxiliaryInvoiceNumber: auxiliaryInvoiceNumber,
-      accessKey: accessKey,
+      accessKey: resolvedAccessKey.isEmpty ? null : resolvedAccessKey,
       issueDate: issueDate,
       paymentCondition: paymentCondition,
       dueDate: dueDate,
-      taxSupportCode: taxSupportCode,
+      taxSupportCode: resolvedTaxSupportCode.isEmpty
+          ? null
+          : resolvedTaxSupportCode,
       physicalTotal: physicalTotal,
       paymentMethod: selectedPaymentMethodName,
       withholdings: withholdings,
@@ -573,6 +619,7 @@ class PurchasesController extends ChangeNotifier {
     suppliers = await DatabaseService.getSuppliers();
     await _loadProducts();
     await loadPurchaseHistory();
+    await ensureInvoiceNumber();
     return purchaseId;
   }
 

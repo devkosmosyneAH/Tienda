@@ -397,7 +397,7 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           if (stores.length > 1)
             DropdownButtonFormField<int>(
-              initialValue: storeId,
+              value: storeId,
               decoration: const InputDecoration(labelText: 'Local'),
               items: [
                 for (final item in stores)

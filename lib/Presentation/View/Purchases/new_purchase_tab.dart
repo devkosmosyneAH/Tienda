@@ -315,8 +315,8 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
               SharedTextField(
                 controller: _invoiceNumberController,
                 onChanged: widget.controller.setInvoiceNumber,
-                label: 'Número de factura *',
-                hint: '001-001-000000000',
+                label: 'Número de factura',
+                hint: 'Se genera automáticamente si queda vacío',
                 prefixIcon: const Icon(Icons.receipt_long_outlined),
                 useFilterStyle: true,
               ),
@@ -324,8 +324,8 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
               SharedTextField(
                 controller: _accessKeyController,
                 onChanged: widget.controller.setAccessKey,
-                label: 'Clave de acceso / autorización *',
-                hint: '49 dígitos',
+                label: 'Clave de acceso / autorización',
+                hint: 'Opcional · 49 dígitos',
                 keyboardType: TextInputType.number,
                 prefixIcon: const Icon(Icons.key_outlined),
                 useFilterStyle: true,
@@ -421,8 +421,8 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
               SharedTextField(
                 controller: _taxSupportController,
                 onChanged: widget.controller.setTaxSupportCode,
-                label: 'Código de sustento tributario *',
-                hint: 'Código ATS',
+                label: 'Código ATS (opcional)',
+                hint: 'Opcional · Código ATS',
                 prefixIcon: const Icon(Icons.assignment_outlined),
                 useFilterStyle: true,
               ),
@@ -519,10 +519,14 @@ class _PurchaseDetailsPanelState extends State<_PurchaseDetailsPanel> {
                           setState(() => _considerVatProfit = value);
                           widget.controller.setConsiderVatProfit(value);
                         },
-                        activeThumbColor: AppColors.cream,
-                        activeTrackColor: AppColors.plumGray,
-                        inactiveThumbColor: AppColors.cream,
-                        inactiveTrackColor: AppColors.plumGray26,
+                        thumbColor: WidgetStateProperty.resolveWith((states) {
+                          return AppColors.cream;
+                        }),
+                        trackColor: WidgetStateProperty.resolveWith((states) {
+                          return states.contains(WidgetState.selected)
+                              ? AppColors.plumGray
+                              : AppColors.plumGray26;
+                        }),
                       ),
                     ),
                     if (_considerVatProfit) ...[
@@ -1343,6 +1347,10 @@ class _SummaryPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
+          if (controller.cart.isNotEmpty) ...[
+            const _InvoiceLineHeader(),
+            const SizedBox(height: 4),
+          ],
           Expanded(
             child: controller.cart.isEmpty
                 ? Container(
@@ -1365,7 +1373,7 @@ class _SummaryPanel extends StatelessWidget {
                           ),
                           SizedBox(height: 12),
                           Text(
-                            'No se han agregado productos',
+                            'Sin productos · usa + para agregar',
                             style: TextStyle(
                               color: AppColors.mediumGray,
                               fontWeight: FontWeight.w700,
@@ -1373,7 +1381,7 @@ class _SummaryPanel extends StatelessWidget {
                           ),
                           SizedBox(height: 5),
                           Text(
-                            'Agrega productos usando el buscador superior',
+                            'Los productos aparecerán como líneas de factura',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppColors.mediumGray),
                           ),
@@ -1395,6 +1403,34 @@ class _SummaryPanel extends StatelessWidget {
                   ),
           ),
           _PurchaseTotals(controller: controller, onSave: onSave),
+        ],
+      ),
+    );
+  }
+}
+
+class _InvoiceLineHeader extends StatelessWidget {
+  const _InvoiceLineHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    const style = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w800,
+      color: AppColors.plumGray,
+    );
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.mediumGray.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Row(
+        children: [
+          SizedBox(width: 62, child: Text('Código', style: style)),
+          SizedBox(width: 82, child: Text('Cantidad', style: style)),
+          Expanded(child: Text('Producto', style: style)),
+          Text('Datos y totales', style: style),
         ],
       ),
     );
@@ -1627,6 +1663,24 @@ class _PurchaseCartRowState extends State<_PurchaseCartRow> {
         children: [
           Row(
             children: [
+              SizedBox(
+                width: 62,
+                child: Text(
+                  '${widget.item['product_id']}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.plumGray54,
+                  ),
+                ),
+              ),
+              _QuantityControl(
+                quantity: quantity,
+                onDecrease: () =>
+                    widget.controller.decrementQuantity(productId),
+                onIncrease: () =>
+                    widget.controller.incrementQuantity(productId),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   widget.item['name']?.toString() ?? '',
@@ -1655,13 +1709,6 @@ class _PurchaseCartRowState extends State<_PurchaseCartRow> {
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              _QuantityControl(
-                quantity: quantity,
-                onDecrease: () =>
-                    widget.controller.decrementQuantity(productId),
-                onIncrease: () =>
-                    widget.controller.incrementQuantity(productId),
-              ),
               SizedBox(
                 width: 94,
                 child: SharedTextField(

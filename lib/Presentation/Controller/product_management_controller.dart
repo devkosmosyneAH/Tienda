@@ -112,7 +112,7 @@ class ProductManagementController extends ChangeNotifier {
     Map<int, int> initialStock = const {},
   }) async {
     try {
-      await DatabaseService.createProduct(
+      final productId = await DatabaseService.createProduct(
       name: name,
       price: price,
       costPrice: costPrice,
@@ -128,7 +128,7 @@ class ProductManagementController extends ChangeNotifier {
       initialStock: initialStock,
     );
       final created = await DatabaseService.rawQuery(
-        'SELECT * FROM products WHERE name = ? ORDER BY id DESC LIMIT 1', [name],
+        'SELECT * FROM products WHERE id = ? LIMIT 1', [productId],
       );
       await AuditService.log(
         action: AuditAction.createProduct, module: 'Products',

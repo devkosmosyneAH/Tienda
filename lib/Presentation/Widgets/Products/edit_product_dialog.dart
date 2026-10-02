@@ -48,10 +48,10 @@ Future<void> showEditProductDialog(
   bool isUploadingEditImages = false;
   bool isSavingEdit = false;
   final bazarStockController = TextEditingController(
-    text: ((item['stock_bazar'] as num?)?.toInt() ?? 0).toString(),
+    text: ((item['stock_store_1'] as num?)?.toInt() ?? 0).toString(),
   );
   final tiendaStockController = TextEditingController(
-    text: ((item['stock_tienda'] as num?)?.toInt() ?? 0).toString(),
+    text: ((item['stock_store_2'] as num?)?.toInt() ?? 0).toString(),
   );
 
   await showDialog<void>(
@@ -694,10 +694,12 @@ Future<void> showEditProductDialog(
                                     final productId = (item['id'] as num)
                                         .toInt();
                                     final stockByStore = <int, int>{};
-                                    for (final store in controller.stores) {
+                                    for (var index = 0;
+                                        index < controller.stores.length;
+                                        index++) {
+                                      final store = controller.stores[index];
                                       final sid = (store['id'] as num).toInt();
-                                      final storeName = store['name'] as String;
-                                      stockByStore[sid] = storeName == 'Bazar'
+                                      stockByStore[sid] = index == 0
                                           ? int.tryParse(
                                                   bazarStockController.text,
                                                 ) ??

@@ -66,7 +66,7 @@ class LegalPageWidget extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   const Text(
-                    'Última actualización: 17 de abril de 2026',
+                    'Última actualización: 1 de octubre de 2026',
                     style: TextStyle(fontSize: 11, color: AppColors.mediumGray),
                   ),
                 ],
@@ -249,7 +249,42 @@ const List<_LegalSection> _termsSections = [
   _LegalSection(
     '10',
     'Contacto',
-    'Para consultas relacionadas con estos Términos y Condiciones puede comunicarse con nosotros a través de los canales de atención habilitados en nuestro establecimiento o mediante los medios de contacto disponibles en el catálogo.',
+    'Soporte general y consultas legales:\n\nSitio web: https://devkosmosyneah.github.io/devkosmosyne-website/\nWhatsApp: +593 95 983 1092\n\nEl canal de WhatsApp es el medio recomendado para solicitar ayuda técnica, reportar incidentes o consultar sobre licencias y servicios.',
+  ),
+  _LegalSection(
+    '11',
+    'Software y servicios de soporte',
+    'Dev Kosmosyne presta servicios de desarrollo, licencia, configuración y soporte conforme al alcance contratado con cada cliente. La aplicación es una herramienta de gestión y no sustituye el criterio, control ni responsabilidad del negocio, su contador, asesor tributario o representante legal. Las funciones, integraciones, disponibilidad y tiempos de atención pueden depender del plan, licencia, infraestructura, internet y servicios de terceros.',
+  ),
+  _LegalSection(
+    '12',
+    'Responsabilidad del cliente',
+    'El cliente es responsable de la exactitud de sus productos, precios, inventarios, usuarios, credenciales, comprobantes, datos de clientes y proveedores, así como del cumplimiento de sus obligaciones comerciales, tributarias, laborales y de protección de datos. Debe revisar la información antes de emitir documentos, realizar respaldos periódicos y controlar los accesos de sus colaboradores.',
+  ),
+  _LegalSection(
+    '13',
+    'Respaldos, terceros e interrupciones',
+    'El software puede depender de internet, dispositivos, almacenamiento local, Google, Firebase, correo u otros proveedores. Pueden ocurrir interrupciones, cambios de API, errores de sincronización o pérdida de conectividad. El soporte realizará esfuerzos razonables para atender incidentes, pero no garantiza disponibilidad continua ni recuperación de datos que el cliente no haya respaldado correctamente.',
+  ),
+  _LegalSection(
+    '14',
+    'Limitación de responsabilidad del servicio',
+    'En la máxima medida permitida por la normativa ecuatoriana, los desarrolladores y proveedores no responderán por daños derivados del uso incorrecto, información ingresada por el cliente, credenciales compartidas, falta de respaldos, decisiones comerciales, sanciones tributarias, fallas de terceros o infraestructura ajena. Esta cláusula no excluye responsabilidades que legalmente no puedan excluirse ni derechos irrenunciables del consumidor.',
+  ),
+  _LegalSection(
+    '15',
+    'Licencia y uso autorizado',
+    'La licencia permite utilizar el software durante el período y bajo las condiciones contratadas. No transfiere la propiedad del código fuente, marcas, diseños, documentación ni componentes de terceros. Está prohibido copiar, sublicenciar, revender, descompilar, modificar o evadir controles de licencia sin autorización escrita.',
+  ),
+  _LegalSection(
+    '16',
+    'Aceptación y cambios',
+    'El uso continuado del software, la activación de una licencia o la contratación de servicios implica que el cliente tuvo acceso a estos términos. Las condiciones específicas de precio, alcance, garantía y soporte deben constar también en una cotización, contrato u orden de servicio aceptada. Las actualizaciones se publicarán con su fecha de vigencia.',
+  ),
+  _LegalSection(
+    '17',
+    'Normativa aplicable',
+    'Estos términos se interpretan conforme a la legislación ecuatoriana aplicable, incluida la Ley Orgánica de Defensa del Consumidor y la Ley Orgánica de Protección de Datos Personales. Se recomienda revisar estos términos con un abogado ecuatoriano antes de usarlos como contrato comercial.',
   ),
 ];
 
@@ -314,6 +349,6 @@ const List<_LegalSection> _privacySections = [
   _LegalSection(
     '12',
     'Contacto',
-    'Para cualquier consulta, solicitud o reclamación relacionada con la protección de sus datos personales puede contactarnos a través de los canales de atención disponibles en nuestro establecimiento físico o mediante los medios indicados en este catálogo.',
+    'Para solicitudes relacionadas con datos personales, soporte o reclamos:\n\nSitio web: https://devkosmosyneah.github.io/devkosmosyne-website/\nWhatsApp: +593 95 983 1092\n\nLa solicitud debe indicar el nombre del titular, el dato o servicio involucrado y la petición concreta. La identidad podrá verificarse antes de entregar, modificar o eliminar información.',
   ),
 ];

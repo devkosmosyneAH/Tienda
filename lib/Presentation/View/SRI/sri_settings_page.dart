@@ -431,7 +431,7 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             DropdownButtonFormField<int>(
-                              initialValue: storeId,
+                              value: storeId,
                               decoration: const InputDecoration(
                                 labelText: 'Local',
                                 border: OutlineInputBorder(),
@@ -572,7 +572,7 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
                                         SizedBox(
                                           width: fieldWidth,
                                           child: DropdownButtonFormField<int>(
-                                            initialValue: _environment,
+                                            value: _environment,
                                             decoration: const InputDecoration(
                                               labelText: 'Ambiente SRI',
                                               border: OutlineInputBorder(),

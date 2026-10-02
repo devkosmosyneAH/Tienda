@@ -529,7 +529,7 @@ class _PurchaseHistoryTabState extends State<PurchaseHistoryTab> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    initialValue: method,
+                    value: method,
                     decoration: const InputDecoration(
                       labelText: 'Medio de pago',
                     ),
