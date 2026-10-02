@@ -10,6 +10,19 @@ dart run tool/license_issuer.dart keygen /ruta-segura/tienda-private.json /ruta-
 
 La clave pública se distribuye con el binario; la privada nunca. Antes de compilar define `LICENSE_PUBLIC_KEY` con el contenido de `tienda-public.txt`. En Windows, `compilar_instalador_premium.bat` y `compilar_instalador_premium_modern_exe.bat` la inyectan como `--dart-define`; si la variable no está definida, solicitan la ruta al archivo `tienda-public.txt`. El generador del EXE moderno compila Flutter antes de empaquetar. En otras plataformas, usa el mismo argumento en `flutter build`.
 
+Para ejecutar o compilar Windows en modo debug usando una clave pública guardada fuera del repositorio:
+
+```powershell
+.\tool\run_windows_with_license_key.ps1 -PublicKeyPath C:\Users\Thonny\TiendaKeys\tienda-public.txt
+.\tool\run_windows_with_license_key.ps1 -PublicKeyPath C:\Users\Thonny\TiendaKeys\tienda-public.txt -BuildOnly
+```
+
+El campo «Código de activación» no acepta el archivo ni el texto de la clave pública. Para activar, genera un código firmado `DK1...` con la clave privada para los valores de Instalación y Huella que muestra la app:
+
+```powershell
+dart run tool/license_issuer.dart issue C:\Users\Thonny\TiendaKeys\tienda-private.json <installation-id> <fingerprint> 365
+```
+
 Solicita al cliente los valores de Instalación y Huella del equipo visibles en Estado de licencia. Emite el código localmente:
 
 ```sh
