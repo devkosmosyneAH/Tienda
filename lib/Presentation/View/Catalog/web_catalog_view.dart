@@ -712,7 +712,7 @@ class _WebCatalogViewState extends State<WebCatalogView>
                 const Text(
                   '© 2026 Bazar & Tienda Nicole — Todos los derechos reservados',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.paleMauve54, fontSize: 11),
+                  style: TextStyle(color: AppColors.cream, fontSize: 11),
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -732,19 +732,16 @@ class _WebCatalogViewState extends State<WebCatalogView>
                       child: const Text(
                         'Términos y Condiciones',
                         style: TextStyle(
-                          color: AppColors.paleMauve70,
+                          color: AppColors.cream,
                           fontSize: 11,
                           decoration: TextDecoration.underline,
-                          decorationColor: AppColors.paleMauve54,
+                          decorationColor: AppColors.cream,
                         ),
                       ),
                     ),
                     const Text(
                       '·',
-                      style: TextStyle(
-                        color: AppColors.paleMauve38,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: AppColors.cream, fontSize: 11),
                     ),
                     TextButton(
                       onPressed: () =>
@@ -760,10 +757,10 @@ class _WebCatalogViewState extends State<WebCatalogView>
                       child: const Text(
                         'Política de Privacidad',
                         style: TextStyle(
-                          color: AppColors.paleMauve70,
+                          color: AppColors.cream,
                           fontSize: 11,
                           decoration: TextDecoration.underline,
-                          decorationColor: AppColors.paleMauve54,
+                          decorationColor: AppColors.cream,
                         ),
                       ),
                     ),

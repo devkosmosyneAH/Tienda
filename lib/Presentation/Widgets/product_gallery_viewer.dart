@@ -374,16 +374,14 @@ class _GalleryImageState extends State<_GalleryImage> {
               errorBuilder: (_, __, ___) => const Center(
                 child: Icon(
                   Icons.broken_image_outlined,
-                  color: AppColors.paleMauve54,
+                  color: AppColors.cream,
                   size: 56,
                 ),
               ),
               loadingBuilder: (_, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.paleMauve70,
-                  ),
+                  child: CircularProgressIndicator(color: AppColors.cream),
                 );
               },
             ),

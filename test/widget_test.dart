@@ -13,10 +13,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  testWidgets('muestra la estructura de productos compartidos', (
+  testWidgets('muestra el catálogo y permite abrir el formulario', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -27,17 +27,30 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    await tester.pump();
 
-    expect(find.text('Productos compartidos'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('Productos'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Nuevo producto'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Nuevo producto'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
     expect(find.text('Nuevo producto'), findsOneWidget);
-    expect(find.text('Stock inicial por local'), findsOneWidget);
+    expect(find.text('Nombre del producto'), findsOneWidget);
+    expect(find.text('Precio de venta'), findsOneWidget);
   });
 
   testWidgets('muestra el módulo de ventas con tabs', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -50,9 +63,10 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Ventas · Punto de venta'), findsOneWidget);
-    expect(find.text('Nueva venta'), findsOneWidget);
-    expect(find.text('Historial de ventas'), findsOneWidget);
+    expect(find.text('Sistema de Ventas'), findsOneWidget);
+    expect(find.text('Venta 1'), findsOneWidget);
+    expect(find.text('Historial'), findsOneWidget);
+    expect(find.byTooltip('Nueva venta · ESC'), findsOneWidget);
   });
 
   testWidgets('muestra el módulo de compras con tabs', (
@@ -90,8 +104,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Clientes · CRM'), findsOneWidget);
-    expect(find.text('Registrar cliente'), findsOneWidget);
+    expect(find.text('Clientes'), findsOneWidget);
+    expect(find.text('Nuevo'), findsOneWidget);
   });
 
   testWidgets('muestra la pantalla de reportes', (WidgetTester tester) async {

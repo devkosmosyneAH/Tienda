@@ -123,7 +123,7 @@ class _InventoryLowStockTabState extends State<InventoryLowStockTab> {
                             Text(
                               'de ${allSorted.length} productos',
                               style: const TextStyle(
-                                color: AppColors.paleMauve54,
+                                color: AppColors.mediumGray,
                                 fontSize: 13,
                               ),
                             ),

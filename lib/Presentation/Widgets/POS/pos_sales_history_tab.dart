@@ -679,7 +679,7 @@ class PosSaleDetailDialog extends StatelessWidget {
                 child: Center(
                   child: Text(
                     'No hay productos en esta venta.',
-                    style: TextStyle(color: AppColors.plumGray45),
+                    style: TextStyle(color: AppColors.mediumGray),
                   ),
                 ),
               )

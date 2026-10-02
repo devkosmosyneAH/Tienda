@@ -48,7 +48,7 @@ class CustomerTable extends StatelessWidget {
                 child: ListView.separated(
                   itemCount: customers.length,
                   separatorBuilder: (_, __) =>
-                      Divider(height: 2, color: AppColors.blackOverlay),
+                      Divider(height: 1, color: AppColors.deepCream),
                   itemBuilder: (context, index) {
                     final customer = customers[index];
                     return _CustomerTableRow(

@@ -63,7 +63,7 @@ class GalleryThumbnail extends StatelessWidget {
                     color: AppColors.plumGray,
                     child: Icon(
                       Icons.broken_image_outlined,
-                      color: AppColors.paleMauve54,
+                      color: AppColors.cream,
                     ),
                   ),
                 ),

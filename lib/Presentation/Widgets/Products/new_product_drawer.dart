@@ -65,7 +65,7 @@ class NewProductDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: AppColors.lightGray,
-      width: 480,
+      width: MediaQuery.sizeOf(context).width.clamp(0.0, 480.0).toDouble(),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(left: Radius.circular(20)),
       ),
@@ -104,7 +104,7 @@ class NewProductDrawer extends StatelessWidget {
                         'Agregar al catálogo compartido',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.paleMauve54,
+                          color: AppColors.paleCream,
                         ),
                       ),
                     ],
@@ -149,6 +149,7 @@ class NewProductDrawer extends StatelessWidget {
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String?>(
                             value: selectedCategoryName,
+                            isExpanded: true,
                             decoration: modernInput(
                               label: 'Categoría',
                               hint: 'Selecciona una categoría',

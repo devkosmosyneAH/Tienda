@@ -83,7 +83,7 @@ class InventoryProductDetailSheet extends StatelessWidget {
               children: [
                 const Text(
                   'Descripción',
-                  style: TextStyle(fontSize: 12, color: AppColors.plumGray45),
+                  style: TextStyle(fontSize: 12, color: AppColors.mediumGray),
                 ),
                 const SizedBox(height: 4),
                 Text(item.name, style: const TextStyle(fontSize: 14)),

@@ -23,7 +23,9 @@ class MetricCard extends StatelessWidget {
     return Expanded(
       child:
           Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(
+                  MediaQuery.sizeOf(context).width < 600 ? 16 : 20,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.cream,
                   borderRadius: BorderRadius.circular(20),

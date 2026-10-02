@@ -222,7 +222,7 @@ class _PosClientSearchDialogState extends State<PosClientSearchDialog> {
                       child: Center(
                         child: Text(
                           'No se encontraron clientes',
-                          style: TextStyle(color: AppColors.plumGray45),
+                          style: TextStyle(color: AppColors.mediumGray),
                         ),
                       ),
                     ),

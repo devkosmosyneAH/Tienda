@@ -126,7 +126,7 @@ Future<void> showEditProductDialog(
                                   'ID: ${item['uid']}',
                                   style: const TextStyle(
                                     fontSize: 11,
-                                    color: AppColors.paleMauve54,
+                                    color: AppColors.paleCream,
                                   ),
                                 ),
                             ],
@@ -694,9 +694,11 @@ Future<void> showEditProductDialog(
                                     final productId = (item['id'] as num)
                                         .toInt();
                                     final stockByStore = <int, int>{};
-                                    for (var index = 0;
-                                        index < controller.stores.length;
-                                        index++) {
+                                    for (
+                                      var index = 0;
+                                      index < controller.stores.length;
+                                      index++
+                                    ) {
                                       final store = controller.stores[index];
                                       final sid = (store['id'] as num).toInt();
                                       stockByStore[sid] = index == 0

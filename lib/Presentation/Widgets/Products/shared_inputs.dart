@@ -240,15 +240,23 @@ InputDecoration filterFieldDecoration({
     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide.none,
+      borderSide: const BorderSide(color: AppColors.deepCream),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide.none,
+      borderSide: const BorderSide(color: AppColors.deepCream),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide.none,
+      borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: AppColors.primaryRed),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: AppColors.primaryRed, width: 1.5),
     ),
   );
 }
@@ -261,7 +269,7 @@ InputDecoration modernInput({
   Widget? prefixIcon,
 }) {
   return filterFieldDecoration(
-    hint: hint ?? label,
+    hint: hint ?? '',
     label: label,
     prefixIcon: prefixIcon,
   ).copyWith(prefixText: prefix, suffixText: suffix);

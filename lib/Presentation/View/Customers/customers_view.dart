@@ -558,7 +558,7 @@ class _CustomersViewState extends State<CustomersView> {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryRed.withValues(alpha: 10),
+                    color: AppColors.primaryRed.withValues(alpha: .10),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -589,7 +589,7 @@ class _CustomersViewState extends State<CustomersView> {
                     style: const TextStyle(
                       fontSize: 14,
                       height: 1.5,
-                      color: AppColors.plumGray54,
+                      color: AppColors.mediumGray,
                     ),
                     children: [
                       const TextSpan(

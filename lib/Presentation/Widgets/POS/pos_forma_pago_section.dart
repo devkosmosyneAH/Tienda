@@ -143,13 +143,16 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
               children: [
                 const Text(
                   'Agregar Forma de Pago',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
-                const Spacer(),
                 TextButton.icon(
                   onPressed: () {},
                   icon: const Icon(Icons.currency_exchange, size: 18),
@@ -165,10 +168,8 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
               margin: const EdgeInsets.only(top: 4, bottom: 12),
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.blackOverlay.withValues(alpha: 0.05),
-                border: Border.all(
-                  color: AppColors.blackOverlay.withValues(alpha: 0.2),
-                ),
+                color: AppColors.softCream,
+                border: Border.all(color: AppColors.deepCream),
                 borderRadius: BorderRadius.circular(5),
               ),
               child: const Row(
@@ -182,7 +183,7 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.blackOverlay.withValues(alpha: 0.1),
+                color: AppColors.paleCream,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -231,7 +232,7 @@ class _PosFormaPagoSectionState extends State<PosFormaPagoSection> {
                           side: BorderSide(
                             color: selected
                                 ? AppColors.plumGray
-                                : Colors.deepPurple.shade100,
+                                : AppColors.deepCream,
                           ),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,

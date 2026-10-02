@@ -73,7 +73,7 @@ class InventoryNavTab extends StatelessWidget {
                 icon,
                 color: isSelected
                     ? AppColors.blackOverlay
-                    : AppColors.paleMauve54,
+                    : AppColors.mediumGray,
                 size: 20,
               ),
               const SizedBox(height: 2),
@@ -82,7 +82,7 @@ class InventoryNavTab extends StatelessWidget {
                 style: TextStyle(
                   color: isSelected
                       ? AppColors.blackOverlay
-                      : AppColors.paleMauve54,
+                      : AppColors.mediumGray,
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),

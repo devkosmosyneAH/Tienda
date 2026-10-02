@@ -55,7 +55,7 @@ class PosPagosRecibidosSection extends StatelessWidget {
                 padding: EdgeInsets.only(top: 4),
                 child: Text(
                   'Sin pagos registrados',
-                  style: TextStyle(color: AppColors.plumGray38, fontSize: 13),
+                  style: TextStyle(color: AppColors.mediumGray, fontSize: 13),
                 ),
               )
             else ...[

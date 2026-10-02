@@ -25,57 +25,67 @@ class PosClienteSection extends StatelessWidget {
             orElse: () => {},
           )
         : null;
+    final searchButton = FilledButton.icon(
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.primaryBlue,
+        foregroundColor: AppColors.whiteOverlay,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: () => onShowClientSearch(context, controller),
+      icon: const Icon(Icons.search, size: 18),
+      label: const Text('Buscar cliente'),
+    );
+    final customerTitle = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'Cliente',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        if (selectedCustomer != null && selectedCustomer.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.plumGray,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check, color: AppColors.cream, size: 13),
+                SizedBox(width: 4),
+                Text(
+                  'Seleccionado',
+                  style: TextStyle(
+                    color: AppColors.cream,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Fila de título
-        Row(
-          children: [
-            const Text(
-              'Cliente',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(width: 8),
-            if (selectedCustomer != null && selectedCustomer.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.plumGray,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.check, color: AppColors.cream, size: 13),
-                    SizedBox(width: 4),
-                    Text(
-                      'Seleccionado',
-                      style: TextStyle(
-                        color: AppColors.cream,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            const Spacer(),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.blackOverlay,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () => onShowClientSearch(context, controller),
-              icon: const Icon(Icons.search, size: 18),
-              label: const Text('Buscar Cliente'),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 440) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  customerTitle,
+                  const SizedBox(height: 8),
+                  searchButton,
+                ],
+              );
+            }
+            return Row(children: [customerTitle, const Spacer(), searchButton]);
+          },
         ),
         // ── Checkbox consumidor final
         Row(

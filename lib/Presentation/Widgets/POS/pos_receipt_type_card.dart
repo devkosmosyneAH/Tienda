@@ -26,57 +26,45 @@ class PosReceiptTypeCard extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Tipo de comprobante',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    DropdownButton<String>(
-                      value: sale.receiptType,
-                      underline: const SizedBox(),
-                      icon: const Icon(Icons.arrow_drop_down, size: 20),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.plumGray87,
-                      ),
-                      items: PosReceiptType.all
-                          .map(
-                            (t) => DropdownMenuItem(value: t, child: Text(t)),
-                          )
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) {
-                          context.read<PosSaleProvider>().setReceiptType(v);
-                        }
-                      },
-                    ),
-                    const Text(
-                      'Cada tipo tiene numeración independiente',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.plumGray54,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Fecha: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.plumGray54,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                const Text(
+                  'Tipo de comprobante',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                DropdownButton<String>(
+                  value: sale.receiptType,
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.arrow_drop_down, size: 20),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.plumGray87,
+                  ),
+                  items: PosReceiptType.all
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) {
+                      context.read<PosSaleProvider>().setReceiptType(v);
+                    }
+                  },
+                ),
+                const Text(
+                  'Cada tipo tiene numeración independiente',
+                  style: TextStyle(fontSize: 11, color: AppColors.mediumGray),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Fecha: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.mediumGray,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),

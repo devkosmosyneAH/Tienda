@@ -99,7 +99,7 @@ class LegalPageWidget extends StatelessWidget {
               child: const Text(
                 '© 2026 Bazar & Tienda Nicole · Todos los derechos reservados',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.paleMauve54, fontSize: 11),
+                style: TextStyle(color: AppColors.cream, fontSize: 11),
               ),
             ),
           ],

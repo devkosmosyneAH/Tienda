@@ -27,7 +27,7 @@ class AppColors {
   static const Color plumGray42 = Color.fromARGB(107, 21, 101, 192);
   static const Color plumGray44 = Color.fromARGB(112, 21, 101, 192);
   static const Color plumGray45 = Color.fromARGB(115, 21, 101, 192);
-  static const Color plumGray54 = Color.fromARGB(138, 21, 101, 192);
+  static const Color plumGray54 = mutedMauve;
   static const Color plumGray55 = Color.fromARGB(140, 21, 101, 192);
   static const Color plumGray60 = Color.fromARGB(153, 21, 101, 192);
   static const Color plumGray70 = Color.fromARGB(179, 21, 101, 192);
