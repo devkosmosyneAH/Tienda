@@ -22,7 +22,11 @@ class LicenseGate extends StatelessWidget {
         if (provider.loading) return child;
         final status = provider.status;
         if (provider.snapshot?.isBlocked ?? true) {
-          return const LicenseStatusPage(locked: true);
+          return Navigator(
+            onGenerateRoute: (_) => MaterialPageRoute<void>(
+              builder: (_) => const LicenseStatusPage(locked: true),
+            ),
+          );
         }
 
         if (status == LicenseStatus.DEMO_ACTIVA ||
