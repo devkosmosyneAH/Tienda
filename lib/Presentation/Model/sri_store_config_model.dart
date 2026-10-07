@@ -39,11 +39,11 @@ class SriStoreConfig {
 
   bool get isComplete {
     return sriEnabled &&
-        ruc.trim().length >= 13 &&
+        ruc.trim().length == 13 &&
         razonSocial.trim().isNotEmpty &&
         direccionMatriz.trim().isNotEmpty &&
-        codigoEstablecimiento.trim().isNotEmpty &&
-        puntoEmision.trim().isNotEmpty &&
+        RegExp(r'^\d{3}$').hasMatch(codigoEstablecimiento.trim()) &&
+        RegExp(r'^\d{3}$').hasMatch(puntoEmision.trim()) &&
         pathP12.trim().isNotEmpty &&
         p12Password.trim().isNotEmpty;
   }
@@ -59,10 +59,9 @@ class SriStoreConfig {
       razonSocial: (row['razon_social'] as String?) ?? '',
       nombreComercial: (row['nombre_comercial'] as String?) ?? '',
       direccionMatriz: (row['direccion_matriz'] as String?) ?? '',
-      codigoEstablecimiento:
-          (row['codigo_establecimiento'] as String?) ?? '001',
-      puntoEmision: (row['punto_emision'] as String?) ?? '001',
-      tipoEmision: (row['tipo_emision'] as String?) ?? 'NORMAL',
+      codigoEstablecimiento: (row['codigo_establecimiento'] as String?) ?? '',
+      puntoEmision: (row['punto_emision'] as String?) ?? '',
+      tipoEmision: (row['tipo_emision'] as String?) ?? '',
       pathP12: (row['path_p12'] as String?) ?? '',
       p12Password: (row['p12_password'] as String?) ?? '',
       facturaTipo: (row['factura_tipo'] as String?) ?? '01',

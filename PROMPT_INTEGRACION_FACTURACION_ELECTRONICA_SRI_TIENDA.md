@@ -569,3 +569,71 @@ Basado **solo** en pruebas realmente ejecutadas (no inventar cobertura):
 7. Cumplimiento SRI en ambiente de pruebas
 
 Trabaja de forma incremental, verifica cada fase y no rompas flujos existentes.
+
+---
+
+## Anexo v2.1 — plataformas, compradores extranjeros y límites de emisión
+
+### Plataforma
+
+- Windows es la plataforma prioritaria de desarrollo y pruebas; Android también
+  debe poder firmar mediante `sri_xml_validator`.
+- Encapsular la firma detrás de `SriSigner`. En Windows/Android se usa el
+  paquete; en Linux/macOS/iOS/web la emisión debe fallar con
+  `Firma electrónica no soportada en esta plataforma`, sin afectar la venta.
+- No añadir una firma manual como alternativa en esta fase. La firma manual
+  queda pendiente de decisión y documentación.
+- La detección de plataforma no debe importar APIs nativas que impidan compilar
+  los targets no soportados.
+
+### Compradores extranjeros y consumidor final
+
+- Pasaporte corresponde al tipo SRI `06`; identificación emitida en el
+  exterior corresponde al tipo `08`. Ninguno pasa por validadores de cédula o
+  RUC ecuatorianos.
+- El límite de USD 50 aplica únicamente cuando el comprador está identificado
+  como consumidor final (`07`); no se debe aplicar a pasaportes ni a
+  identificaciones del exterior.
+- La dirección del comprador es opcional.
+- Las migraciones de clientes existentes no deben inferir ni asignar un tipo de
+  identificación. Los registros ambiguos requieren revisión explícita.
+
+### Gate vigente de IVA
+
+- El POS todavía no tiene una política uniforme documentada para saber si
+  `products.price` incluye o excluye IVA. No construir ni enviar XML de factura
+  hasta definir ese contrato. Un intento se debe guardar como `ERROR` con una
+  explicación clara, sin consumir secuencial y sin revertir la venta.
+- Esta pausa evita emitir comprobantes con bases imponibles/impuestos
+  inventados; una vez definida la política, agregar pruebas para ambos
+  escenarios aplicables antes de habilitar el envío.
+
+## Nota de revisión — prompt v2.2 adjunto
+
+El prompt v2.2 adjunto pasa a ser la especificación de trabajo para las fases
+pendientes. Mantiene las decisiones de plataforma y compradores extranjeros
+de este anexo, y amplía el alcance con reglas de IVA por producto, snapshot
+tributario en ventas, XML/XSD, idempotencia y compras/costos/márgenes.
+
+Decisiones ya confirmadas por el usuario:
+
+- Prioridad y pruebas en Windows Desktop; Android permanece compatible.
+- Pasaporte `06`, identificación exterior `08`, dirección opcional y límite
+  USD 50 solo para consumidor final `07`.
+- La tarifa tributaria debe identificarse explícitamente por producto; no se
+  debe inferir de la tarifa de compra del proveedor.
+- Descuento de POS debe distribuirse proporcionalmente entre líneas de la
+  factura. Transporte debe modelarse como línea de servicio con tarifa
+  tributaria explícita.
+
+Antes de habilitar emisión falta implementar la fase de precios de v2.2: PVP
+final con IVA como fuente de verdad, catálogo/tarifa aplicable por producto y
+aritmética monetaria determinista. No se debe introducir un selector de precio
+"incluye/excluye IVA" por producto: v2.2 define precio POS como PVP final y
+deriva base e IVA a partir de ese precio. Los datos históricos ambiguos deben
+seguir sin clasificarse y quedar bloqueados para emisión hasta su revisión.
+
+No se presume una tarifa ni modo tributario para los productos existentes.
+Mientras falte ese dato maestro o exista una política fiscal pendiente, una
+venta no debe emitir XML tributario; la venta y el checkout permanecen
+intactos.

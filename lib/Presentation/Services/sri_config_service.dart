@@ -2,6 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../Model/sri_store_config_model.dart';
+import '../Utils/supplier_ruc_validator.dart';
 import 'database_service.dart';
 
 class SriConfigService {
@@ -57,9 +58,9 @@ class SriConfigService {
     String razonSocial = '',
     String nombreComercial = '',
     String direccionMatriz = '',
-    String codigoEstablecimiento = '001',
-    String puntoEmision = '001',
-    String tipoEmision = 'NORMAL',
+    String codigoEstablecimiento = '',
+    String puntoEmision = '',
+    String tipoEmision = '',
     String pathP12 = '',
     String? p12Password,
     String facturaTipo = '01',
@@ -88,11 +89,9 @@ class SriConfigService {
       razonSocial: razonSocial.trim(),
       nombreComercial: nombreComercial.trim(),
       direccionMatriz: direccionMatriz.trim(),
-      codigoEstablecimiento: codigoEstablecimiento.trim().isEmpty
-          ? '001'
-          : codigoEstablecimiento.trim(),
-      puntoEmision: puntoEmision.trim().isEmpty ? '001' : puntoEmision.trim(),
-      tipoEmision: tipoEmision.trim().isEmpty ? 'NORMAL' : tipoEmision.trim(),
+      codigoEstablecimiento: codigoEstablecimiento.trim(),
+      puntoEmision: puntoEmision.trim(),
+      tipoEmision: tipoEmision.trim(),
       pathP12: pathP12.trim(),
       p12Password: p12Password ?? existing?.p12Password ?? '',
       facturaTipo: facturaTipo.trim().isEmpty ? '01' : facturaTipo.trim(),
@@ -180,14 +179,18 @@ class SriConfigService {
     if (config.ambiente != 1 && config.ambiente != 2) {
       return 'El ambiente SRI debe ser 1 (pruebas) o 2 (producción).';
     }
-    if (config.ruc.trim().length != 13) {
-      return 'El RUC del local debe tener 13 dígitos.';
+    if (!SupplierRucValidator.isValidRuc(config.ruc.trim())) {
+      return 'El RUC del local no es válido.';
     }
-    if (config.codigoEstablecimiento.trim().isEmpty) {
-      return 'Falta el código de establecimiento del local.';
+    if (!RegExp(r'^\d{3}$').hasMatch(config.codigoEstablecimiento.trim())) {
+      return 'El código de establecimiento debe contener 3 dígitos.';
     }
-    if (config.puntoEmision.trim().isEmpty) {
-      return 'Falta el punto de emisión del local.';
+    if (!RegExp(r'^\d{3}$').hasMatch(config.puntoEmision.trim())) {
+      return 'El punto de emisión debe contener 3 dígitos.';
+    }
+    if (config.razonSocial.trim().isEmpty ||
+        config.direccionMatriz.trim().isEmpty) {
+      return 'Falta la razón social o dirección matriz del local.';
     }
     if (config.pathP12.trim().isEmpty || config.p12Password.trim().isEmpty) {
       return 'Falta la ruta o contraseña del certificado .p12 del local.';

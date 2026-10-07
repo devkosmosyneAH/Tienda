@@ -36,10 +36,11 @@ void main() {
         sequence: 1,
         date: DateTime(2026, 10, 1),
       );
+      final expectedInvoiceNumber = '001-001-000000001';
       expect(
         SupplierRucValidator.validateAccessKeyForInvoice(
           accessKey: key,
-          invoiceNumber: '001-001-000000001',
+          invoiceNumber: expectedInvoiceNumber,
           issueDate: DateTime(2026, 10, 1),
           supplierRuc: '1790016919001',
         ),
@@ -51,6 +52,27 @@ void main() {
           invoiceNumber: '001-001-000000002',
           issueDate: DateTime(2026, 10, 1),
           supplierRuc: '1790016919001',
+        ),
+        isNotNull,
+      );
+    });
+
+    test('applies the official modulo 11 rule for 11->0 and 10->1', () {
+      expect(
+        SupplierRucValidator.validateAccessKey(
+          '0000000000000000000000000000000000000000000000140',
+        ),
+        isNull,
+      );
+      expect(
+        SupplierRucValidator.validateAccessKey(
+          '0000000000000000000000000000000000000000000000051',
+        ),
+        isNull,
+      );
+      expect(
+        SupplierRucValidator.validateAccessKey(
+          '0000000000000000000000000000000000000000000000141',
         ),
         isNotNull,
       );

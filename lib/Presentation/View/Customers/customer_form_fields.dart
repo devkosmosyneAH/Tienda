@@ -11,6 +11,8 @@ class CustomerFormFields extends StatelessWidget {
     required this.phoneController,
     required this.emailController,
     required this.idController,
+    required this.identificationType,
+    required this.onIdentificationTypeChanged,
     required this.addressController,
     required this.referencesController,
     required this.uuidController,
@@ -22,6 +24,8 @@ class CustomerFormFields extends StatelessWidget {
   final TextEditingController phoneController;
   final TextEditingController emailController;
   final TextEditingController idController;
+  final String? identificationType;
+  final ValueChanged<String?> onIdentificationTypeChanged;
   final TextEditingController addressController;
   final TextEditingController referencesController;
   final TextEditingController uuidController;
@@ -89,10 +93,16 @@ class CustomerFormFields extends StatelessWidget {
               width: width,
               child: SharedTextField(
                 controller: idController,
-                label: 'Cédula',
+                label: 'Número de identificación',
                 prefixIcon: const Icon(Icons.badge_outlined),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                keyboardType: TextInputType.text,
+              ),
+            ),
+            SizedBox(
+              width: width,
+              child: CustomerIdentificationTypeField(
+                value: identificationType,
+                onChanged: onIdentificationTypeChanged,
               ),
             ),
             SizedBox(
@@ -139,6 +149,51 @@ class CustomerFormFields extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class CustomerIdentificationTypeField extends StatelessWidget {
+  const CustomerIdentificationTypeField({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String? value;
+  final ValueChanged<String?> onChanged;
+
+  static const _types = <String, String>{
+    'cedula': 'Cédula',
+    'ruc': 'RUC',
+    'pasaporte': 'Pasaporte',
+    'identificacion exterior': 'Identificación del exterior',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final values = <String?>[null, ..._types.keys];
+    if (value != null && !values.contains(value)) values.add(value);
+
+    return DropdownButtonFormField<String?>(
+      initialValue: value,
+      decoration: const InputDecoration(
+        labelText: 'Tipo de identificación',
+        prefixIcon: Icon(Icons.badge_outlined),
+      ),
+      items: values
+          .map(
+            (type) => DropdownMenuItem<String?>(
+              value: type,
+              child: Text(
+                type == null
+                    ? 'No especificado'
+                    : _types[type] ?? 'Sin clasificar ($type)',
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: onChanged,
     );
   }
 }

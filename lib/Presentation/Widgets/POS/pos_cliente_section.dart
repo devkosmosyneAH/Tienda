@@ -153,7 +153,14 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
   late String _idType;
   bool _saving = false;
 
-  final _idTypes = ['cedula', 'ruc', 'pasaporte', 'otro'];
+  final _idTypes = [
+    '',
+    'cedula',
+    'ruc',
+    'pasaporte',
+    'identificacion exterior',
+    'otro',
+  ];
 
   @override
   void initState() {
@@ -185,7 +192,7 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
       text: c['address']?.toString() ?? '',
     );
     final rawType = c['identification_type']?.toString() ?? '';
-    _idType = _idTypes.contains(rawType) ? rawType : 'cedula';
+    _idType = rawType;
   }
 
   void _disposeControllers() {
@@ -311,9 +318,12 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
                         color: AppColors.plumGray87,
                         fontSize: 14,
                       ),
-                      items: _idTypes
+                      items: {..._idTypes, _idType}
                           .map(
-                            (t) => DropdownMenuItem(value: t, child: Text(t)),
+                            (t) => DropdownMenuItem(
+                              value: t,
+                              child: Text(_identificationTypeLabel(t)),
+                            ),
                           )
                           .toList(),
                       onChanged: (v) {
@@ -336,7 +346,9 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
                       ),
                       SharedTextField(
                         controller: _cedulaCtrl,
-                        keyboardType: TextInputType.number,
+                        keyboardType: _idType == 'cedula' || _idType == 'ruc'
+                            ? TextInputType.number
+                            : TextInputType.text,
                         hint: 'Número de identificación',
                       ),
                     ],
@@ -462,4 +474,14 @@ class _PosClienteDetailPanelState extends State<PosClienteDetailPanel> {
       ),
     );
   }
+
+  String _identificationTypeLabel(String type) => switch (type) {
+    '' => 'Sin especificar',
+    'cedula' => 'Cédula (05)',
+    'ruc' => 'RUC (04)',
+    'pasaporte' => 'Pasaporte (06)',
+    'identificacion exterior' => 'Identificación exterior (08)',
+    'otro' => 'Otro (no SRI)',
+    _ => type,
+  };
 }

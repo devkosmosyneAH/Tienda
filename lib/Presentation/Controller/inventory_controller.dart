@@ -1,8 +1,12 @@
-import 'package:tienda/Presentation/Services/database_service.dart';
+import 'package:tienda/Presentation/Repository/inventory_repository.dart';
 import 'package:tienda/Presentation/Services/audit_service.dart';
 import 'package:flutter/foundation.dart';
 
 class InventoryController extends ChangeNotifier {
+  InventoryController({InventoryRepository? repository})
+      : _repository = repository ?? const DatabaseInventoryRepository();
+
+  final InventoryRepository _repository;
   bool isLoading = false;
   String? errorMessage;
   String search = '';
@@ -30,7 +34,7 @@ class InventoryController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      stores = await DatabaseService.getStores();
+      stores = await _repository.getStores();
       if (stores.isNotEmpty) {
         selectedStoreId ??= (stores.first['id'] as num).toInt();
         await loadInventory();
@@ -57,7 +61,7 @@ class InventoryController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      inventory = await DatabaseService.getInventoryByStore(
+      inventory = await _repository.getInventoryByStore(
         selectedStoreId!,
         search: search,
       );
@@ -76,18 +80,20 @@ class InventoryController extends ChangeNotifier {
 
   Future<void> updateStock({required int productId, required int stock}) async {
     if (selectedStoreId == null) return;
-    final before = await DatabaseService.rawQuery(
-      'SELECT stock FROM inventory WHERE product_id = ? AND store_id = ? LIMIT 1',
-      [productId, selectedStoreId],
+    final before = await _repository.getInventoryStock(
+      productId: productId,
+      storeId: selectedStoreId!,
     );
     try {
-      await DatabaseService.updateInventoryStock(
-        productId: productId, storeId: selectedStoreId!, stock: stock,
+      await _repository.updateInventoryStock(
+        productId: productId,
+        storeId: selectedStoreId!,
+        stock: stock,
       );
       await AuditService.log(
         action: AuditAction.stockAdjustment, module: 'Inventory',
         page: 'InventoryView', entity: 'inventory', entityId: productId,
-        oldData: {'stock': before.isEmpty ? 0 : before.first['stock']},
+        oldData: {'stock': before?['stock'] ?? 0},
         newData: {'stock': stock}, controller: 'InventoryController',
         metadata: {'store_id': selectedStoreId},
       );
@@ -109,9 +115,11 @@ class InventoryController extends ChangeNotifier {
     required int quantity,
   }) async {
     try {
-      await DatabaseService.transferInventory(
-        productId: productId, fromStoreId: fromStoreId,
-        toStoreId: toStoreId, quantity: quantity,
+      await _repository.transferInventory(
+        productId: productId,
+        fromStoreId: fromStoreId,
+        toStoreId: toStoreId,
+        quantity: quantity,
       );
       await AuditService.log(
         action: AuditAction.stockTransfer, module: 'Inventory',

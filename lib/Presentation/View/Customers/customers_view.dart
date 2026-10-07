@@ -43,6 +43,7 @@ class _CustomersViewState extends State<CustomersView> {
   final _notesController = TextEditingController();
   final _searchController = TextEditingController();
   bool _isReadyForNextCustomer = false;
+  String? _identificationType;
 
   @override
   void initState() {
@@ -85,6 +86,7 @@ class _CustomersViewState extends State<CustomersView> {
         notes: _notesController.text,
         apellidos: _lastNameController.text,
         cedula: _idController.text,
+        identificationType: _identificationType,
         address: _addressController.text,
         referencias: _referencesController.text,
       );
@@ -94,6 +96,7 @@ class _CustomersViewState extends State<CustomersView> {
       _phoneController.clear();
       _emailController.clear();
       _idController.clear();
+      _identificationType = null;
       _addressController.clear();
       _referencesController.clear();
       _notesController.clear();
@@ -118,6 +121,7 @@ class _CustomersViewState extends State<CustomersView> {
     _phoneController.clear();
     _emailController.clear();
     _idController.clear();
+    _identificationType = null;
     _addressController.clear();
     _referencesController.clear();
     _uuidController.text = _generateCustomerUuid();
@@ -181,6 +185,10 @@ class _CustomersViewState extends State<CustomersView> {
                     phoneController: _phoneController,
                     emailController: _emailController,
                     idController: _idController,
+                    identificationType: _identificationType,
+                    onIdentificationTypeChanged: (value) {
+                      setState(() => _identificationType = value);
+                    },
                     addressController: _addressController,
                     referencesController: _referencesController,
                     uuidController: _uuidController,
@@ -351,6 +359,7 @@ class _CustomersViewState extends State<CustomersView> {
     _phoneController.text = customer['phone']?.toString() ?? '';
     _emailController.text = customer['email']?.toString() ?? '';
     _idController.text = customer['cedula']?.toString() ?? '';
+    _identificationType = customer['identification_type']?.toString();
     _addressController.text = customer['address']?.toString() ?? '';
     _referencesController.text = customer['referencias']?.toString() ?? '';
     _uuidController.text = customer['uid']?.toString() ?? '';
@@ -396,10 +405,18 @@ class _CustomersViewState extends State<CustomersView> {
                   _editEmailField(),
                   _editField(
                     _idController,
-                    'Cédula',
+                    'Número de identificación',
                     Icons.badge_outlined,
                     false,
-                    true,
+                  ),
+                  SizedBox(
+                    width: 290,
+                    child: CustomerIdentificationTypeField(
+                      value: _identificationType,
+                      onChanged: (value) {
+                        setState(() => _identificationType = value);
+                      },
+                    ),
                   ),
                   _editField(
                     _addressController,
@@ -455,6 +472,7 @@ class _CustomersViewState extends State<CustomersView> {
                 notes: _notesController.text,
                 apellidos: _lastNameController.text,
                 cedula: _idController.text,
+                identificationType: _identificationType,
                 address: _addressController.text,
                 referencias: _referencesController.text,
               );

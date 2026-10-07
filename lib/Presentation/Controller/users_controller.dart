@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:tienda/Presentation/Model/user_model.dart';
+import 'package:tienda/Presentation/Repository/user_repository.dart';
 import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:tienda/Presentation/Services/audit_service.dart';
 
 class UsersController extends ChangeNotifier {
+  UsersController({UserRepository? repository})
+      : _repository = repository ?? const DatabaseUserRepository();
+
+  final UserRepository _repository;
   List<UserModel> _users = [];
   bool _loading = false;
   String? _error;
@@ -18,11 +23,7 @@ class UsersController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final rows = await DatabaseService.rawQuery(
-        'SELECT * FROM users ORDER BY created_at DESC',
-        [],
-      );
-      _users = rows.map(UserModel.fromMap).toList();
+      _users = await _repository.loadUsers();
     } catch (e) {
       _error = 'Error al cargar usuarios: $e';
     } finally {
@@ -41,28 +42,18 @@ class UsersController extends ChangeNotifier {
   }) async {
     try {
       // Verificar email único
-      final existing = await DatabaseService.rawQuery(
-        'SELECT id FROM users WHERE lower(email) = ?',
-        [email.toLowerCase().trim()],
-      );
-      if (existing.isNotEmpty) {
+      if (await _repository.emailExists(email)) {
         return 'Ya existe un usuario con ese correo.';
       }
 
       final uid = generateFirebaseId();
-      final userId = await DatabaseService.rawInsert(
-        '''INSERT INTO users (uid, email, password, name, lastname, role, is_active, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-        [
-          uid,
-          email.trim(),
-          password,
-          name.trim(),
-          lastname.trim(),
-          role,
-          1,
-          DateTime.now().toIso8601String(),
-        ],
+      final userId = await _repository.createUser(
+        email: email,
+        password: password,
+        name: name,
+        lastname: lastname,
+        role: role,
+        uid: uid,
       );
       await AuditService.log(
         action: AuditAction.createUser, module: 'Users', page: 'UsersView',
@@ -81,24 +72,21 @@ class UsersController extends ChangeNotifier {
 
   /// Actualizar rol y estado de un usuario.
   Future<String?> updateUser(UserModel user) async {
+    final userId = user.id;
+    if (userId == null) {
+      return 'No se puede actualizar un usuario sin identificador.';
+    }
+
     try {
-      final before = await DatabaseService.rawQuery(
-        'SELECT * FROM users WHERE id = ? LIMIT 1', [user.id],
-      );
-      await DatabaseService.rawUpdate(
-        '''UPDATE users SET name = ?, lastname = ?, role = ?, is_active = ?
-           WHERE id = ?''',
-        [user.name, user.lastname, user.role, user.isActive ? 1 : 0, user.id],
-      );
-      final after = await DatabaseService.rawQuery(
-        'SELECT * FROM users WHERE id = ? LIMIT 1', [user.id],
-      );
+      final before = (await _repository.getUserById(userId))?.toMap();
+      await _repository.updateUser(user);
+      final after = await _repository.getUserById(userId);
       await AuditService.log(
-        action: before.isNotEmpty && before.first['role'] != user.role
+        action: before != null && before['role'] != user.role
             ? AuditAction.changeRole : AuditAction.updateUser,
-        module: 'Users', page: 'UsersView', entity: 'user', entityId: user.id,
-        oldData: before.isEmpty ? null : before.first,
-        newData: after.isEmpty ? null : after.first,
+        module: 'Users', page: 'UsersView', entity: 'user', entityId: userId,
+        oldData: before,
+        newData: after?.toMap(),
         controller: 'UsersController',
       );
       await loadUsers();
@@ -111,10 +99,7 @@ class UsersController extends ChangeNotifier {
   /// Cambiar contraseña de un usuario.
   Future<String?> changePassword(int userId, String newPassword) async {
     try {
-      await DatabaseService.rawUpdate(
-        'UPDATE users SET password = ? WHERE id = ?',
-        [newPassword, userId],
-      );
+      await _repository.changePassword(userId, newPassword);
       return null;
     } catch (e) {
       return 'Error al cambiar contraseña: $e';
@@ -137,6 +122,11 @@ class UsersController extends ChangeNotifier {
 
   /// Eliminar usuario (no se puede eliminar al único admin).
   Future<String?> deleteUser(UserModel user) async {
+    final userId = user.id;
+    if (userId == null) {
+      return 'No se puede eliminar un usuario sin identificador.';
+    }
+
     if (user.role == 'admin') {
       final admins = _users.where((u) => u.role == 'admin').toList();
       if (admins.length <= 1) {
@@ -144,17 +134,12 @@ class UsersController extends ChangeNotifier {
       }
     }
     try {
-      final before = await DatabaseService.rawQuery(
-        'SELECT * FROM users WHERE id = ? LIMIT 1', [user.id],
-      );
-      await DatabaseService.rawDelete(
-        'DELETE FROM users WHERE id = ?',
-        [user.id],
-      );
+      final before = (await _repository.getUserById(userId))?.toMap();
+      await _repository.deleteUser(userId);
       await AuditService.log(
         action: AuditAction.deleteUser, module: 'Users', page: 'UsersView',
-        entity: 'user', entityId: user.id,
-        oldData: before.isEmpty ? null : before.first,
+        entity: 'user', entityId: userId,
+        oldData: before,
         controller: 'UsersController',
       );
       await loadUsers();
