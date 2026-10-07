@@ -1,3 +1,4 @@
+import 'package:tienda/Presentation/Repository/product_repository.dart';
 import 'package:tienda/Presentation/Services/catalog_sync_service.dart';
 import 'package:tienda/Presentation/Services/audit_service.dart';
 import 'package:tienda/Presentation/Services/database_service.dart';
@@ -6,9 +7,13 @@ import 'package:tienda/Presentation/Services/image_optimizer_service.dart';
 import 'package:flutter/foundation.dart';
 
 class ProductManagementController extends ChangeNotifier {
-  ProductManagementController() {
+  ProductManagementController({
+    ProductRepository? productRepository,
+  }) : _productRepository = productRepository ?? const DatabaseProductRepository() {
     DatabaseService.addDatabaseListener(_handleDatabaseChanged);
   }
+
+  final ProductRepository _productRepository;
 
   bool isLoading = false;
   String? errorMessage;
@@ -81,9 +86,9 @@ class ProductManagementController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      stores = await DatabaseService.getStores();
-      categories = await DatabaseService.getCategories();
-      products = await DatabaseService.getProducts(
+      stores = await _productRepository.getStores();
+      categories = await _productRepository.getCategories();
+      products = await _productRepository.getProducts(
         search: search,
         storeId: storeId,
         category: category,
@@ -112,21 +117,21 @@ class ProductManagementController extends ChangeNotifier {
     Map<int, int> initialStock = const {},
   }) async {
     try {
-      final productId = await DatabaseService.createProduct(
-      name: name,
-      price: price,
-      costPrice: costPrice,
-      ivaRate: ivaRate,
-      profitIva: profitIva,
-      categoryName: category,
-      sku: sku,
-      auxCode: auxCode,
-      description: description,
-      tags: tags,
-      storeId: storeId,
-      images: images,
-      initialStock: initialStock,
-    );
+      final productId = await _productRepository.createProduct(
+        name: name,
+        price: price,
+        costPrice: costPrice,
+        ivaRate: ivaRate,
+        profitIva: profitIva,
+        categoryName: category,
+        sku: sku,
+        auxCode: auxCode,
+        description: description,
+        tags: tags,
+        storeId: storeId,
+        images: images,
+        initialStock: initialStock,
+      );
       final created = await DatabaseService.rawQuery(
         'SELECT * FROM products WHERE id = ? LIMIT 1', [productId],
       );
@@ -164,26 +169,26 @@ class ProductManagementController extends ChangeNotifier {
     int? storeId,
     List<String>? images,
   }) async {
-    final previousImages = await DatabaseService.getProductImageIds(productId);
+    final previousImages = await _productRepository.getProductImageIds(productId);
     final before = await DatabaseService.rawQuery(
       'SELECT * FROM products WHERE id = ? LIMIT 1', [productId],
     );
     try {
-      await DatabaseService.updateProduct(
-      productId: productId,
-      name: name,
-      categoryName: category,
-      sku: sku ?? '',
-      price: price,
-      costPrice: costPrice,
-      ivaRate: ivaRate,
-      profitIva: profitIva,
-      auxCode: auxCode,
-      description: description,
-      tags: tags,
-      storeId: storeId,
-      images: images,
-    );
+      await _productRepository.updateProduct(
+        productId: productId,
+        name: name,
+        categoryName: category,
+        sku: sku ?? '',
+        price: price,
+        costPrice: costPrice,
+        ivaRate: ivaRate,
+        profitIva: profitIva,
+        auxCode: auxCode,
+        description: description,
+        tags: tags,
+        storeId: storeId,
+        images: images,
+      );
       if (images != null) {
       final current = images.toSet();
       for (final oldId in previousImages.where((id) => !current.contains(id))) {
@@ -229,8 +234,8 @@ class ProductManagementController extends ChangeNotifier {
     List<String>? images,
     Map<int, int> stockByStore = const {},
   }) async {
-    final previousImages = await DatabaseService.getProductImageIds(productId);
-    await DatabaseService.updateProduct(
+    final previousImages = await _productRepository.getProductImageIds(productId);
+    await _productRepository.updateProduct(
       productId: productId,
       name: name,
       categoryName: category,
@@ -272,10 +277,10 @@ class ProductManagementController extends ChangeNotifier {
     final isDriveReference = !trimmed.contains('/') && !trimmed.contains('\\');
 
     if (productId != null) {
-      final currentIds = await DatabaseService.getProductImageIds(productId);
+      final currentIds = await _productRepository.getProductImageIds(productId);
       if (currentIds.contains(trimmed)) {
         final remainingIds = currentIds.where((id) => id != trimmed).toList();
-        await DatabaseService.updateProductImages(
+        await _productRepository.updateProductImages(
           productId: productId,
           imageIds: remainingIds,
         );
@@ -290,12 +295,12 @@ class ProductManagementController extends ChangeNotifier {
   }
 
   Future<void> deleteProduct(int productId) async {
-    final imageIds = await DatabaseService.getProductImageIds(productId);
+    final imageIds = await _productRepository.getProductImageIds(productId);
     final before = await DatabaseService.rawQuery(
       'SELECT * FROM products WHERE id = ? LIMIT 1', [productId],
     );
     try {
-      await DatabaseService.deleteProduct(productId);
+      await _productRepository.deleteProduct(productId);
       await AuditService.log(
         action: AuditAction.deleteProduct, module: 'Products',
         page: 'ProductManagementView', entity: 'product', entityId: productId,

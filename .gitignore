@@ -131,6 +131,10 @@ installer_output/
 .venv
 /license_keys/
 
+# Certificados SRI de prueba (no commitear)
+*.p12
+*.pfx
+
 # Keep the installer source under version control, but ignore generated output.
 !/installer_output/
 /installer_output/*

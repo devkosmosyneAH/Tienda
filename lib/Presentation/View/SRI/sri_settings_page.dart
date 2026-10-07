@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:tienda/Presentation/Controller/cash_controller.dart';
 import 'package:tienda/Presentation/Model/sri_store_config_model.dart';
 import 'package:tienda/Presentation/Services/auth_service.dart';
+import 'package:tienda/Presentation/Services/sri_invoice_service.dart';
 import 'package:tienda/Presentation/Services/sri_config_service.dart';
 import 'package:tienda/Presentation/Utils/Colors.dart';
 
@@ -39,6 +40,10 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
   bool _isLoadingConfig = true;
   bool _isSaving = false;
   String? _loadError;
+  List<Map<String, Object?>> _invoices = [];
+  bool _isLoadingInvoices = true;
+  int? _retryingInvoiceId;
+  String? _invoiceLoadError;
 
   @override
   void initState() {
@@ -105,14 +110,60 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
     }
   }
 
+  Future<void> _loadInvoices(int storeId) async {
+    try {
+      final invoices = await SriInvoiceService.getInvoicesForStore(storeId);
+      if (!mounted || _selectedStoreId != storeId) return;
+      setState(() {
+        _invoices = invoices;
+        _isLoadingInvoices = false;
+        _invoiceLoadError = null;
+      });
+    } catch (error) {
+      if (!mounted || _selectedStoreId != storeId) return;
+      setState(() {
+        _isLoadingInvoices = false;
+        _invoiceLoadError = 'No se pudo cargar el historial SRI: $error';
+      });
+    }
+  }
+
+  Future<void> _retryInvoice(int invoiceId, int storeId) async {
+    setState(() => _retryingInvoiceId = invoiceId);
+    try {
+      final result = await SriInvoiceService.retry(
+        electronicInvoiceId: invoiceId,
+        storeId: storeId,
+      );
+      await _loadInvoices(storeId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.message.isEmpty
+                ? 'Estado del comprobante: ${result.status}.'
+                : result.message,
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo reintentar el comprobante: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _retryingInvoiceId = null);
+    }
+  }
+
   void _applyConfig(SriStoreConfig? config) {
     _rucController.text = config?.ruc ?? '';
     _legalNameController.text = config?.razonSocial ?? '';
     _commercialNameController.text = config?.nombreComercial ?? '';
     _addressController.text = config?.direccionMatriz ?? '';
-    _establishmentController.text = config?.codigoEstablecimiento ?? '001';
-    _emissionPointController.text = config?.puntoEmision ?? '001';
-    _emissionTypeController.text = config?.tipoEmision ?? 'NORMAL';
+    _establishmentController.text = config?.codigoEstablecimiento ?? '';
+    _emissionPointController.text = config?.puntoEmision ?? '';
+    _emissionTypeController.text = config?.tipoEmision ?? '';
     _invoiceTypeController.text = config?.facturaTipo ?? '01';
     _certificatePathController.text = config?.pathP12 ?? '';
     _certificatePasswordController.clear();
@@ -411,8 +462,13 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
               _selectedStoreId = storeId;
               _loadingStoreId = storeId;
               _isLoadingConfig = true;
+              _isLoadingInvoices = true;
+              _invoiceLoadError = null;
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) _loadConfig(storeId);
+                if (mounted) {
+                  _loadConfig(storeId);
+                  _loadInvoices(storeId);
+                }
               });
             }
 
@@ -455,9 +511,12 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
                                         _loadedStoreId = null;
                                         _loadingStoreId = value;
                                         _isLoadingConfig = true;
+                                        _isLoadingInvoices = true;
                                         _loadError = null;
+                                        _invoiceLoadError = null;
                                       });
                                       _loadConfig(value);
+                                      _loadInvoices(value);
                                     },
                             ),
                             const SizedBox(height: 20),
@@ -530,6 +589,21 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
                                         value: _sriEnabled,
                                         onChanged: (value) =>
                                             setState(() => _sriEnabled = value),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    _settingsCard(
+                                      child: const ListTile(
+                                        leading: Icon(
+                                          Icons.warning_amber_outlined,
+                                          color: AppColors.primaryRed,
+                                        ),
+                                        title: Text(
+                                          'Emisión temporalmente bloqueada',
+                                        ),
+                                        subtitle: Text(
+                                          'La factura electrónica requiere una tarifa SRI verificada por producto. El precio del POS representa el PVP final; la base imponible e IVA se derivan de forma determinista. Las ventas se registran aunque falte una tarifa, pero no se emite XML ni se consume secuencial.',
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(height: 20),
@@ -764,6 +838,8 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
                                   ],
                                 ),
                               ),
+                            const SizedBox(height: 28),
+                            _invoiceHistorySection(storeId),
                           ],
                         ),
                       ),
@@ -773,6 +849,108 @@ class _SriSettingsPageState extends State<SriSettingsPage> {
               },
             );
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _invoiceHistorySection(int storeId) {
+    return _settingsCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Comprobantes electrónicos de este local',
+                    style: TextStyle(
+                      color: AppColors.blackOverlay,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Actualizar historial',
+                  onPressed: _isLoadingInvoices
+                      ? null
+                      : () {
+                          setState(() => _isLoadingInvoices = true);
+                          _loadInvoices(storeId);
+                        },
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
+            if (_isLoadingInvoices)
+              const LinearProgressIndicator()
+            else if (_invoiceLoadError != null)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.error_outline,
+                  color: AppColors.primaryRed,
+                ),
+                title: Text(_invoiceLoadError!),
+              )
+            else if (_invoices.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text('Este local todavía no tiene comprobantes SRI.'),
+              )
+            else
+              ..._invoices.map((invoice) {
+                final id = (invoice['id'] as num).toInt();
+                final status = invoice['estado']?.toString() ?? 'DESCONOCIDO';
+                final errorMessage =
+                    invoice['error_message']?.toString().trim() ?? '';
+                final canRetry = status == 'ERROR' || status == 'PENDIENTE';
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    status == 'AUTORIZADO'
+                        ? Icons.verified_outlined
+                        : status == 'ERROR' || status == 'RECHAZADO'
+                        ? Icons.error_outline
+                        : Icons.receipt_long_outlined,
+                    color: status == 'AUTORIZADO'
+                        ? Colors.green
+                        : status == 'ERROR' || status == 'RECHAZADO'
+                        ? AppColors.primaryRed
+                        : AppColors.primaryBlue,
+                  ),
+                  title: Text(
+                    'Venta ${invoice['sale_id']} · $status',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    errorMessage.isNotEmpty
+                        ? errorMessage
+                        : 'Creado: ${invoice['created_at'] ?? 'sin fecha'}',
+                  ),
+                  trailing: canRetry
+                      ? IconButton(
+                          tooltip: 'Reintentar comprobante',
+                          onPressed: _retryingInvoiceId == id
+                              ? null
+                              : () => _retryInvoice(id, storeId),
+                          icon: _retryingInvoiceId == id
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.refresh),
+                        )
+                      : null,
+                );
+              }),
+          ],
         ),
       ),
     );

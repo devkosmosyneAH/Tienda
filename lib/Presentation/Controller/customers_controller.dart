@@ -1,11 +1,15 @@
+import 'package:tienda/Presentation/Repository/customer_repository.dart';
 import 'package:tienda/Presentation/Services/database_service.dart';
 import 'package:tienda/Presentation/Services/audit_service.dart';
 import 'package:flutter/foundation.dart';
 
 class CustomersController extends ChangeNotifier {
-  CustomersController() {
+  CustomersController({CustomerRepository? repository})
+      : _repository = repository ?? const DatabaseCustomerRepository() {
     DatabaseService.addDatabaseListener(_handleDatabaseChanged);
   }
+
+  final CustomerRepository _repository;
 
   bool isLoading = false;
   String? errorMessage;
@@ -39,7 +43,7 @@ class CustomersController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      customers = await DatabaseService.getCustomers(search: searchValue);
+      customers = await _repository.loadCustomers(search: searchValue);
       if (selectedCustomer != null) {
         await selectCustomer(selectedCustomer!);
       }
@@ -59,30 +63,43 @@ class CustomersController extends ChangeNotifier {
     String? notes,
     String? apellidos,
     String? cedula,
+    String? identificationType,
     String? address,
     String? referencias,
   }) async {
     try {
-      final savedUid = await DatabaseService.createCustomer(
-        name: name, uid: uid, phone: phone, email: email, notes: notes,
-        apellidos: apellidos, cedula: cedula, address: address,
+      final savedUid = await _repository.createCustomer(
+        name: name,
+        uid: uid,
+        phone: phone,
+        email: email,
+        notes: notes,
+        apellidos: apellidos,
+        cedula: cedula,
+        address: address,
+        identificationType: identificationType,
         referencias: referencias,
       );
-      final created = await DatabaseService.rawQuery(
-        'SELECT * FROM clients WHERE uid = ? LIMIT 1', [savedUid],
-      );
+      final created = await _repository.getCustomerByUid(savedUid);
       await AuditService.log(
-        action: AuditAction.createCustomer, module: 'Customers',
-        page: 'CustomersView', entity: 'client', entityId: created.first['id'],
-        newData: created.first, controller: 'CustomersController',
+        action: AuditAction.createCustomer,
+        module: 'Customers',
+        page: 'CustomersView',
+        entity: 'client',
+        entityId: created?['id'],
+        newData: created,
+        controller: 'CustomersController',
       );
       await loadCustomers(searchValue: search);
       return savedUid;
     } catch (error) {
       await AuditService.log(
-        action: AuditAction.createCustomer, module: 'Customers',
-        page: 'CustomersView', controller: 'CustomersController',
-        success: false, error: error,
+        action: AuditAction.createCustomer,
+        module: 'Customers',
+        page: 'CustomersView',
+        controller: 'CustomersController',
+        success: false,
+        error: error,
       );
       rethrow;
     }
@@ -90,7 +107,7 @@ class CustomersController extends ChangeNotifier {
 
   Future<void> selectCustomer(Map<String, dynamic> customer) async {
     selectedCustomer = customer;
-    history = await DatabaseService.getCustomerHistory(
+    history = await _repository.getCustomerHistory(
       (customer['id'] as num).toInt(),
     );
     notifyListeners();
@@ -105,34 +122,47 @@ class CustomersController extends ChangeNotifier {
     String? notes,
     String? apellidos,
     String? cedula,
+    String? identificationType,
     String? address,
     String? referencias,
   }) async {
-    final before = await DatabaseService.rawQuery(
-      'SELECT * FROM clients WHERE id = ? LIMIT 1', [id],
-    );
+    final before = await _repository.getCustomerById(id);
     try {
-      await DatabaseService.updateCustomer(
-        id: id, name: name, uid: uid, phone: phone, email: email, notes: notes,
-        apellidos: apellidos, cedula: cedula, address: address,
+      await _repository.updateCustomer(
+        id: id,
+        name: name,
+        uid: uid,
+        phone: phone,
+        email: email,
+        notes: notes,
+        apellidos: apellidos,
+        cedula: cedula,
+        address: address,
+        identificationType: identificationType,
         referencias: referencias,
       );
-      final after = await DatabaseService.rawQuery(
-        'SELECT * FROM clients WHERE id = ? LIMIT 1', [id],
-      );
+      final after = await _repository.getCustomerById(id);
       await AuditService.log(
-        action: AuditAction.updateCustomer, module: 'Customers',
-        page: 'CustomersView', entity: 'client', entityId: id,
-        oldData: before.isEmpty ? null : before.first,
-        newData: after.isEmpty ? null : after.first,
+        action: AuditAction.updateCustomer,
+        module: 'Customers',
+        page: 'CustomersView',
+        entity: 'client',
+        entityId: id,
+        oldData: before,
+        newData: after,
         controller: 'CustomersController',
       );
     } catch (error) {
       await AuditService.log(
-        action: AuditAction.updateCustomer, module: 'Customers',
-        page: 'CustomersView', entity: 'client', entityId: id,
-        oldData: before.isEmpty ? null : before.first,
-        controller: 'CustomersController', success: false, error: error,
+        action: AuditAction.updateCustomer,
+        module: 'Customers',
+        page: 'CustomersView',
+        entity: 'client',
+        entityId: id,
+        oldData: before,
+        controller: 'CustomersController',
+        success: false,
+        error: error,
       );
       rethrow;
     }
@@ -141,23 +171,29 @@ class CustomersController extends ChangeNotifier {
   }
 
   Future<void> deleteCustomer(int id) async {
-    final before = await DatabaseService.rawQuery(
-      'SELECT * FROM clients WHERE id = ? LIMIT 1', [id],
-    );
+    final before = await _repository.getCustomerById(id);
     try {
-      await DatabaseService.deleteCustomer(id);
+      await _repository.deleteCustomer(id);
       await AuditService.log(
-        action: AuditAction.deleteCustomer, module: 'Customers',
-        page: 'CustomersView', entity: 'client', entityId: id,
-        oldData: before.isEmpty ? null : before.first,
+        action: AuditAction.deleteCustomer,
+        module: 'Customers',
+        page: 'CustomersView',
+        entity: 'client',
+        entityId: id,
+        oldData: before,
         controller: 'CustomersController',
       );
     } catch (error) {
       await AuditService.log(
-        action: AuditAction.deleteCustomer, module: 'Customers',
-        page: 'CustomersView', entity: 'client', entityId: id,
-        oldData: before.isEmpty ? null : before.first,
-        controller: 'CustomersController', success: false, error: error,
+        action: AuditAction.deleteCustomer,
+        module: 'Customers',
+        page: 'CustomersView',
+        entity: 'client',
+        entityId: id,
+        oldData: before,
+        controller: 'CustomersController',
+        success: false,
+        error: error,
       );
       rethrow;
     }

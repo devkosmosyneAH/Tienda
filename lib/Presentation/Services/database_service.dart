@@ -626,7 +626,7 @@ class DatabaseService {
     // ── Migracion: datos adicionales del cliente ──
     for (final colDef in [
       'cedula TEXT',
-      'identification_type TEXT DEFAULT "cedula"',
+      'identification_type TEXT',
       'address TEXT',
       'apellidos TEXT',
       'referencias TEXT',
@@ -856,9 +856,9 @@ class DatabaseService {
         razon_social TEXT,
         nombre_comercial TEXT,
         direccion_matriz TEXT,
-        codigo_establecimiento TEXT DEFAULT '001',
-        punto_emision TEXT DEFAULT '001',
-        tipo_emision TEXT DEFAULT 'NORMAL',
+        codigo_establecimiento TEXT,
+        punto_emision TEXT,
+        tipo_emision TEXT,
         path_p12 TEXT,
         p12_password TEXT,
         factura_tipo TEXT DEFAULT '01',
@@ -873,8 +873,8 @@ class DatabaseService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         store_id INTEGER NOT NULL,
         cod_doc TEXT NOT NULL DEFAULT '01',
-        estab TEXT NOT NULL DEFAULT '001',
-        pto_emi TEXT NOT NULL DEFAULT '001',
+        estab TEXT NOT NULL,
+        pto_emi TEXT NOT NULL,
         current_value INTEGER NOT NULL DEFAULT 1,
         updated_at TEXT NOT NULL,
         UNIQUE(store_id, cod_doc, estab, pto_emi),
@@ -2818,7 +2818,9 @@ class DatabaseService {
             ? apellidos!.trim()
             : null,
         'cedula': cedula?.trim().isNotEmpty == true ? cedula!.trim() : null,
-        'identification_type': identificationType,
+        'identification_type': identificationType?.trim().isNotEmpty == true
+            ? identificationType!.trim()
+            : null,
         'address': address?.trim().isNotEmpty == true ? address!.trim() : null,
         'referencias': referencias?.trim().isNotEmpty == true
             ? referencias!.trim()
@@ -2842,6 +2844,7 @@ class DatabaseService {
     String? notes,
     String? apellidos,
     String? cedula,
+    String? identificationType,
     String? address,
     String? referencias,
   }) async {
@@ -2853,8 +2856,9 @@ class DatabaseService {
     final db = await database;
     final customerId = await db.rawInsert(
       '''INSERT INTO clients
-         (name, phone, email, notes, apellidos, cedula, address, referencias, uid, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, lower(hex(randomblob(16)))), ?)''',
+         (name, phone, email, notes, apellidos, cedula, identification_type,
+          address, referencias, uid, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, lower(hex(randomblob(16)))), ?)''',
       [
         cleanName,
         phone?.trim(),
@@ -2862,6 +2866,9 @@ class DatabaseService {
         notes?.trim(),
         apellidos?.trim(),
         cedula?.trim(),
+        identificationType?.trim().isNotEmpty == true
+            ? identificationType!.trim()
+            : null,
         address?.trim(),
         referencias?.trim(),
         uid?.trim().isNotEmpty == true ? uid!.trim() : null,

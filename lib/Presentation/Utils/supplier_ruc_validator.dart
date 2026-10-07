@@ -85,13 +85,13 @@ class SupplierRucValidator {
       return 'La fecha de la clave de acceso no coincide con la emisión.';
     }
     final keyInvoice =
-        '${key.substring(23, 26)}-${key.substring(26, 29)}-${key.substring(29, 38)}';
+        '${key.substring(24, 27)}-${key.substring(27, 30)}-${key.substring(30, 39)}';
     if (keyInvoice != invoiceNumber.trim()) {
       return 'El número secuencial no coincide con la clave de acceso.';
     }
     if (supplierRuc != null &&
         supplierRuc.trim().isNotEmpty &&
-        key.substring(8, 21) != supplierRuc.trim()) {
+        key.substring(10, 23) != supplierRuc.trim()) {
       return 'El RUC de la clave de acceso no coincide con el proveedor.';
     }
     return null;
@@ -142,6 +142,6 @@ class SupplierRucValidator {
       factor = factor == 7 ? 2 : factor + 1;
     }
     final result = 11 - total % 11;
-    return result == 11 ? 0 : (result == 10 ? 0 : result);
+    return result == 11 ? 0 : (result == 10 ? 1 : result);
   }
 }
