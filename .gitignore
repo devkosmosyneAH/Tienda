@@ -135,3 +135,4 @@ installer_output/
 !/installer_output/
 /installer_output/*
 !/installer_output/instalador_premium_modern.ps1
+.codegraphy/*
