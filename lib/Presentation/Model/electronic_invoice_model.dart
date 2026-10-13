@@ -10,6 +10,7 @@ class ElectronicInvoiceModel {
     required this.ambiente,
     required this.xml,
     required this.authorizationNumber,
+    this.authorizationDate,
     required this.errorMessage,
     required this.createdAt,
     required this.updatedAt,
@@ -25,6 +26,7 @@ class ElectronicInvoiceModel {
   final int ambiente;
   final String xml;
   final String? authorizationNumber;
+  final DateTime? authorizationDate;
   final String? errorMessage;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -41,6 +43,9 @@ class ElectronicInvoiceModel {
       ambiente: (row['ambiente'] as num?)?.toInt() ?? 1,
       xml: (row['xml'] as String?) ?? '',
       authorizationNumber: row['authorization_number'] as String?,
+      authorizationDate: DateTime.tryParse(
+        (row['authorization_date'] as String?) ?? '',
+      ),
       errorMessage: row['error_message'] as String?,
       createdAt:
           DateTime.tryParse((row['created_at'] as String?) ?? '') ??

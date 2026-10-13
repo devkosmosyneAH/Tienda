@@ -894,6 +894,7 @@ class DatabaseService {
         ambiente INTEGER NOT NULL DEFAULT 1,
         xml TEXT,
         authorization_number TEXT,
+        authorization_date TEXT,
         error_message TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
@@ -902,6 +903,13 @@ class DatabaseService {
         FOREIGN KEY (client_id) REFERENCES clients(id)
       )
     ''');
+
+    await _ensureColumn(
+      db,
+      table: 'electronic_invoices',
+      column: 'authorization_date',
+      definition: 'TEXT',
+    );
 
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_sri_config_store ON sri_store_config(store_id)',

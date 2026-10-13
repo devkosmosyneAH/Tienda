@@ -180,14 +180,34 @@ class SriConfigService {
     if (config.ambiente != 1 && config.ambiente != 2) {
       return 'El ambiente SRI debe ser 1 (pruebas) o 2 (producción).';
     }
-    if (config.ruc.trim().length != 13) {
+    if (!RegExp(r'^\d{13}$').hasMatch(config.ruc.trim())) {
       return 'El RUC del local debe tener 13 dígitos.';
     }
-    if (config.codigoEstablecimiento.trim().isEmpty) {
-      return 'Falta el código de establecimiento del local.';
+    if (config.razonSocial.trim().isEmpty) {
+      return 'Falta la razón social del emisor.';
     }
-    if (config.puntoEmision.trim().isEmpty) {
-      return 'Falta el punto de emisión del local.';
+    if (config.direccionMatriz.trim().isEmpty) {
+      return 'Falta la dirección matriz del emisor.';
+    }
+    if (!RegExp(r'^\d{3}$').hasMatch(config.codigoEstablecimiento.trim())) {
+      return 'El establecimiento debe contener exactamente 3 dígitos.';
+    }
+    if (!RegExp(r'^\d{3}$').hasMatch(config.puntoEmision.trim())) {
+      return 'El punto de emisión debe contener exactamente 3 dígitos.';
+    }
+    if (config.facturaTipo.trim() != '01') {
+      return 'Esta integración solo admite facturas SRI tipo 01.';
+    }
+    final emissionType = config.tipoEmision.trim().toLowerCase();
+    if (!{
+      '1',
+      '2',
+      'normal',
+      'contingencia',
+      'emisión por indisponibilidad',
+      'emision por indisponibilidad',
+    }.contains(emissionType)) {
+      return 'El tipo de emisión debe ser normal o contingencia.';
     }
     if (config.pathP12.trim().isEmpty || config.p12Password.trim().isEmpty) {
       return 'Falta la ruta o contraseña del certificado .p12 del local.';

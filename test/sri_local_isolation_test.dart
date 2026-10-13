@@ -1,5 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:xml/xml.dart';
 import 'package:tienda/Presentation/Model/sri_store_config_model.dart';
 import 'package:tienda/Presentation/Services/sri_config_service.dart';
 import 'package:tienda/Presentation/Services/sri_invoice_service.dart';
@@ -199,5 +200,135 @@ void main() {
       expect(storeA, isNot(storeB));
       expect(firstA, isNot(firstB));
     });
+
+    test(
+      'T01 - la clave incluye campos SRI oficiales y el dígito módulo 11',
+      () {
+        const body =
+            '2809202601'
+            '0999999999001'
+            '1'
+            '001'
+            '002'
+            '000000123'
+            '12345678'
+            '1';
+        final key = SriInvoiceService.generateAccessKey(
+          ruc: '0999999999001',
+          documentCode: '01',
+          ambiente: 1,
+          estab: '001',
+          ptoEmi: '002',
+          sequence: 123,
+          date: DateTime(2026, 9, 28),
+          codigoNumerico: '12345678',
+          tipoEmision: '1',
+        );
+
+        expect(key, '$body${_modulo11ForTest(body)}');
+        expect(key, hasLength(49));
+        expect(SriInvoiceService.calculateModulo11('123456789'), 2);
+      },
+    );
+
+    test('T05 - XML factura agrupa IVA y conserva el total de la venta', () {
+      final config = SriStoreConfig(
+        id: 1,
+        storeId: 7,
+        sriEnabled: true,
+        autoEmitOnCheckout: true,
+        ambiente: 1,
+        ruc: '0999999999001',
+        razonSocial: 'Local de prueba',
+        nombreComercial: 'Tienda de prueba',
+        direccionMatriz: 'Av. Principal 123',
+        codigoEstablecimiento: '001',
+        puntoEmision: '002',
+        tipoEmision: 'NORMAL',
+        pathP12: '/tmp/cert.p12',
+        p12Password: 'secret',
+        facturaTipo: '01',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      );
+      final accessKey = SriInvoiceService.generateAccessKey(
+        ruc: config.ruc,
+        documentCode: config.facturaTipo,
+        ambiente: config.ambiente,
+        estab: config.codigoEstablecimiento,
+        ptoEmi: config.puntoEmision,
+        sequence: 1,
+        date: DateTime(2026, 9, 28),
+        codigoNumerico: '12345678',
+      );
+      final xml = SriInvoiceService.buildInvoiceXml(
+        config: config,
+        sale: {
+          'date': '2026-09-28T12:00:00.000',
+          'total': 115.00,
+          'payments': [
+            {'forma_pago': '01', 'total': 115.0, 'credito': false},
+          ],
+        },
+        customer: {
+          'name': 'Juan Pérez',
+          'identification_number': '1712345678',
+          'identification_type': 'cedula',
+        },
+        items: [
+          {
+            'product_id': 1,
+            'product_name': 'Producto con IVA',
+            'quantity': 1,
+            'price': 115.0,
+            'iva_rate': 15.0,
+          },
+        ],
+        accessKey: accessKey,
+        sequence: 1,
+      );
+      final document = XmlDocument.parse(xml);
+
+      expect(document.rootElement.name.local, 'factura');
+      expect(
+        document.findAllElements('claveAcceso').single.innerText,
+        accessKey,
+      );
+      expect(
+        document.findAllElements('importeTotal').single.innerText,
+        '115.00',
+      );
+      expect(
+        document.findAllElements('totalSinImpuestos').single.innerText,
+        '100.00',
+      );
+      expect(
+        document
+            .findAllElements('codigoPorcentaje')
+            .map((node) => node.innerText)
+            .toList(),
+        ['4', '4'],
+      );
+      expect(
+        document
+            .findAllElements('valor')
+            .map((node) => node.innerText)
+            .toList(),
+        ['15.00', '15.00'],
+      );
+    });
   });
+}
+
+int _modulo11ForTest(String digits) {
+  var factor = 2;
+  var total = 0;
+  for (var index = digits.length - 1; index >= 0; index--) {
+    total += int.parse(digits[index]) * factor;
+    factor = factor == 7 ? 2 : factor + 1;
+  }
+  final check = 11 - total % 11;
+  if (check == 11) return 0;
+  if (check == 10) return 1;
+  return check;
 }
