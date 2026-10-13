@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class ElectronicInvoiceModel {
   const ElectronicInvoiceModel({
     required this.id,
@@ -12,6 +14,9 @@ class ElectronicInvoiceModel {
     required this.authorizationNumber,
     this.authorizationDate,
     required this.errorMessage,
+    this.errorType,
+    this.errorIdentifier,
+    this.sriMessages = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -28,6 +33,9 @@ class ElectronicInvoiceModel {
   final String? authorizationNumber;
   final DateTime? authorizationDate;
   final String? errorMessage;
+  final String? errorType;
+  final String? errorIdentifier;
+  final List<SriInvoiceMessage> sriMessages;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -47,12 +55,58 @@ class ElectronicInvoiceModel {
         (row['authorization_date'] as String?) ?? '',
       ),
       errorMessage: row['error_message'] as String?,
+      errorType: row['error_type'] as String?,
+      errorIdentifier: row['error_identifier'] as String?,
+      sriMessages: _parseSriMessages(row['sri_messages'] as String?),
       createdAt:
           DateTime.tryParse((row['created_at'] as String?) ?? '') ??
           DateTime.now(),
       updatedAt:
           DateTime.tryParse((row['updated_at'] as String?) ?? '') ??
           DateTime.now(),
+    );
+  }
+
+  static List<SriInvoiceMessage> _parseSriMessages(String? value) {
+    if (value == null || value.isEmpty) return const [];
+    final decoded = jsonDecode(value);
+    if (decoded is! List) {
+      throw const FormatException(
+        'Los mensajes SRI guardados no son una lista.',
+      );
+    }
+    return decoded
+        .map((message) {
+          if (message is! Map<String, dynamic>) {
+            throw const FormatException(
+              'Un mensaje SRI guardado no es válido.',
+            );
+          }
+          return SriInvoiceMessage.fromMap(message);
+        })
+        .toList();
+  }
+}
+
+class SriInvoiceMessage {
+  const SriInvoiceMessage({
+    required this.identifier,
+    required this.message,
+    required this.additionalInformation,
+    required this.type,
+  });
+
+  final String identifier;
+  final String message;
+  final String? additionalInformation;
+  final String type;
+
+  factory SriInvoiceMessage.fromMap(Map<String, dynamic> map) {
+    return SriInvoiceMessage(
+      identifier: map['identificador'] as String? ?? '',
+      message: map['mensaje'] as String? ?? '',
+      additionalInformation: map['informacionAdicional'] as String?,
+      type: map['tipo'] as String? ?? '',
     );
   }
 }

@@ -79,6 +79,8 @@ class Sale {
   final DateTime saleDate;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final int? electronicInvoiceId;
+  final String? sriStatus;
 
   Sale({
     required this.id,
@@ -97,6 +99,8 @@ class Sale {
     required this.saleDate,
     required this.createdAt,
     this.updatedAt,
+    this.electronicInvoiceId,
+    this.sriStatus,
   });
 
   int get itemCount => items.fold(0, (sum, item) => sum + item.quantity);
@@ -118,6 +122,8 @@ class Sale {
     DateTime? saleDate,
     DateTime? createdAt,
     DateTime? updatedAt,
+    int? electronicInvoiceId,
+    String? sriStatus,
   }) {
     return Sale(
       id: id ?? this.id,
@@ -136,6 +142,8 @@ class Sale {
       saleDate: saleDate ?? this.saleDate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      electronicInvoiceId: electronicInvoiceId ?? this.electronicInvoiceId,
+      sriStatus: sriStatus ?? this.sriStatus,
     );
   }
 
@@ -172,6 +180,8 @@ class Sale {
       updatedAt: map['updated_at'] != null
           ? DateTime.parse(map['updated_at'] as String)
           : null,
+      electronicInvoiceId: (map['electronic_invoice_id'] as num?)?.toInt(),
+      sriStatus: map['sri_status'] as String?,
     );
   }
 
@@ -193,6 +203,8 @@ class Sale {
       'sale_date': saleDate.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'electronic_invoice_id': electronicInvoiceId,
+      'sri_status': sriStatus,
     };
   }
 }

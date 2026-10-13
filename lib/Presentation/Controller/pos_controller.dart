@@ -186,6 +186,19 @@ class PosController extends ChangeNotifier {
     return DatabaseService.getSaleItems(saleId);
   }
 
+  Future<SriEmitResult> retrySriInvoice(int electronicInvoiceId) async {
+    final storeId = selectedStoreId;
+    if (storeId == null) {
+      throw StateError('Selecciona un local para consultar el estado SRI.');
+    }
+    final result = await SriInvoiceService.retry(
+      electronicInvoiceId: electronicInvoiceId,
+      storeId: storeId,
+    );
+    await loadSalesHistory();
+    return result;
+  }
+
   Future<void> _loadProducts() async {
     if (selectedStoreId == null) {
       products = [];

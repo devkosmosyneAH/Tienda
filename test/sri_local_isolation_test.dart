@@ -1,5 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sri_xml_validator/sri_xml_validator.dart';
 import 'package:xml/xml.dart';
 import 'package:tienda/Presentation/Model/sri_store_config_model.dart';
 import 'package:tienda/Presentation/Services/sri_config_service.dart';
@@ -299,6 +300,10 @@ void main() {
         '115.00',
       );
       expect(
+        document.findAllElements('precioUnitario').single.innerText,
+        '100.00',
+      );
+      expect(
         document.findAllElements('totalSinImpuestos').single.innerText,
         '100.00',
       );
@@ -317,6 +322,149 @@ void main() {
         ['15.00', '15.00'],
       );
     });
+
+    test(
+      'el parser SRI conserva estados, mensajes y datos de autorización',
+      () {
+        final rejected = SriInvoiceService.parseAuthorizationResponse('''
+<autorizacionComprobanteResponse>
+  <autorizaciones>
+    <autorizacion>
+      <estado>NO AUTORIZADO</estado>
+      <numeroAutorizacion>clave-rechazada</numeroAutorizacion>
+      <fechaAutorizacion>2026-10-12T20:00:00-05:00</fechaAutorizacion>
+      <mensajes>
+        <mensaje>
+          <identificador>70</identificador>
+          <mensaje>La base imponible no coincide.</mensaje>
+          <informacionAdicional>Revise el cálculo del IVA.</informacionAdicional>
+          <tipo>ERROR</tipo>
+        </mensaje>
+      </mensajes>
+    </autorizacion>
+  </autorizaciones>
+</autorizacionComprobanteResponse>
+''');
+        expect(rejected.estado, EstadoAutorizacion.noAutorizado);
+        expect(rejected.mensajes, hasLength(1));
+        expect(rejected.mensajes.single.identificador, '70');
+        expect(
+          rejected.mensajes.single.mensaje,
+          'La base imponible no coincide.',
+        );
+        expect(
+          rejected.mensajes.single.informacionAdicional,
+          'Revise el cálculo del IVA.',
+        );
+        expect(rejected.mensajes.single.tipo, 'ERROR');
+
+        final inProgress = SriInvoiceService.parseAuthorizationResponse('''
+<autorizacionComprobanteResponse>
+  <autorizaciones>
+    <autorizacion><estado>EN_PROCESO</estado></autorizacion>
+  </autorizaciones>
+</autorizacionComprobanteResponse>
+''');
+        expect(inProgress.estado, EstadoAutorizacion.enProceso);
+
+        final authorized = SriInvoiceService.parseAuthorizationResponse('''
+<autorizacionComprobanteResponse>
+  <autorizaciones>
+    <autorizacion>
+      <estado>AUTORIZADO</estado>
+      <numeroAutorizacion>123456789</numeroAutorizacion>
+      <fechaAutorizacion>2026-10-12T20:00:00-05:00</fechaAutorizacion>
+      <comprobante>&lt;factura/&gt;</comprobante>
+    </autorizacion>
+  </autorizaciones>
+</autorizacionComprobanteResponse>
+''');
+        expect(authorized.estado, EstadoAutorizacion.autorizado);
+        expect(authorized.numeroAutorizacion, '123456789');
+        expect(authorized.fechaAutorizacion, isNotNull);
+        expect(authorized.xmlAutorizado, '<factura/>');
+      },
+    );
+
+    test(
+      'la base del IVA incluido se genera como precio unitario antes de IVA',
+      () {
+        final config = SriStoreConfig(
+          id: 1,
+          storeId: 7,
+          sriEnabled: true,
+          autoEmitOnCheckout: true,
+          ambiente: 1,
+          ruc: '0999999999001',
+          razonSocial: 'Local de prueba',
+          nombreComercial: 'Tienda de prueba',
+          direccionMatriz: 'Av. Principal 123',
+          codigoEstablecimiento: '001',
+          puntoEmision: '002',
+          tipoEmision: 'NORMAL',
+          pathP12: '/tmp/cert.p12',
+          p12Password: 'secret',
+          facturaTipo: '01',
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        );
+        final accessKey = SriInvoiceService.generateAccessKey(
+          ruc: config.ruc,
+          documentCode: config.facturaTipo,
+          ambiente: config.ambiente,
+          estab: config.codigoEstablecimiento,
+          ptoEmi: config.puntoEmision,
+          sequence: 1,
+          date: DateTime(2026, 9, 28),
+          codigoNumerico: '12345678',
+        );
+        final xml = SriInvoiceService.buildInvoiceXml(
+          config: config,
+          sale: {
+            'date': '2026-09-28T12:00:00.000',
+            'total': 112,
+            'payments': [
+              {'forma_pago': '01', 'total': 112.0, 'credito': false},
+            ],
+          },
+          customer: {
+            'name': 'Juan Pérez',
+            'identification_number': '1712345678',
+            'identification_type': 'cedula',
+          },
+          items: [
+            {
+              'product_id': 1,
+              'product_name': 'Producto con IVA',
+              'quantity': 1,
+              'price': 112.0,
+              'iva_rate': 12.0,
+            },
+          ],
+          accessKey: accessKey,
+          sequence: 1,
+        );
+        final document = XmlDocument.parse(xml);
+        expect(
+          document.findAllElements('totalSinImpuestos').single.innerText,
+          '100.00',
+        );
+        expect(
+          document
+              .findAllElements('codigoPorcentaje')
+              .map((node) => node.innerText),
+          ['2', '2'],
+        );
+        expect(
+          document.findAllElements('valor').map((node) => node.innerText),
+          ['12.00', '12.00'],
+        );
+        expect(
+          document.findAllElements('importeTotal').single.innerText,
+          '112.00',
+        );
+      },
+    );
   });
 }
 

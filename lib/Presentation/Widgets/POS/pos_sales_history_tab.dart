@@ -18,6 +18,7 @@ class PosSalesHistoryTab extends StatefulWidget {
 
 class _PosSalesHistoryTabState extends State<PosSalesHistoryTab> {
   String _query = '';
+  final Set<int> _retryingInvoices = {};
 
   static const _months = [
     'Enero',
@@ -46,7 +47,11 @@ class _PosSalesHistoryTabState extends State<PosSalesHistoryTab> {
           if (query.isEmpty) return true;
           final client = sale['client_name']?.toString().toLowerCase() ?? '';
           final id = sale['id']?.toString() ?? '';
-          return client.contains(query) || id.contains(query);
+          final accessKey =
+              sale['sri_access_key']?.toString().toLowerCase() ?? '';
+          return client.contains(query) ||
+              id.contains(query) ||
+              accessKey.contains(query);
         }).toList();
         final filteredTotal = filteredSales.fold<double>(
           0,
@@ -337,6 +342,13 @@ class _PosSalesHistoryTabState extends State<PosSalesHistoryTab> {
                         final storeName = sale['store_name']?.toString() ?? '';
                         final paymentName = sale['payment_method_name']
                             ?.toString();
+                        final sriState = sale['sri_state']?.toString();
+                        final invoiceId =
+                            (sale['electronic_invoice_id'] as num?)?.toInt();
+                        final canRetrySri =
+                            invoiceId != null &&
+                            (sriState == 'EN_PROCESO' ||
+                                sriState == 'RECIBIDO');
                         final nvLabel =
                             'NV\n#${saleId.toString().padLeft(3, '0')}';
 
@@ -348,8 +360,23 @@ class _PosSalesHistoryTabState extends State<PosSalesHistoryTab> {
                           date: date,
                           total: total,
                           paymentName: paymentName,
-                          onTap: () =>
-                              _showSaleDetail(context, controller, saleId),
+                          sriInvoice: sale,
+                          isRetryingSri:
+                              invoiceId != null &&
+                              _retryingInvoices.contains(invoiceId),
+                          onRetrySri: canRetrySri
+                              ? () => _retrySriInvoice(
+                                  context,
+                                  controller,
+                                  invoiceId,
+                                )
+                              : null,
+                          onTap: () => _showSaleDetail(
+                            context,
+                            controller,
+                            saleId,
+                            sale,
+                          ),
                         );
                       },
                     ),
@@ -360,16 +387,40 @@ class _PosSalesHistoryTabState extends State<PosSalesHistoryTab> {
     );
   }
 
+  Future<void> _retrySriInvoice(
+    BuildContext context,
+    PosController controller,
+    int invoiceId,
+  ) async {
+    setState(() => _retryingInvoices.add(invoiceId));
+    try {
+      final result = await controller.retrySriInvoice(invoiceId);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${result.status}: ${result.message}')),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo consultar al SRI: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _retryingInvoices.remove(invoiceId));
+    }
+  }
+
   Future<void> _showSaleDetail(
     BuildContext context,
     PosController controller,
     int saleId,
+    Map<String, dynamic> sale,
   ) async {
     final items = await controller.getSaleItems(saleId);
     if (!context.mounted) return;
     await showDialog<void>(
       context: context,
-      builder: (ctx) => PosSaleDetailDialog(saleId: saleId, items: items),
+      builder: (ctx) =>
+          PosSaleDetailDialog(saleId: saleId, items: items, sale: sale),
     );
   }
 }
@@ -446,6 +497,9 @@ class PosSaleHistoryCard extends StatelessWidget {
   final DateTime? date;
   final double total;
   final String? paymentName;
+  final Map<String, dynamic> sriInvoice;
+  final bool isRetryingSri;
+  final VoidCallback? onRetrySri;
   final VoidCallback onTap;
 
   const PosSaleHistoryCard({
@@ -457,6 +511,9 @@ class PosSaleHistoryCard extends StatelessWidget {
     required this.date,
     required this.total,
     required this.paymentName,
+    required this.sriInvoice,
+    this.isRetryingSri = false,
+    this.onRetrySri,
     required this.onTap,
   });
 
@@ -574,6 +631,29 @@ class PosSaleHistoryCard extends StatelessWidget {
                         ],
                       ),
                     ],
+                    if (sriInvoice['sri_state'] != null) ...[
+                      const SizedBox(height: 8),
+                      _SriInvoiceSummary(invoice: sriInvoice, compact: true),
+                      if (onRetrySri != null)
+                        TextButton.icon(
+                          onPressed: isRetryingSri ? null : onRetrySri,
+                          icon: isRetryingSri
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.sync, size: 16),
+                          label: const Text('Consultar estado'),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                            ),
+                          ),
+                        ),
+                    ],
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -614,14 +694,96 @@ class PosSaleHistoryCard extends StatelessWidget {
 //  Widget: Dialog de detalle de venta
 // ─────────────────────────────────────────────────────────────────
 
+class _SriInvoiceSummary extends StatelessWidget {
+  const _SriInvoiceSummary({required this.invoice, this.compact = false});
+
+  final Map<String, dynamic> invoice;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = invoice['sri_state']?.toString() ?? '';
+    if (state.isEmpty) return const SizedBox.shrink();
+
+    final color = switch (state) {
+      'AUTORIZADO' => Colors.green.shade700,
+      'DEVUELTA' || 'NO_AUTORIZADO' || 'NO AUTORIZADO' => Colors.red.shade700,
+      'EN_PROCESO' || 'RECIBIDO' || 'PENDIENTE' => Colors.orange.shade800,
+      _ => AppColors.plumGray54,
+    };
+    final error = invoice['sri_error_message']?.toString();
+    final authorizationNumber = invoice['sri_authorization_number']?.toString();
+    final authorizationDate = DateTime.tryParse(
+      invoice['sri_authorization_date']?.toString() ?? '',
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            'SRI: $state',
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        if (error != null && error.isNotEmpty) ...[
+          const SizedBox(height: 5),
+          Text(
+            error,
+            maxLines: compact ? 2 : null,
+            overflow: compact ? TextOverflow.ellipsis : null,
+            style: TextStyle(color: color, fontSize: compact ? 11 : 13),
+          ),
+        ],
+        if (state == 'AUTORIZADO') ...[
+          if (authorizationNumber != null &&
+              authorizationNumber.isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(
+              'Autorización: $authorizationNumber',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+          if (authorizationDate != null)
+            Text(
+              'Fecha oficial: ${DateFormat('dd/MM/yyyy HH:mm:ss').format(authorizationDate)}',
+              style: const TextStyle(fontSize: 12),
+            ),
+        ],
+        if (!compact) ...[
+          if (invoice['sri_access_key'] case final String key
+              when key.isNotEmpty) ...[
+            const SizedBox(height: 5),
+            SelectableText(
+              'Clave de acceso: $key',
+              style: const TextStyle(fontSize: 11),
+            ),
+          ],
+        ],
+      ],
+    );
+  }
+}
+
 class PosSaleDetailDialog extends StatelessWidget {
   final int saleId;
   final List<Map<String, dynamic>> items;
+  final Map<String, dynamic> sale;
 
   const PosSaleDetailDialog({
     super.key,
     required this.saleId,
     required this.items,
+    required this.sale,
   });
 
   @override
@@ -672,6 +834,11 @@ class PosSaleDetailDialog extends StatelessWidget {
                 ],
               ),
             ),
+            if (sale['sri_state'] != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: _SriInvoiceSummary(invoice: sale),
+              ),
             // ── Lista de productos
             if (items.isEmpty)
               const Padding(

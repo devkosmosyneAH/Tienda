@@ -62,6 +62,8 @@ class SaleProvider extends ChangeNotifier {
           status: SaleStatus.completed,
           saleDate: DateTime.parse(s['date'] as String),
           createdAt: DateTime.parse(s['date'] as String),
+          electronicInvoiceId: (s['electronic_invoice_id'] as num?)?.toInt(),
+          sriStatus: s['sri_state'] as String?,
         );
       }).toList();
 

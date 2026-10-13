@@ -896,6 +896,9 @@ class DatabaseService {
         authorization_number TEXT,
         authorization_date TEXT,
         error_message TEXT,
+        error_type TEXT,
+        error_identifier TEXT,
+        sri_messages TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         FOREIGN KEY (store_id) REFERENCES stores(id),
@@ -908,6 +911,24 @@ class DatabaseService {
       db,
       table: 'electronic_invoices',
       column: 'authorization_date',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'electronic_invoices',
+      column: 'error_type',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'electronic_invoices',
+      column: 'error_identifier',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'electronic_invoices',
+      column: 'sri_messages',
       definition: 'TEXT',
     );
 
@@ -4183,10 +4204,24 @@ class DatabaseService {
       SELECT sa.id, sa.date, sa.total,
              st.name AS store_name,
              COALESCE(c.name, 'Consumidor final') AS client_name,
-             pm.name AS payment_method_name
+             pm.name AS payment_method_name,
+             ei.id AS electronic_invoice_id,
+             ei.estado AS sri_state,
+             ei.clave_acceso AS sri_access_key,
+             ei.error_message AS sri_error_message,
+             ei.error_type AS sri_error_type,
+             ei.error_identifier AS sri_error_identifier,
+             ei.sri_messages AS sri_messages,
+             ei.authorization_number AS sri_authorization_number,
+             ei.authorization_date AS sri_authorization_date
       FROM sales sa
       INNER JOIN stores st ON st.id = sa.store_id
       LEFT JOIN clients c ON c.id = sa.client_id
+      LEFT JOIN electronic_invoices ei ON ei.id = (
+        SELECT MAX(invoice.id)
+        FROM electronic_invoices invoice
+        WHERE invoice.sale_id = sa.id AND invoice.store_id = sa.store_id
+      )
       LEFT JOIN sale_payments sp ON sp.sale_id = sa.id
         AND sp.id = (SELECT MIN(id) FROM sale_payments WHERE sale_id = sa.id)
       LEFT JOIN payment_methods pm ON pm.id = sp.method_id

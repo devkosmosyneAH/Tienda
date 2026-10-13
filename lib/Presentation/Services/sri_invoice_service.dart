@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:sri_xml_validator/sri_xml_validator.dart';
 import 'package:xml/xml.dart';
@@ -18,6 +20,8 @@ class SriEmitResult {
     this.accessKey,
     this.authorizationNumber,
     this.authorizationDate,
+    this.errorType,
+    this.errorIdentifier,
   });
 
   final String status;
@@ -26,8 +30,10 @@ class SriEmitResult {
   final String? accessKey;
   final String? authorizationNumber;
   final DateTime? authorizationDate;
+  final String? errorType;
+  final String? errorIdentifier;
 
-  bool get isSuccess => status == 'AUTORIZADO' || status == 'RECIBIDO';
+  bool get isSuccess => status == 'AUTORIZADO';
 }
 
 class _InvoiceLine {
@@ -162,7 +168,13 @@ class SriInvoiceService {
       );
     }
 
-    if (currentStatus == 'RECIBIDO' && accessKey.isNotEmpty) {
+    if ({
+          'RECIBIDO',
+          'EN_PROCESO',
+          'NO AUTORIZADO',
+          'NO_AUTORIZADO',
+        }.contains(currentStatus) &&
+        accessKey.isNotEmpty) {
       final xml = (invoice['xml'] as String?) ?? '';
       try {
         return await _checkAuthorization(
@@ -173,17 +185,17 @@ class SriInvoiceService {
         );
       } catch (error) {
         final message =
-            'El comprobante fue recibido, pero no se pudo consultar su autorización: '
+            'El comprobante sigue en proceso; no se pudo consultar su autorización: '
             '${_safeErrorMessage(error, config)}';
         await _updateInvoice(
           invoiceId: electronicInvoiceId,
           accessKey: accessKey,
-          state: 'RECIBIDO',
+          state: 'EN_PROCESO',
           xml: xml,
           errorMessage: message,
         );
         return SriEmitResult(
-          status: 'RECIBIDO',
+          status: 'EN_PROCESO',
           message: message,
           electronicInvoiceId: electronicInvoiceId,
           accessKey: accessKey,
@@ -270,7 +282,7 @@ class SriInvoiceService {
       }
 
       final invoiceRows = await db.rawQuery(
-        'SELECT id, clave_acceso, estado FROM electronic_invoices WHERE store_id = ? AND sale_id = ? ORDER BY id DESC LIMIT 1',
+        'SELECT id, clave_acceso, estado, xml, authorization_number, authorization_date FROM electronic_invoices WHERE store_id = ? AND sale_id = ? ORDER BY id DESC LIMIT 1',
         [storeId, saleId],
       );
       if (invoiceRows.isNotEmpty && invoiceId == null) {
@@ -282,18 +294,33 @@ class SriInvoiceService {
             message: 'La venta ya tiene una factura autorizada.',
             electronicInvoiceId: (previous['id'] as num).toInt(),
             accessKey: previous['clave_acceso'] as String?,
+            authorizationNumber: previous['authorization_number'] as String?,
+            authorizationDate: DateTime.tryParse(
+              previous['authorization_date'] as String? ?? '',
+            ),
           );
         }
-        if (previousStatus == 'RECIBIDO' || previousStatus == 'PENDIENTE') {
+        final previousAccessKey = previous['clave_acceso'] as String? ?? '';
+        final previousInvoiceId = (previous['id'] as num).toInt();
+        if ((previousStatus == 'RECIBIDO' || previousStatus == 'EN_PROCESO') &&
+            previousAccessKey.isNotEmpty) {
+          return _checkAuthorization(
+            accessKey: previousAccessKey,
+            config: config,
+            invoiceId: previousInvoiceId,
+            unsignedXml: previous['xml'] as String? ?? '',
+          );
+        }
+        if (previousStatus == 'PENDIENTE' && previousAccessKey.isNotEmpty) {
           return SriEmitResult(
             status: previousStatus,
             message: 'La factura ya está en proceso de autorización.',
-            electronicInvoiceId: (previous['id'] as num).toInt(),
-            accessKey: previous['clave_acceso'] as String?,
+            electronicInvoiceId: previousInvoiceId,
+            accessKey: previousAccessKey,
           );
         }
-        invoiceId = (previous['id'] as num).toInt();
-        accessKey = previous['clave_acceso'] as String?;
+        invoiceId = previousInvoiceId;
+        accessKey = previousAccessKey;
       }
 
       if (invoiceId == null) {
@@ -380,7 +407,8 @@ class SriInvoiceService {
           xsdFileName: _invoiceXsd,
         );
         var finalEmission = emission;
-        if (emission.estado == EstadoAutorizacion.enProceso) {
+        if (emission.estado == EstadoAutorizacion.enProceso ||
+            emission.estado == EstadoAutorizacion.noAutorizado) {
           try {
             finalEmission = await _pollAuthorization(
               accessKey: accessKey,
@@ -388,17 +416,17 @@ class SriInvoiceService {
             );
           } catch (error) {
             final message =
-                'Comprobante recibido; falló la consulta de autorización: '
+                'Comprobante en proceso; falló la consulta de autorización: '
                 '${_safeErrorMessage(error, config)}';
             await _updateInvoice(
               invoiceId: invoiceId,
               accessKey: accessKey,
-              state: 'RECIBIDO',
+              state: 'EN_PROCESO',
               xml: unsignedXml,
               errorMessage: message,
             );
             return SriEmitResult(
-              status: 'RECIBIDO',
+              status: 'EN_PROCESO',
               message: message,
               electronicInvoiceId: invoiceId,
               accessKey: accessKey,
@@ -482,46 +510,59 @@ class SriInvoiceService {
     required int invoiceId,
     required String unsignedXml,
   }) async {
-    final client = http.Client();
-    try {
-      final ws = SriWsRepositoryImpl(
-        client,
-        ambiente: config.ambiente == 2
-            ? AmbienteSri.produccion
-            : AmbienteSri.pruebas,
-      );
-      final result = await _pollAuthorization(
-        ws: ws,
-        accessKey: accessKey,
-        config: config,
-      );
-      return _saveEmissionResult(
-        invoiceId: invoiceId,
-        accessKey: accessKey,
-        unsignedXml: unsignedXml,
-        result: result,
-      );
-    } finally {
-      client.close();
-    }
+    final result = await _pollAuthorization(
+      accessKey: accessKey,
+      config: config,
+    );
+    return _saveEmissionResult(
+      invoiceId: invoiceId,
+      accessKey: accessKey,
+      unsignedXml: unsignedXml,
+      result: result,
+    );
   }
 
   static Future<ResultadoEmision> _pollAuthorization({
-    SriWsRepositoryImpl? ws,
     required String accessKey,
     required SriStoreConfig config,
   }) async {
-    final httpClient = ws == null ? http.Client() : null;
+    final httpClient = http.Client();
     try {
-      final repository =
-          ws ??
-          SriWsRepositoryImpl(
-            httpClient!,
-            ambiente: config.ambiente == 2
-                ? AmbienteSri.produccion
-                : AmbienteSri.pruebas,
+      Future<ResultadoEmision> queryAuthorization() async {
+        final environment = config.ambiente == 2
+            ? AmbienteSri.produccion
+            : AmbienteSri.pruebas;
+        final envelope =
+            '''<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ec="http://ec.gob.sri.ws.autorizacion">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <ec:autorizacionComprobante>
+      <claveAccesoComprobante>$accessKey</claveAccesoComprobante>
+    </ec:autorizacionComprobante>
+  </soapenv:Body>
+</soapenv:Envelope>''';
+        final response = await httpClient
+            .post(
+              Uri.parse(
+                '${environment.urlBase}/comprobantes-electronicos-ws/AutorizacionComprobantesOffline',
+              ),
+              headers: {
+                'Content-Type': 'text/xml;charset=UTF-8',
+                'SOAPAction': '',
+              },
+              body: envelope,
+            )
+            .timeout(const Duration(seconds: 30));
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          throw HttpException(
+            'El Web Service de autorización respondió HTTP ${response.statusCode}.',
           );
-      var result = await repository.consultarAutorizacion(accessKey);
+        }
+        return parseAuthorizationResponse(response.body);
+      }
+
+      var result = await queryAuthorization();
       for (
         var attempt = 0;
         result.estado == EstadoAutorizacion.enProceso &&
@@ -529,12 +570,88 @@ class SriInvoiceService {
         attempt++
       ) {
         await Future<void>.delayed(_sriPollInterval);
-        result = await repository.consultarAutorizacion(accessKey);
+        result = await queryAuthorization();
       }
       return result;
     } finally {
-      httpClient?.close();
+      httpClient.close();
     }
+  }
+
+  @visibleForTesting
+  static ResultadoEmision parseAuthorizationResponse(String xmlResponse) {
+    final document = XmlDocument.parse(xmlResponse);
+
+    String? childText(XmlElement parent, String name) {
+      for (final child in parent.childElements) {
+        if (child.name.local == name) return child.innerText.trim();
+      }
+      return null;
+    }
+
+    final soapFault = document.descendantElements
+        .where((element) => element.name.local == 'Fault')
+        .firstOrNull;
+    if (soapFault != null) {
+      final faultMessage =
+          soapFault.descendantElements
+              .where(
+                (element) =>
+                    element.name.local == 'faultstring' ||
+                    element.name.local == 'Text',
+              )
+              .map((element) => element.innerText.trim())
+              .firstOrNull ??
+          'El SRI devolvió una falla SOAP sin detalle.';
+      throw FormatException('Falla SOAP del SRI: $faultMessage');
+    }
+
+    final authorization = document.descendantElements
+        .where((element) => element.name.local == 'autorizacion')
+        .firstOrNull;
+    if (authorization == null) {
+      return const ResultadoEmision(estado: EstadoAutorizacion.enProceso);
+    }
+
+    final rawState = childText(authorization, 'estado')?.toUpperCase() ?? '';
+    final state = switch (rawState) {
+      'AUTORIZADO' => EstadoAutorizacion.autorizado,
+      'NO AUTORIZADO' || 'NO_AUTORIZADO' => EstadoAutorizacion.noAutorizado,
+      'EN PROCESO' || 'EN_PROCESO' => EstadoAutorizacion.enProceso,
+      _ => throw FormatException(
+        'Estado de autorización SRI desconocido: '
+        '${rawState.isEmpty ? '(vacío)' : rawState}.',
+      ),
+    };
+    final messages = authorization.descendantElements
+        .where(
+          (element) =>
+              element.name.local == 'mensaje' &&
+              element.childElements.any(
+                (child) =>
+                    child.name.local == 'identificador' ||
+                    child.name.local == 'tipo' ||
+                    child.name.local == 'informacionAdicional',
+              ),
+        )
+        .map(
+          (element) => MensajeSri(
+            identificador: childText(element, 'identificador') ?? '',
+            mensaje: childText(element, 'mensaje') ?? '',
+            informacionAdicional: childText(element, 'informacionAdicional'),
+            tipo: childText(element, 'tipo') ?? '',
+          ),
+        )
+        .toList();
+    final date = childText(authorization, 'fechaAutorizacion');
+
+    return ResultadoEmision(
+      estado: state,
+      numeroAutorizacion: childText(authorization, 'numeroAutorizacion'),
+      fechaAutorizacion: date == null ? null : DateTime.tryParse(date),
+      xmlAutorizado: childText(authorization, 'comprobante'),
+      mensajes: messages,
+    );
   }
 
   static Future<SriEmitResult> _saveEmissionResult({
@@ -545,24 +662,36 @@ class SriInvoiceService {
   }) async {
     final status = switch (result.estado) {
       EstadoAutorizacion.autorizado => 'AUTORIZADO',
-      EstadoAutorizacion.noAutorizado => 'NO AUTORIZADO',
+      EstadoAutorizacion.noAutorizado => 'NO_AUTORIZADO',
       EstadoAutorizacion.rechazado => 'DEVUELTA',
-      EstadoAutorizacion.enProceso => 'RECIBIDO',
+      EstadoAutorizacion.enProceso => 'EN_PROCESO',
     };
+    final sriMessages = result.mensajes
+        .map(
+          (message) => <String, String?>{
+            'identificador': message.identificador,
+            'mensaje': message.mensaje,
+            'informacionAdicional': message.informacionAdicional,
+            'tipo': message.tipo,
+          },
+        )
+        .toList();
     final messages = result.mensajes
         .map(
           (message) => [
-            if (message.identificador.isNotEmpty) '[${message.identificador}]',
-            message.mensaje,
+            if (message.tipo.isNotEmpty) 'Tipo: ${message.tipo}',
+            if (message.identificador.isNotEmpty)
+              'Código: ${message.identificador}',
+            if (message.mensaje.isNotEmpty) message.mensaje,
             if ((message.informacionAdicional ?? '').isNotEmpty)
-              message.informacionAdicional!,
-          ].where((part) => part.isNotEmpty).join(' '),
+              'Información adicional: ${message.informacionAdicional}',
+          ].join(' · '),
         )
         .where((message) => message.isNotEmpty)
         .join('\n');
     final successMessage = switch (status) {
       'AUTORIZADO' => 'Factura autorizada por el SRI.',
-      'RECIBIDO' => 'Comprobante recibido; autorización aún en proceso.',
+      'EN_PROCESO' => 'Comprobante recibido; autorización aún en proceso.',
       'DEVUELTA' => 'El SRI devolvió el comprobante.',
       _ => 'El SRI no autorizó el comprobante.',
     };
@@ -572,9 +701,16 @@ class SriInvoiceService {
       accessKey: accessKey,
       state: status,
       xml: result.xmlAutorizado ?? unsignedXml,
-      errorMessage: status == 'AUTORIZADO' || status == 'RECIBIDO'
+      errorMessage: status == 'AUTORIZADO' || status == 'EN_PROCESO'
           ? null
           : message,
+      errorType: result.mensajes
+          .map((item) => item.tipo.trim())
+          .firstWhere((value) => value.isNotEmpty, orElse: () => ''),
+      errorIdentifier: result.mensajes
+          .map((item) => item.identificador.trim())
+          .firstWhere((value) => value.isNotEmpty, orElse: () => ''),
+      sriMessages: jsonEncode(sriMessages),
       authorizationNumber: result.numeroAutorizacion,
       authorizationDate: result.fechaAutorizacion,
     );
@@ -585,6 +721,12 @@ class SriInvoiceService {
       accessKey: accessKey,
       authorizationNumber: result.numeroAutorizacion,
       authorizationDate: result.fechaAutorizacion,
+      errorType: result.mensajes
+          .map((item) => item.tipo.trim())
+          .firstWhere((value) => value.isNotEmpty, orElse: () => ''),
+      errorIdentifier: result.mensajes
+          .map((item) => item.identificador.trim())
+          .firstWhere((value) => value.isNotEmpty, orElse: () => ''),
     );
   }
 
@@ -855,9 +997,13 @@ class SriInvoiceService {
                   _xmlText(
                     builder,
                     'precioUnitario',
-                    _formatMoney(line.unitPrice),
+                    _formatInvoiceDecimal(line.unitPrice),
                   );
-                  _xmlText(builder, 'descuento', _formatMoney(line.discount));
+                  _xmlText(
+                    builder,
+                    'descuento',
+                    _formatInvoiceDecimal(line.discount),
+                  );
                   _xmlText(
                     builder,
                     'precioTotalSinImpuesto',
@@ -907,11 +1053,16 @@ class SriInvoiceService {
       );
     }
     final taxCode = _ivaCode(taxRate);
-    // POS sale totals are quantity multiplied by the stored retail price.
-    // Treat that amount as tax-inclusive so the invoice total stays identical.
-    final lineDiscount = _money(discount * quantity);
-    final gross = _money(unitPrice * quantity - lineDiscount);
-    final base = taxRate == 0 ? gross : _money(gross / (1 + taxRate / 100));
+    final grossDiscount = _money(discount * quantity);
+    final gross = _money(unitPrice * quantity - grossDiscount);
+    final factor = 1 + taxRate / 100;
+    final netUnitPrice = taxRate == 0
+        ? _precision(unitPrice)
+        : _precision(unitPrice / factor);
+    final netDiscount = taxRate == 0
+        ? _precision(grossDiscount)
+        : _precision(grossDiscount / factor);
+    final base = _money(netUnitPrice * quantity - netDiscount);
     final name =
         (item['product_name'] as String?) ??
         (item['name'] as String?) ??
@@ -923,9 +1074,9 @@ class SriInvoiceService {
       code: code,
       description: name,
       quantity: quantity,
-      unitPrice: unitPrice,
+      unitPrice: netUnitPrice,
       gross: gross,
-      discount: lineDiscount,
+      discount: netDiscount,
       taxBase: base,
       taxRate: taxRate,
       taxCode: taxCode,
@@ -1146,7 +1297,7 @@ class SriInvoiceService {
   }) async {
     final db = await DatabaseService.database;
     final now = DateTime.now().toIso8601String();
-    return db.rawInsert(
+    final invoiceId = await db.rawInsert(
       '''
       INSERT INTO electronic_invoices (
         store_id, sale_id, client_id, document_code, clave_acceso, estado,
@@ -1163,6 +1314,15 @@ class SriInvoiceService {
         now,
       ],
     );
+    await db.rawUpdate(
+      '''
+      UPDATE sales
+      SET electronic_invoice_id = ?, sri_status = 'PENDIENTE'
+      WHERE id = ? AND store_id = ?
+      ''',
+      [invoiceId, saleId, storeId],
+    );
+    return invoiceId;
   }
 
   static Future<void> _updateInvoice({
@@ -1171,6 +1331,9 @@ class SriInvoiceService {
     required String state,
     String? xml,
     String? errorMessage,
+    String? errorType,
+    String? errorIdentifier,
+    String? sriMessages,
     String? authorizationNumber,
     DateTime? authorizationDate,
   }) async {
@@ -1182,6 +1345,9 @@ class SriInvoiceService {
         estado = ?,
         xml = COALESCE(?, xml),
         error_message = ?,
+        error_type = ?,
+        error_identifier = ?,
+        sri_messages = ?,
         authorization_number = COALESCE(?, authorization_number),
         authorization_date = COALESCE(?, authorization_date),
         updated_at = ?
@@ -1192,12 +1358,27 @@ class SriInvoiceService {
         state,
         xml,
         errorMessage,
+        errorType,
+        errorIdentifier,
+        sriMessages,
         authorizationNumber,
         authorizationDate?.toIso8601String(),
         DateTime.now().toIso8601String(),
         invoiceId,
       ],
     );
+    await db.rawUpdate(
+      '''
+      UPDATE sales
+      SET electronic_invoice_id = ?,
+          sri_status = ?
+      WHERE id = (
+        SELECT sale_id FROM electronic_invoices WHERE id = ?
+      )
+      ''',
+      [invoiceId, state, invoiceId],
+    );
+    DatabaseService.notifyDatabaseChanged();
   }
 
   static String _safeErrorMessage(Object error, SriStoreConfig config) {
@@ -1240,8 +1421,19 @@ class SriInvoiceService {
 
   static double _money(double amount) => (amount * 100).roundToDouble() / 100;
 
+  static double _precision(double amount) =>
+      (amount * 1000000).roundToDouble() / 1000000;
+
   static String _formatMoney(double amount) =>
       _money(amount).toStringAsFixed(2);
+
+  static String _formatInvoiceDecimal(double amount) {
+    final value = _precision(amount).toStringAsFixed(6);
+    final trimmed = value
+        .replaceFirst(RegExp(r'0+$'), '')
+        .replaceFirst(RegExp(r'\.$'), '');
+    return trimmed.contains('.') ? trimmed : '$trimmed.00';
+  }
 
   static String _formatQuantity(double quantity) {
     if (quantity == quantity.roundToDouble()) {
