@@ -54,6 +54,35 @@ void main() {
         ),
         isNotNull,
       );
+      expect(
+        SupplierRucValidator.validateAccessKeyForInvoice(
+          accessKey: key,
+          invoiceNumber: '001-001-000000001',
+          issueDate: DateTime(2026, 10, 2),
+          supplierRuc: '1790016919001',
+        ),
+        isNotNull,
+      );
+      expect(
+        SupplierRucValidator.validateAccessKeyForInvoice(
+          accessKey: key,
+          invoiceNumber: '001-001-000000001',
+          issueDate: DateTime(2026, 10, 1),
+          supplierRuc: '1790016918001',
+        ),
+        isNotNull,
+      );
+    });
+
+    test('uses the SRI modulo 11 mapping when the result is ten', () {
+      final key = '${List.filled(47, '0').join()}61';
+
+      expect(key, hasLength(49));
+      expect(SupplierRucValidator.validateAccessKey(key), isNull);
+      expect(
+        SupplierRucValidator.validateAccessKey('${key.substring(0, 48)}0'),
+        isNotNull,
+      );
     });
 
     test('rejects invalid length, province, and check digit', () {
