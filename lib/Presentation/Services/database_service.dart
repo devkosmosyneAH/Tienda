@@ -892,21 +892,69 @@ class DatabaseService {
         clave_acceso TEXT,
         estado TEXT NOT NULL DEFAULT 'PENDIENTE',
         ambiente INTEGER NOT NULL DEFAULT 1,
-        xml TEXT,
+        xml_original TEXT,
+        xml_firmado TEXT,
+        xml_enviado TEXT,
+        sri_response TEXT,
+        authorization_data TEXT,
+        invoice_snapshot TEXT,
         authorization_number TEXT,
         authorization_date TEXT,
         error_message TEXT,
         error_type TEXT,
         error_identifier TEXT,
         sri_messages TEXT,
+        retry_count INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         FOREIGN KEY (store_id) REFERENCES stores(id),
         FOREIGN KEY (sale_id) REFERENCES sales(id),
         FOREIGN KEY (client_id) REFERENCES clients(id)
       )
-    ''');
+    ''' );
 
+    await _ensureColumn(
+      db,
+      table: 'electronic_invoices',
+      column: 'xml_original',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'electronic_invoices',
+      column: 'xml_firmado',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'electronic_invoices',
+      column: 'xml_enviado',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'electronic_invoices',
+      column: 'sri_response',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'electronic_invoices',
+      column: 'authorization_data',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'electronic_invoices',
+      column: 'invoice_snapshot',
+      definition: 'TEXT',
+    );
+    await _ensureColumn(
+      db,
+      table: 'electronic_invoices',
+      column: 'retry_count',
+      definition: 'INTEGER NOT NULL DEFAULT 0',
+    );
     await _ensureColumn(
       db,
       table: 'electronic_invoices',
@@ -932,6 +980,25 @@ class DatabaseService {
       definition: 'TEXT',
     );
 
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS electronic_invoice_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        invoice_id INTEGER NOT NULL,
+        from_state TEXT,
+        to_state TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        payload_json TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (invoice_id) REFERENCES electronic_invoices(id) ON DELETE CASCADE
+      )
+    ''' );
+
+    await db.execute(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_electronic_invoices_store_sale ON electronic_invoices(store_id, sale_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_electronic_invoice_history_invoice ON electronic_invoice_history(invoice_id, created_at DESC)',
+    );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_sri_config_store ON sri_store_config(store_id)',
     );
